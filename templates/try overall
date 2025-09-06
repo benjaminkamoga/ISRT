@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Time-Based Report</title>
+<style>
+table { width:100%; border-collapse:collapse; }
+th, td { border:1px solid #333; padding:8px; text-align:left; }
+th { background-color:#eee; }
+tr:nth-child(even) { background-color:#f9f9f9; }
+</style>
+</head>
+<body>
+<h2>Time-Based Report</h2>
+
+<table>
+<thead>
+<tr>
+    <th>Inspection Name</th>
+    <th>Inspection Type</th>
+    <th>Date</th>
+    <th>Region</th>
+    <th>District</th>
+    <th>Premises Data</th>
+    <th>Defects Data</th>
+    <th>Recall Products</th>
+    <th>Charges & Confiscated Values</th>
+</tr>
+</thead>
+<tbody>
+{% if inspections %}
+    {% for insp in inspections %}
+    <tr>
+        <td>{{ insp.summary.inspection_name if insp.summary else 'N/A' }}</td>
+        <td>{{ insp.summary.inspection_type if insp.summary else 'N/A' }}</td>
+        <td>{{ insp.date.strftime('%Y-%m-%d') if insp.date else 'N/A' }}</td>
+        <td>{{ insp.summary.region if insp.summary else 'N/A' }}</td>
+        <td>{{ insp.summary.district if insp.summary else 'N/A' }}</td>
+
+        <!-- Premises Data -->
+        <td>
+            {% if insp.summary.inspection_type == 'POE Inspection' %}
+                POE: 1
+            {% elif insp.premises_data %}
+                {% for k, v in insp.premises_data.items() %}
+                    {{ k }}: {{ v }}<br>
+                {% endfor %}
+            {% else %}N/A{% endif %}
+        </td>
+
+        <!-- Defects Data -->
+        <td>
+            {% if insp.summary.inspection_type == 'POE Inspection' %}
+                {% set poe_products = insp.poe_products_dict %}
+                {% set defects_list = [] %}
+                {% if poe_products.get('got_products') %}{% set _ = defects_list.append('GOT Products') %}{% endif %}
+                {% if poe_products.get('unregistered_products') %}{% set _ = defects_list.append('Unregistered Products') %}{% endif %}
+                {% if poe_products.get('no_permit_products') %}{% set _ = defects_list.append('No Permit Products') %}{% endif %}
+                {{ defects_list | join(', ') if defects_list else 'None' }}
+            {% elif insp.defects_data %}
+                {% for k, v in insp.defects_data.items() %}
+                    {{ k }}: {{ v }}<br>
+                {% endfor %}
+            {% else %}N/A{% endif %}
+        </td>
+
+        <!-- Recall Products -->
+        <td>
+            {% if insp.recall_product_data %}
+                {% for k, v in insp.recall_product_data.items() %}
+                    {{ k }}: {{ v }}<br>
+                {% endfor %}
+            {% else %}N/A{% endif %}
+        </td>
+
+        <!-- Charges & Confiscated Values -->
+        <td>
+            {% if insp.summary.inspection_type == 'POE Inspection' %}
+                Total Charges: {{ insp.poe_total_charges }}<br>
+                GOT Products Value: {{ insp.poe_products_dict.get('got_value', 0) }}<br>
+                Unregistered Products Value: {{ insp.poe_products_dict.get('unregistered_value', 0) }}<br>
+                No Permit Products Value: {{ insp.poe_products_dict.get('no_permit_value', 0) }}
+            {% else %}
+                Total Charges: {{ insp.charges_data.get('total', 0) }}<br>
+                GOT Products Value: {{ insp.charges_data.get('got_value', 0) }}<br>
+                Unregistered Products Value: {{ insp.charges_data.get('unregistered_value', 0) }}<br>
+                DLDM Not Allowed Value: {{ insp.charges_data.get('dldm_value', 0) }}<br>
+                No Permit Products Value: {{ insp.charges_data.get('no_permit_value', 0) }}
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+{% else %}
+<tr><td colspan="9">No inspections recorded.</td></tr>
+{% endif %}
+</tbody>
+</table>
+</body>
+</html>

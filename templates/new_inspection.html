@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Start New Inspection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .modal-container {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            width: 360px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #4caf50;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            margin-top: 6px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .buttons {
+            margin-top: 25px;
+            text-align: center;
+        }
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #388e3c;
+        }
+        button.cancel-btn {
+            background-color: #6c757d;
+        }
+        button.cancel-btn:hover {
+            background-color: #565e64;
+        }
+    </style>
+</head>
+<body>
+
+<div class="modal-container">
+    <h2>Start New Inspection</h2>
+    
+    <label for="inspectionType">Inspection Type</label>
+    <select id="inspectionType" required>
+        <option value="" disabled selected>Select inspection type</option>
+        <option value="Routine Inspection">Routine Inspection</option>
+        <option value="Follow up Inspection">Follow up Inspection</option>
+        <option value="Recall Inspection">Recall Inspection</option>
+        <option value="Medical Device Inspection">Medical Device Inspection</option>
+        <option value="Special Inspection">Special Inspection</option>
+        <option value="POE Inspection">POE Inspection</option>
+    </select>
+    
+    <label for="regionSelect">Region</label>
+    <select id="regionSelect" required>
+        <option value="" disabled selected>Select region</option>
+        <option value="Mtwara">Mtwara</option>
+        <option value="Lindi">Lindi</option>
+        <option value="Ruvuma">Ruvuma</option>
+    </select>
+    
+    <label for="districtSelect">District</label>
+    <select id="districtSelect" required disabled>
+        <option value="" disabled selected>Select district</option>
+    </select>
+    
+    <div class="buttons">
+        <button id="proceedBtn" disabled>Proceed</button>
+        <button id="cancelBtn" class="cancel-btn">Cancel</button>
+    </div>
+</div>
+
+<script>
+    const regionDistricts = {
+        "Mtwara": ["Mtwara MC", "Mtwara DC", "Masasi DC", "Masasi TC", "Nanyumbu", "Newala TC", "Newala DC", "Tandahimba", "Nanyamba"],
+        "Lindi": ["Lindi MC", "Kilwa", "Nachingwea", "Liwale", "Ruangwa", "Mtama"],
+        "Ruvuma": ["Songea MC", "Songea DC", "Mbinga TC", "Mbinga DC", "Madaba", "Nyasa", "Namtumbo", "Tunduru"]
+    };
+
+    const regionSelect = document.getElementById('regionSelect');
+    const districtSelect = document.getElementById('districtSelect');
+    const inspectionTypeSelect = document.getElementById('inspectionType');
+    const proceedBtn = document.getElementById('proceedBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    function updateDistricts() {
+        const selectedRegion = regionSelect.value;
+        districtSelect.innerHTML = '<option value="" disabled selected>Select district</option>';
+        if (selectedRegion && regionDistricts[selectedRegion]) {
+            regionDistricts[selectedRegion].forEach(district => {
+                const option = document.createElement('option');
+                option.value = district;
+                option.textContent = district;
+                districtSelect.appendChild(option);
+            });
+            districtSelect.disabled = false;
+        } else {
+            districtSelect.disabled = true;
+        }
+        checkEnableProceed();
+    }
+
+    function checkEnableProceed() {
+        const inspectionType = inspectionTypeSelect.value;
+        const region = regionSelect.value;
+        const district = districtSelect.value;
+        proceedBtn.disabled = !(inspectionType && region && district);
+    }
+
+    regionSelect.addEventListener('change', () => {
+        updateDistricts();
+        checkEnableProceed();
+    });
+
+    districtSelect.addEventListener('change', checkEnableProceed);
+    inspectionTypeSelect.addEventListener('change', checkEnableProceed);
+
+    // Updated proceed button handler to handle Recall Inspection
+    proceedBtn.addEventListener('click', () => {
+        const inspectionType = inspectionTypeSelect.value;
+        const region = encodeURIComponent(regionSelect.value);
+        const district = encodeURIComponent(districtSelect.value);
+
+        if (inspectionType === "POE Inspection") {
+            window.location.href = `/poe_inspection_form?region=${region}&district=${district}`;
+        } 
+        else if (inspectionType === "Recall Inspection") {
+            window.location.href = `/recall_inspection?region=${region}&district=${district}`;
+        }
+        else {
+            window.location.href = `/inspection_form?inspection_type=${encodeURIComponent(inspectionType)}&region=${region}&district=${district}`;
+        }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        window.location.href = '/dashboard';
+    });
+</script>
+
+</body>
+</html>

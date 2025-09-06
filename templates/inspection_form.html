@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inspection Form</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        .main-content {
+            padding: 20px 40px;
+            min-height: 100vh;
+            background: #fefefe;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+        .premises-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .charges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .charges-grid .defect-group input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .total-charges {
+            grid-column: span 3;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        input, textarea, select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        textarea {
+            font-family: Arial, sans-serif;
+        }
+        input[type="date"], #totalCharges {
+            max-width: 200px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+        button:hover:not(:disabled) { background: #388e3c; }
+        button.cancel-btn { background: #6c757d; }
+        button.cancel-btn:hover { background: #565e64; }
+        button.danger-btn { background: #d32f2f; }
+        button.danger-btn:hover:not(:disabled) { background: #a52828; }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        
+.action-buttons {
+    display: flex;
+    gap: 18px;          
+    justify-content: flex-start;  
+}
+
+/* Buttons sized like single premise input */
+.action-buttons button {
+    width: 200px;       
+    height: 36px;       
+    box-sizing: border-box;
+    font-size: 14px;
+    padding: 8px;
+}
+
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        .modal-content {
+    background: white;
+    margin: 2% auto;          /* slightly pushed up */
+    padding: 20px;
+    width: 450px;
+    border-radius: 5px;
+    max-height: 95vh;          /* increased from 80vh */
+    overflow-y: auto;          /* allow internal scrolling if needed */
+    box-sizing: border-box;
+}
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <input type="hidden" id="region" name="region" value="{{ region|default('') }}">
+    <input type="hidden" id="district" name="district" value="{{ district|default('') }}">
+    <input type="hidden" id="inspectionType" name="inspection_type" value="{{ inspection_type|default('') }}">
+
+    <div class="header">
+        <h1 id="inspectionTypeDisplay">{{ inspection_type }}</h1>
+        <p>Region: <span id="regionDisplay">{{ region }}</span> | District: <span id="districtDisplay">{{ district }}</span></p>
+    </div>
+
+    <div class="card">
+        <h2>Inspection Date</h2>
+        <input type="date" id="inspectionDate" required>
+    </div>
+
+    <div class="card">
+        <h2>Premises Inspected</h2>
+        <div class="premises-grid">
+            {% for category in categories %}
+            <div>
+                <label>{{ category }}:</label>
+                <input type="number" min="0" id="prem-{{ loop.index0 }}" 
+                       data-category="{{ category }}" onchange="handlePremiseChange(this)" required>
+            </div>
+            {% endfor %}
+        </div>
+        <p><strong>Total Premises: <span id="totalPremises">0</span></strong></p>
+    </div>
+
+    <div class="card" id="financialInfo">
+        <h2>CHARGES AND CONFISCATED PRODUCT INFORMATION</h2>
+        <div class="charges-grid">
+            <div class="defect-group">
+                <label>Value of GOT Products (Tsh):</label>
+                <input type="number" min="0" id="gotValue" required>
+            </div>
+            <div class="defect-group">
+                <label>Value of Unregistered Products (Tsh):</label>
+                <input type="number" min="0" id="unregisteredValue" required>
+            </div>
+            <div class="defect-group">
+                <label>Value of DLDM Not Allowed Medicines (Tsh):</label>
+                <input type="number" min="0" id="dldmValue" required>
+            </div>
+            <div class="defect-group">
+                <label>TOTAL CHARGES<br>(Tsh):</label>
+                <input type="number" min="0" id="totalCharges" required>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal defect-related">
+        <div class="modal-content">
+            <h3>Defects Found in <span id="currentCategory"></span>?</h3>
+            <button onclick="showDefectForm()">Yes</button>
+            <button onclick="closeModals()">No</button>
+        </div>
+    </div>
+
+    <div id="defectModal" class="modal defect-related">
+        <div class="modal-content">
+            <h3>Defects in <span id="defectCategory"></span></h3>
+            <div class="defect-group"><label>GOT Medicines (Count):</label><input type="number" min="0" id="defectGot" required></div>
+            <div class="defect-group"><label>Unregistered Medicines (Count):</label><input type="number" min="0" id="defectUnreg" required></div>
+            <div class="defect-group"><label>No Qualified Personnel (Count):</label><input type="number" min="0" id="defectPersonnel" required></div>
+            <div class="defect-group"><label>Premise Meets Minimal Requirements (Count):</label><input type="number" min="0" id="defectRequirements" required></div>
+            <div class="defect-group"><label>Unregistered Premise (Count):</label><input type="number" min="0" id="defectUnregPremise" required></div>
+
+            <div id="dldmExtraDefects" class="hidden">
+                <div class="defect-group"><label>Medical Practices (Count):</label><input type="number" min="0" id="defectMedicalPractices" required></div>
+                <div class="defect-group"><label>DLDM Not Allowed Medicines (Count):</label><input type="number" min="0" id="defectDldmNotAllowed" required></div>
+            </div>
+
+            <div id="pharmacyExtraDefect" class="hidden">
+                <div class="defect-group"><label>Medical Practices (Count):</label><input type="number" min="0" id="defectPharmMedicalPractices" required></div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button onclick="saveDefectData()">Save Defects</button>
+                <button onclick="closeModals()" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card action-buttons">
+    <button id="saveBtn" onclick="submitInspection()" disabled>Save Inspection</button>
+    <button id="saveEndBtn" onclick="submitAndEndInspection()" class="danger-btn" disabled>Save and End Inspection</button>
+    <button onclick="window.location.href='/dashboard'" class="cancel-btn">Back to Dashboard</button>
+</div>
+
+</div>
+
+</body>
+</html>
+
+<script>
+    var currentCategory = null;
+    var defectsData = {};
+    var categories = JSON.parse('{{ categories|tojson|safe }}');
+    var inspectionName = "{{ inspection_name|default('') }}";
+    var region = "{{ region|default('') }}";
+    var district = "{{ district|default('') }}";
+    var inspectionType = "{{ inspection_type|default('') }}";
+
+    document.addEventListener('DOMContentLoaded', function () {
+    const dateInput = document.getElementById("inspectionDate");
+
+    // Prevent future dates
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const dd = String(today.getDate()).padStart(2, '0');
+    const maxDate = `${yyyy}-${mm}-${dd}`;
+    dateInput.max = maxDate;
+
+    dateInput.value = "";
+
+    document.getElementById("region").value = region;
+    document.getElementById("district").value = district;
+    document.getElementById("inspectionType").value = inspectionType;
+    document.getElementById("regionDisplay").textContent = region;
+    document.getElementById("districtDisplay").textContent = district;
+    document.getElementById("inspectionTypeDisplay").textContent = inspectionType;
+
+    categories.forEach((cat, i) => {
+        const input = document.getElementById("prem-" + i);
+        input.value = '';
+        input.addEventListener('input', toggleSaveButtons);
+    });
+
+    ['gotValue','unregisteredValue','dldmValue','totalCharges'].forEach(id => {
+        const el = document.getElementById(id);
+        el.value = '';
+        el.addEventListener('input', toggleSaveButtons);
+    });
+
+    dateInput.addEventListener('input', toggleSaveButtons);
+    toggleSaveButtons();
+});
+
+
+    function toggleSaveButtons() {
+        const dateVal = document.getElementById('inspectionDate').value.trim();
+        const premisesOk = categories.every((cat, i) => {
+            const val = document.getElementById("prem-" + i).value.trim();
+            return val !== "" && !isNaN(val);
+        });
+        const chargesOk = ['gotValue','unregisteredValue','dldmValue','totalCharges'].every(id => {
+            const val = document.getElementById(id).value.trim();
+            return val !== "" && !isNaN(val);
+        });
+
+        const enabled = dateVal && premisesOk && chargesOk;
+        ['saveBtn','saveEndBtn'].forEach(id => {
+            const btn = document.getElementById(id);
+            btn.disabled = !enabled;
+            btn.style.opacity = enabled ? "1" : "0.5";
+        });
+    }
+
+    function handlePremiseChange(input) {
+        currentCategory = input.dataset.category;
+        updateTotal();
+        toggleSaveButtons();
+
+        if (parseInt(input.value) > 0) {
+            document.getElementById("currentCategory").textContent = currentCategory;
+            document.getElementById("confirmModal").style.display = "block";
+        }
+    }
+
+    function updateTotal() {
+        let total = categories.reduce((sum, cat, i) => {
+            return sum + (parseInt(document.getElementById("prem-" + i).value) || 0);
+        }, 0);
+        document.getElementById("totalPremises").textContent = total;
+    }
+
+    function showDefectForm() {
+        document.getElementById("confirmModal").style.display = "none";
+        document.getElementById("defectCategory").textContent = currentCategory;
+        document.getElementById("dldmExtraDefects").classList.add("hidden");
+        document.getElementById("pharmacyExtraDefect").classList.add("hidden");
+        if (currentCategory === "DLDM (Human)") document.getElementById("dldmExtraDefects").classList.remove("hidden");
+        else if (currentCategory === "Pharmacy (Human)") document.getElementById("pharmacyExtraDefect").classList.remove("hidden");
+        document.querySelectorAll('#defectModal input').forEach(input => input.value = "");
+        document.getElementById("defectModal").style.display = "block";
+    }
+
+    function saveDefectData() {
+        defectsData[currentCategory] = {
+            gotMedicines: parseInt(document.getElementById("defectGot").value) || 0,
+            unregisteredMedicines: parseInt(document.getElementById("defectUnreg").value) || 0,
+            noQualifiedPersonnel: parseInt(document.getElementById("defectPersonnel").value) || 0,
+            minimalRequirements: parseInt(document.getElementById("defectRequirements").value) || 0,
+            unregisteredPremise: parseInt(document.getElementById("defectUnregPremise").value) || 0
+        };
+        closeModals();
+    }
+
+    function closeModals() {
+        document.querySelectorAll(".modal").forEach(m => m.style.display = "none");
+    }
+
+    function gatherFormData() {
+        const inspectionDate = document.getElementById("inspectionDate").value;
+        if (!inspectionDate) return null;
+
+        let premisesInspected = {};
+        categories.forEach((cat, i) => {
+            const val = parseInt(document.getElementById("prem-" + i).value);
+            if (isNaN(val)) return null;
+            premisesInspected[cat] = val;
+        });
+
+        let gotValue = parseInt(document.getElementById("gotValue").value);
+        let unregisteredValue = parseInt(document.getElementById("unregisteredValue").value);
+        let dldmValue = parseInt(document.getElementById("dldmValue").value);
+        let totalCharges = parseInt(document.getElementById("totalCharges").value);
+        if ([gotValue, unregisteredValue, dldmValue, totalCharges].some(v => isNaN(v))) return null;
+
+        return {
+            inspection_type: inspectionType,
+            inspection_date: inspectionDate,
+            premises_inspected: premisesInspected,
+            defects: defectsData,
+            charges: {
+                got_value: gotValue,
+                unregistered_value: unregisteredValue,
+                dldm_value: dldmValue,
+                total_charges: totalCharges
+            },
+            region: region,
+            district: district,
+            inspection_name: inspectionName
+        };
+    }
+
+    function submitInspection() {
+        const data = gatherFormData();
+        if (!data) return alert("Please fill all required fields correctly.");
+        if (inspectionName) data.inspection_name = inspectionName;
+        data.end = false;
+
+        fetch("/api/inspection/save", {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.ok ? res.json() : Promise.reject("Server rejected request"))
+        .then(resp => {
+            if (resp.success) {
+                alert("Inspection saved successfully");
+                if (!inspectionName && resp.inspection_name) inspectionName = resp.inspection_name;
+                window.location.href = "/dashboard";
+            } else alert("Error saving inspection");
+        })
+        .catch(err => alert("Server error: " + err));
+    }
+
+    function submitAndEndInspection() {
+        const data = gatherFormData();
+        if (!data) return alert("Please fill all required fields correctly.");
+        if (inspectionName) data.inspection_name = inspectionName;
+        data.end = true;
+
+        fetch("/api/inspection/end", {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.ok ? res.json() : Promise.reject("Server rejected request"))
+        .then(resp => {
+            if (resp.success) {
+                alert("Inspection ended successfully");
+                if (!inspectionName && resp.inspection_name) inspectionName = resp.inspection_name;
+                window.location.href = "/dashboard";
+            } else alert("Error ending inspection");
+        })
+        .catch(err => alert("Server error: " + err));
+    }
+</script>
+
+</body>
+</html>

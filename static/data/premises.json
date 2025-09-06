@@ -1,0 +1,157 @@
+[
+    {
+        "id": 1,
+        "name": "Ben Dldm",
+        "category": "Ware House",
+        "region": "Mtwara",
+        "district": "Nanyamba",
+        "location": "Tty",
+        "latitude": "-10.080000",
+        "longitude": "35.900000",
+        "observations": [
+            {
+                "date": "2025-09-01",
+                "observations": [
+                    "GOT Medicines",
+                    "Unregistered Medicines"
+                ],
+                "intensity": 60
+            },
+            {
+                "date": "2025-09-05",
+                "observations": [
+                    "GOT Medicines",
+                    "Unregistered Medicines",
+                    "No Qualified Personnel",
+                    "Premise doesn't meet GSP Requirement",
+                    "Unregistered Premise",
+                    "Medical Practices",
+                    "DLDM NOT ALLOWED Medicines"
+                ],
+                "intensity": 90
+            }
+        ],
+        "total_intensity": 150,
+        "average_intensity": 75.0
+    },
+    {
+        "id": 2,
+        "name": "Ddd",
+        "category": "Dispensary",
+        "region": "Mtwara",
+        "district": "Tandahimba",
+        "location": "Stendi",
+        "latitude": "-10.678160",
+        "longitude": "35.649839",
+        "observations": [
+            {
+                "date": "2025-09-02",
+                "observations": [
+                    "GOT Medicines",
+                    "Unregistered Medicines",
+                    "No Qualified Personnel",
+                    "Premise doesn't meet GSP Requirement",
+                    "Unregistered Premise",
+                    "Medical Practices"
+                ],
+                "intensity": 80
+            }
+        ],
+        "total_intensity": 80,
+        "average_intensity": 80.0
+    },
+    {
+        "id": 3,
+        "name": "23",
+        "category": "Polyclinic",
+        "region": "Mtwara",
+        "district": "Newala DC",
+        "location": "Stendi",
+        "latitude": null,
+        "longitude": null,
+        "observations": [
+            {
+                "date": "2025-09-02",
+                "observations": [
+                    "GOT Medicines",
+                    "Unregistered Medicines",
+                    "No Qualified Personnel",
+                    "Premise doesn't meet GSP Requirement",
+                    "Unregistered Premise",
+                    "Medical Practices"
+                ],
+                "intensity": 80
+            }
+        ],
+        "total_intensity": 80,
+        "average_intensity": 80.0
+    },
+    {
+        "id": 4,
+        "name": "Sdfghj",
+        "category": "Ware House",
+        "region": "Lindi",
+        "district": "Kilwa",
+        "location": "Tty",
+        "latitude": null,
+        "longitude": null,
+        "observations": [
+            {
+                "date": "2025-09-02",
+                "observations": [
+                    "Medical Practices",
+                    "DLDM NOT ALLOWED Medicines"
+                ],
+                "intensity": 15
+            }
+        ],
+        "total_intensity": 15,
+        "average_intensity": 15.0
+    },
+    {
+        "id": 5,
+        "name": "Sdfghj",
+        "category": "Dispensary",
+        "region": "Mtwara",
+        "district": "Tandahimba",
+        "location": "Stendi",
+        "latitude": null,
+        "longitude": null,
+        "observations": [
+            {
+                "date": "2025-09-02",
+                "observations": [
+                    "GOT Medicines",
+                    "Unregistered Medicines",
+                    "Unregistered Premise",
+                    "Medical Practices",
+                    "DLDM NOT ALLOWED Medicines"
+                ],
+                "intensity": 80
+            }
+        ],
+        "total_intensity": 80,
+        "average_intensity": 80.0
+    },
+    {
+        "id": 7,
+        "name": "Ddffeed",
+        "category": "Pharmacy (Vet)",
+        "region": "Mtwara",
+        "district": "Tandahimba",
+        "location": "4",
+        "latitude": null,
+        "longitude": null,
+        "observations": [
+            {
+                "date": "2025-09-03",
+                "observations": [
+                    "DLDM NOT ALLOWED Medicines"
+                ],
+                "intensity": 10
+            }
+        ],
+        "total_intensity": 10,
+        "average_intensity": 10.0
+    }
+]

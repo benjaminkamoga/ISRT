@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background-color: #4CAF50; /* green apple */
+      color: white;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .sidebar-header h2 {
+      font-size: 1.5em;
+      margin: 0;
+      user-select: none;
+    }
+
+    .profile-pic {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #ddd;
+      background-image: url("{{ profile_pic_url if profile_pic_url else url_for('static', filename='images/profile.png') }}");
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
+      border: 2px solid white;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    /* Menu styles */
+    .menu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .menu > li {
+      margin-bottom: 15px;
+    }
+
+    .menu a,
+    .menu button {
+      display: block;
+      padding: 10px 12px;
+      border-radius: 5px;
+      color: white;
+      text-decoration: none;
+      font-size: 1em;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      user-select: none;
+    }
+
+    .menu a:hover,
+    .menu button:hover {
+      background: rgba(255, 255, 255, 0.25);
+      text-decoration: none;
+    }
+
+    /* Submenu */
+    .submenu {
+      list-style: none;
+      padding-left: 15px;
+      margin-top: 5px;
+      display: none;
+    }
+
+    .submenu li {
+      margin-bottom: 8px;
+    }
+
+    .submenu a,
+    .submenu button {
+      font-size: 0.95em;
+      padding-left: 10px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      text-decoration: none;
+      width: 100%;
+      text-align: left;
+      user-select: none;
+    }
+
+    .submenu a:hover,
+    .submenu button:hover {
+      background: rgba(255,255,255,0.35);
+    }
+
+    /* Main content */
+    .main-content {
+      flex-grow: 1;
+      height: 100vh;
+      margin: 0;
+      padding: 20px 30px;
+      box-sizing: border-box;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
+    /* Welcome message */
+    .welcome-message {
+      font-size: 1.25em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      user-select: none;
+    }
+
+    /* Map container fills remaining space */
+    .map-container {
+      flex-grow: 1;
+      overflow: hidden;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: white;
+    }
+
+    .map-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      border: none;
+      margin: 0;
+      padding: 0;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>ISRT</h2>
+      <!-- Profile pic clickable -->
+      <label for="profilePicInput" class="profile-pic" title="Click to change profile picture"></label>
+      <input type="file" id="profilePicInput" name="profile_pic" accept="image/*" style="display:none;" />
+    </div>
+
+    <ul class="menu">
+
+      <!-- Premise Inspection Menu -->
+      <li>
+        <button type="button" onclick="toggleSubmenu('inspectionSubmenu')" aria-expanded="false" aria-controls="inspectionSubmenu">
+          🏢 Premise Inspection
+        </button>
+        <ul id="inspectionSubmenu" class="submenu" aria-label="Premise Inspection submenu">
+          <li><a href="{{ url_for('new_inspection') }}">🆕 New Inspection</a></li>
+          <li><a href="{{ url_for('continue_inspection') }}">⏩ Continue from Previous Inspection</a></li>
+        </ul>
+      </li>
+
+      <!-- Reports Menu -->
+      <li>
+        <button type="button" onclick="toggleSubmenu('reportsSubmenu')" aria-expanded="false" aria-controls="reportsSubmenu">
+          📊 Reports
+        </button>
+        <ul id="reportsSubmenu" class="submenu" aria-label="Reports submenu">
+          <li><a href="{{ url_for('overall_reports') }}">📈 Overall Reports</a></li>
+          <li><a href="{{ url_for('time_based_report') }}">⏳ Time based Reports</a></li>
+          <li><a href="{{ url_for('data_analysis') }}">🔍 Data Analysis</a></li>
+        </ul>
+      </li>
+
+      <!-- Accounts Menu for Admin -->
+      {% if role == 'admin' %}
+      <li>
+        <button type="button" onclick="toggleSubmenu('accountsSubmenu')" aria-expanded="false" aria-controls="accountsSubmenu">
+          👥 Accounts
+        </button>
+        <ul id="accountsSubmenu" class="submenu" aria-label="Accounts submenu">
+          <li><button type="button" data-bs-toggle="modal" data-bs-target="#createUserModal">➕ Create New Account</button></li>
+          <li><a href="{{ url_for('manage_accounts') }}">⚙️ Manage Accounts</a></li>
+        </ul>
+      </li>
+      {% endif %}
+
+      <!-- Premise Data -->
+      
+      <li>
+        <a href="{{ url_for('premise_data') }}">📂 Premise Data</a>
+      </li>
+     
+
+      <!-- Help -->
+      <li>
+        <a href="{{ url_for('help') }}">❓ Help</a>
+      </li>
+
+      <!-- Logout -->
+      <li>
+        <a href="{{ url_for('logout') }}">🚪 Logout</a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Main content -->
+  <div class="main-content">
+    <div class="welcome-message">
+      Hello! {{ username }} Welcome to Southern Zone Inspection Summary Reporting Tool.
+    </div>
+
+    <div class="map-container">
+      <img src="{{ url_for('static', filename='images/sz_map.png') }}" alt="Tanzania Map">
+    </div>
+  </div>
+
+  <!-- Create User Modal -->
+  <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form method="POST" action="{{ url_for('create_user') }}" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createUserLabel">Create New User Account</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <label for="new_username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="new_username" name="new_username" required />
+          </div>
+
+          <div class="mb-3">
+            <label for="new_password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="new_password" name="new_password" required />
+          </div>
+
+          <div class="mb-3">
+            <label for="new_role" class="form-label">Role</label>
+            <select class="form-select" id="new_role" name="new_role" required>
+              <option value="" selected disabled>Select role</option>
+              <option value="admin">Admin</option>
+              <option value="champion">Champion</option>
+              <option value="user">User</option>
+            </select>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Create Account</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+  function toggleSubmenu(id) {
+  const submenu = document.getElementById(id);
+  // Close other submenus
+  ['inspectionSubmenu', 'reportsSubmenu', 'accountsSubmenu'].forEach(otherId => {
+    const other = document.getElementById(otherId);
+    if (other && otherId !== id) {
+      other.style.display = 'none';
+    }
+  });
+  // Toggle clicked submenu
+  if (submenu) {
+    submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+  }
+}
+
+    // Profile picture upload handler
+    const profilePicInput = document.getElementById('profilePicInput');
+    const profilePicLabel = document.querySelector('.profile-pic');
+
+    profilePicInput.addEventListener('change', function () {
+      const file = this.files[0];
+      if (!file) return;
+
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Please select a valid image file (jpg, png, gif)');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('profile_pic', file);
+
+      fetch('/upload_profile_pic', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          alert('Upload failed: ' + data.error);
+          return;
+        }
+        profilePicLabel.style.backgroundImage = `url('${data.img_url}?t=${new Date().getTime()}')`;
+      })
+      .catch(err => {
+        alert('Upload error: ' + err);
+      });
+    });
+  </script>
+  
+</body>
+</html>

@@ -1,0 +1,3232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Analysis Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body { font-family: Arial, sans-serif; background:#f5f6fa; margin:0; padding:0; }
+.main-container { max-width:900px; width:100%; padding:15px; box-sizing:border-box; margin: 0 auto; }
+h1,h2,h3,h4 { color:#2c3e50; margin:5px 0;}
+.report-block { background:white; border-radius:6px; padding:15px; margin:15px auto; box-shadow: 0 2px 6px rgba(0,0,0,0.1); width:100%; text-align:left; position:relative; }
+.report-block table { border-collapse: collapse; margin-top:10px; width:100%; }
+.report-block th, .report-block td { border:1px solid #ddd; padding:5px; text-align:left; font-size:14px; }
+.report-block th { background:#ecf0f1; }
+.report-block table tr:nth-child(even) { background-color: #f9f9f9; }
+.report-block table tr:nth-child(odd) { background-color: #ffffff; }
+
+.empty-state { text-align: center; font-style: italic; color: #7f8c8d; margin-top: 50px;}
+.actions-taken ul { padding-left: 20px; margin-top: 10px; }
+.actions-taken li { margin-bottom: 12px; line-height: 1.5; }
+.section-checkbox { position:absolute; top:10px; right:10px; z-index:10; }
+#buttons-container { display:flex; gap:10px; margin-top:20px; }
+#buttons-container button { padding:10px 15px; border:none; border-radius:4px; cursor:pointer; }
+#exportPdfBtn { background:#3498db; color:white; }
+#exportPdfBtn:hover { background:#2980b9; }
+#backDashboardBtn { background:#95a5a6; color:white; }
+#backDashboardBtn:hover { background:#7f8c8d; }
+
+#overall-summary-content > div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+#overall-summary-content canvas {
+    width: 300px !important;
+    height: 300px !important;
+    display: block;
+}
+
+.overview-card {
+    background: #ffffff;
+    border-radius: 6px;
+    padding: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    flex: 1;
+    min-width: 250px;
+    max-width: 400px;
+    text-align: left;
+}
+
+.overview-card h3 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#textual-summary-content {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.section-heading {
+    text-align: left;
+    margin-top: 30px;
+    margin-bottom: 10px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 5px;
+}
+
+
+/* Sort arrows styling */
+.sort-arrow-up {
+    color: red;
+    cursor: pointer;
+    font-weight: bold;
+}
+.sort-arrow-down {
+    color: green;
+    cursor: pointer;
+    font-weight: bold;
+}
+.sort-row td {
+    text-align: center;
+    background: #f9f9f9;
+}
+
+.blur-column {
+    opacity: 0.5;         /* Slightly dimmed */
+    filter: blur(1px);    /* Light blur */
+    transition: all 0.3s ease;
+    cursor: help;
+}
+
+.blur-column:hover {
+    opacity: 1;
+    filter: none;
+}
+
+
+
+</style>
+</head>
+<body>
+<div class="main-container" id="exportContent">
+    <h1>Data Analysis Dashboard</h1>
+
+    <!-- Overall Summary Section -->
+    <div class="report-block" id="overall-summary">
+        <input type="checkbox" class="section-checkbox" checked>
+        <h2>Overall Summary</h2>
+
+        <!-- Filters -->
+        <label for="regionFilter">Region:</label>
+        <select id="regionFilter">
+            <option value="">-- All Regions --</option>
+            <option value="Mtwara">Mtwara</option>
+            <option value="Lindi">Lindi</option>
+            <option value="Ruvuma">Ruvuma</option>
+        </select>
+
+        <label for="districtFilter">District:</label>
+        <select id="districtFilter">
+            <option value="">-- All Districts --</option>
+        </select>
+
+        <label for="typeFilter">Inspection Type:</label>
+        <select id="typeFilter">
+            <option value="">-- All Types --</option>
+            <option value="Routine Inspection">Routine Inspection</option>
+            <option value="Follow up Inspection">Follow up Inspection</option>
+            <option value="Recall Inspection">Recall Inspection</option>
+            <option value="Medical Device Inspection">Medical Device Inspection</option>
+            <option value="Special Inspection">Special Inspection</option>
+            <option value="POE Inspection">POE Inspection</option>
+        </select>
+
+        <div id="overall-summary-content"></div>
+    </div>
+
+  
+
+
+    <!-- Quick Overview Section -->
+<div class="report-block" id="textual-summary">
+    <input type="checkbox" class="section-checkbox" checked>
+    <h2 style="text-align: center; margin-bottom: 10px;">Quick Overview</h2>
+
+    <!-- Quick Overview Region Filter -->
+    <div style="text-align: left; margin-bottom: 15px;">
+        <label for="quickRegionFilter">Region: </label>
+        <select id="quickRegionFilter">
+            <option value="">-- All Regions --</option>
+            <option value="Mtwara">Mtwara</option>
+            <option value="Lindi">Lindi</option>
+            <option value="Ruvuma">Ruvuma</option>
+        </select>
+    </div>
+
+    <!-- Summary cards container -->
+    <div id="summary-cards" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+</div>
+
+
+
+    <!-- Observations -->
+   <!-- Observations / Defects Data Full Width -->
+<div id="defects-section" style="width:100%; background:#fff; border-radius:6px; padding:15px; box-shadow:0 2px 6px rgba(0,0,0,0.1); margin:15px auto;">
+  <h2 class="section-heading">Observations Identified</h2>
+
+
+
+
+  <!-- Table container -->
+  <div id="defects-table-container" style="overflow-x:auto;"></div>
+</div>
+
+
+
+ 
+
+
+    <!-- Defects by Premise Type -->
+    <div class="report-block">
+        <input type="checkbox" class="section-checkbox" checked>
+        <h2>Graphical Representation of Observation Identified</h2>
+        <canvas id="defectsChart" height="200"></canvas>
+    </div>
+
+
+
+ 
+<!-- ================== Non Conformance Intensity Summary Section ================== -->
+<div class="report-block" id="intensitySection">
+    <h2>Non Conformance Intensity Summary</h2>
+    
+    <div style="margin-bottom:10px;">
+        <label>Region:</label>
+        <select id="intensityRegionSelect">
+            <option value="all">-- All Regions --</option>
+        </select>
+
+        <label>District:</label>
+        <select id="intensityDistrictSelect" style="display:none">
+            <option value="all">-- All Districts --</option>
+        </select>
+    </div>
+
+    <table id="intensityTable">
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Region</th>
+                <th>District</th>
+                <th>Average Intensity</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be dynamically inserted here -->
+        </tbody>
+    </table>
+
+    <!-- Show More / Show Less Buttons -->
+    <div style="margin-top:10px;">
+        <button id="showMoreBtn" style="display:none; margin-right:5px;">Show More</button>
+        <button id="showLessBtn" style="display:none;">Show Less</button>
+    </div>
+</div>
+
+
+
+
+<!-- Total Charges & Confiscated Products Section -->
+<div class="report-block" id="chargesConfiscationSection">
+    <h2>Total Charges and Confiscated Products</h2>
+
+    <!-- Filters -->
+    <div style="margin-top:10px;">
+        <label for="chargesRegionFilter">Region:</label>
+        <select id="chargesRegionFilter">
+            <option value="">All</option>
+        </select>
+
+        <label for="chargesDistrictFilter">District:</label>
+        <select id="chargesDistrictFilter">
+            <option value="">All</option>
+        </select>
+
+        <label for="chargesInspectionTypeFilter">Inspection Type:</label>
+        <select id="chargesInspectionTypeFilter">
+            <option value="">All</option>
+        </select>
+    </div>
+
+    <!-- Table container -->
+    <div id="summary-table" style="margin-top:10px;"></div>
+<div id="summary-table"></div>
+<button id="chargesShowMore" style="margin-top:10px; display:none;"></button>
+    <!-- Pie Chart below the table -->
+    <div style="margin-top:20px; display:flex; justify-content:center; align-items:center;">
+        <canvas id="chargesPieChart" style="max-width:300px; max-height:300px;"></canvas>
+    </div>
+</div>
+
+
+
+
+
+
+
+<!-- ===== Violation rate ===== -->
+<div id="summary-table"></div>
+
+<!-- Recall section -->
+<div id="reportContainer"></div>
+
+
+
+   
+
+    
+
+    <!-- Buttons -->
+    <div id="buttons-container">
+        <button id="backDashboardBtn">Back to Dashboard</button>
+        <button id="exportPdfBtn">Export to PDF</button>
+    </div>
+</div>
+
+<script>
+
+// ================== Filters & Data ==================
+const data = JSON.parse(`{{ data | tojson | safe }}`);
+const regions = {
+    "Mtwara": ["Mtwara MC", "Mtwara DC", "Masasi DC", "Masasi TC", "Nanyumbu", "Newala TC", "Newala DC", "Tandahimba", "Nanyamba"],
+    "Lindi": ["Lindi MC", "Kilwa", "Nachingwea", "Liwale", "Ruangwa", "Mtama"],
+    "Ruvuma": ["Songea MC", "Songea DC", "Mbinga TC", "Mbinga DC", "Madaba", "Nyasa", "Namtumbo", "Tunduru"]
+};
+
+const regionFilter = document.getElementById('regionFilter');
+const districtFilter = document.getElementById('districtFilter');
+const typeFilter = document.getElementById('typeFilter');
+
+regionFilter.addEventListener('change', () => {
+    const selectedRegion = regionFilter.value;
+    districtFilter.innerHTML = '<option value="">-- All Districts --</option>';
+    if (selectedRegion && regions[selectedRegion]) {
+        regions[selectedRegion].forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d;
+            opt.textContent = d;
+            districtFilter.appendChild(opt);
+        });
+    }
+    renderOverallSummary();
+    renderDefectsTable(data.Inspections); // update defects table
+});
+
+districtFilter.addEventListener('change', () => {
+    renderOverallSummary();
+    renderDefectsTable(data.Inspections); // update defects table
+});
+
+typeFilter.addEventListener('change', renderOverallSummary);
+
+let targetCounts = {};
+async function loadTargets() {
+    try {
+        const resp = await fetch('/static/data/targets.json');
+        if (resp.ok) targetCounts = await resp.json();
+    } catch(e){ console.error(e); }
+}
+
+// ================== Overall Summary ==================
+async function renderOverallSummary() {
+    const contentDiv = document.getElementById('overall-summary-content');
+    contentDiv.innerHTML = '';
+
+    const selectedRegion = regionFilter.value;
+    const selectedDistrict = districtFilter.value;
+    const selectedType = typeFilter.value;
+
+    const filteredInspections = data.Inspections.filter(ins =>
+        (!selectedRegion || ins.Region === selectedRegion) &&
+        (!selectedDistrict || ins.District === selectedDistrict) &&
+        (!selectedType || ins['Inspection Type'] === selectedType)
+    );
+
+    if (filteredInspections.length === 0) {
+        contentDiv.innerHTML = '<p class="empty-state">No inspections for selected filters.</p>';
+        return;
+    }
+
+    // === Fetch registered premises ===
+    let premises = [];
+    try {
+        const resp = await fetch('/get_premises');
+        if (resp.ok) premises = await resp.json();
+    } catch (e) { console.error(e); }
+
+    // === Registered counts ===
+    const registeredCounts = {};
+    premises.forEach(p => {
+        const premiseRegion = (p.region || '').trim().toLowerCase();
+        const premiseDistrict = (p.district || '').trim().toLowerCase();
+        const premiseCategory = (p.category || '').trim();
+        const selRegion = (selectedRegion || '').trim().toLowerCase();
+        const selDistrict = (selectedDistrict || '').trim().toLowerCase();
+        if ((!selRegion || premiseRegion === selRegion) && (!selDistrict || premiseDistrict === selDistrict)) {
+            registeredCounts[premiseCategory] = (registeredCounts[premiseCategory] || 0) + 1;
+        }
+    });
+
+    // === Total premises in system ===
+    const totalInSystem = {};
+    data.Inspections.forEach(ins => {
+        ins['Premises Data'].forEach(p => {
+            totalInSystem[p['Premise Type']] = (totalInSystem[p['Premise Type']] || 0) + p['Count'];
+        });
+    });
+
+    // === Helper → format short date range ===
+    function formatDateRange(minDate, maxDate) {
+        const sameDay = minDate.getTime() === maxDate.getTime();
+        const sameMonth = minDate.getMonth() === maxDate.getMonth() && minDate.getFullYear() === maxDate.getFullYear();
+        const sameYear = minDate.getFullYear() === maxDate.getFullYear();
+
+        const day1 = minDate.getDate().toString().padStart(2, '0');
+        const day2 = maxDate.getDate().toString().padStart(2, '0');
+        const month1 = minDate.toLocaleString('en-GB', { month: 'short' });
+        const month2 = maxDate.toLocaleString('en-GB', { month: 'short' });
+
+        if (sameDay) {
+            return `${day1} ${month1} ${minDate.getFullYear()}`;
+        } else if (sameMonth) {
+            return `${day1} to ${day2} ${month1} ${minDate.getFullYear()}`;
+        } else if (sameYear) {
+            return `${day1} ${month1} → ${day2} ${month2} ${minDate.getFullYear()}`;
+        } else {
+            return `${day1} ${month1} ${minDate.getFullYear()} → ${day2} ${month2} ${maxDate.getFullYear()}`;
+        }
+    }
+
+    // === Group inspections by Overall ID ===
+    const groupedByOverall = {};
+    filteredInspections.forEach(ins => {
+        const overallID = ins['Overall ID'] || ins['Daily ID'] || 'Unknown';
+        if (!groupedByOverall[overallID]) groupedByOverall[overallID] = [];
+        groupedByOverall[overallID].push(ins);
+    });
+
+    // =====================================
+    //  OVERALL INSPECTIONS TABLE + PAGINATION
+    // =====================================
+
+    // Keep rowsToShow global to maintain state across re-renders
+    if (typeof window.rowsToShow === 'undefined') {
+        window.rowsToShow = 5;  // Default rows initially
+    }
+
+    const table = document.createElement('table');
+    table.innerHTML = `<tr>
+        <th>S/No</th>
+        <th>Inspection Type</th>
+        <th>Region</th>
+        <th>District</th>
+        <th>Date</th>
+        <th>Total Premises</th>
+    </tr>`;
+
+    // Get grouped data first
+    const groupedData = Object.values(groupedByOverall);
+    const totalRows = groupedData.length;
+
+    // Show up to rowsToShow rows
+    let counter = 1;
+    groupedData.slice(0, window.rowsToShow).forEach(group => {
+        const ins = group[0];
+        const allDates = group.map(i => new Date(i.Date));
+        const minDate = new Date(Math.min(...allDates));
+        const maxDate = new Date(Math.max(...allDates));
+        const dateRange = formatDateRange(minDate, maxDate);
+
+        const totalPremises = group.reduce((sum, i) =>
+            sum + i['Premises Data'].reduce((s, p) => s + p['Count'], 0), 0);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${counter++}</td>
+            <td>${ins['Inspection Type']}</td>
+            <td>${ins.Region}</td>
+            <td>${ins.District}</td>
+            <td>${dateRange}</td>
+            <td>${totalPremises}</td>
+        `;
+        table.appendChild(row);
+    });
+
+    // Append the table
+    contentDiv.appendChild(table);
+
+    // === Add Show More / Show Less buttons ===
+    const paginationDiv = document.createElement('div');
+    paginationDiv.style.marginTop = '10px';
+    paginationDiv.style.textAlign = 'center';
+
+    const showMoreBtn = document.createElement('button');
+    showMoreBtn.id = 'showMoreBtn';
+    showMoreBtn.textContent = 'Show More';
+    showMoreBtn.style.marginRight = '8px';
+
+    const showLessBtn = document.createElement('button');
+    showLessBtn.id = 'showLessBtn';
+    showLessBtn.textContent = 'Show Less';
+
+    // Handle button visibility
+    showMoreBtn.style.display = window.rowsToShow >= totalRows ? 'none' : 'inline-block';
+    showLessBtn.style.display = window.rowsToShow <= 5 ? 'none' : 'inline-block';
+
+    paginationDiv.appendChild(showMoreBtn);
+    paginationDiv.appendChild(showLessBtn);
+    contentDiv.appendChild(paginationDiv);
+
+    // Add event listeners
+    showMoreBtn.addEventListener('click', () => {
+        window.rowsToShow += 5;
+        if (window.rowsToShow > totalRows) window.rowsToShow = totalRows;
+        renderOverallSummary();
+    });
+
+    showLessBtn.addEventListener('click', () => {
+        window.rowsToShow -= 5;
+        if (window.rowsToShow < 5) window.rowsToShow = 5;
+        renderOverallSummary();
+    });
+
+    // =====================================
+    //  PREMISE CATEGORY BREAKDOWN TABLE (UNCHANGED)
+    // =====================================
+
+    const breakdownHeading = document.createElement('h2');
+    breakdownHeading.textContent = "Premise Category Breakdown";
+    breakdownHeading.classList.add('section-heading');
+    contentDiv.appendChild(breakdownHeading);
+
+    const inspectedCounts = {};
+    filteredInspections.forEach(ins => {
+        ins['Premises Data'].forEach(p => {
+            inspectedCounts[p['Premise Type']] = (inspectedCounts[p['Premise Type']] || 0) + p['Count'];
+        });
+    });
+
+    const allTypes = Array.from(new Set([
+        ...Object.keys(inspectedCounts),
+        ...Object.keys(registeredCounts),
+        ...Object.keys(totalInSystem),
+        ...Object.keys(targetCounts)
+    ]));
+
+    const breakdownTable = document.createElement('table');
+    breakdownTable.innerHTML = `<tr>
+        <th>Premise Type</th>
+        <th>Total Inspected</th>
+        <th>Target</th>
+        <th id="achievementHeader">Achievement (%)</th>
+        <th>Registered</th>
+        <th id="coverageHeader">Coverage (%)</th>
+    </tr>`;
+
+    // === Detect applied filters ===
+    const isRegionFiltered = !!selectedRegion;
+    const isDistrictFiltered = !!selectedDistrict;
+    const isInspectionTypeFiltered = !!selectedType;
+    const isAnyFilterApplied = isRegionFiltered || isDistrictFiltered || isInspectionTypeFiltered;
+
+    // === Overall inspected counts (ignore filters for Achievement) ===
+    const overallInspectedCounts = {};
+    data.Inspections.forEach(ins => {
+        ins['Premises Data'].forEach(p => {
+            overallInspectedCounts[p['Premise Type']] =
+                (overallInspectedCounts[p['Premise Type']] || 0) + p['Count'];
+        });
+    });
+
+    // === Coverage counts (ignore Inspection Type filter) ===
+    const coverageInspectedCounts = {};
+    data.Inspections.forEach(ins => {
+        if (
+            (!selectedRegion || ins.Region === selectedRegion) &&
+            (!selectedDistrict || ins.District === selectedDistrict)
+        ) {
+            ins['Premises Data'].forEach(p => {
+                coverageInspectedCounts[p['Premise Type']] =
+                    (coverageInspectedCounts[p['Premise Type']] || 0) + p['Count'];
+            });
+        }
+    });
+
+    let totalInspectedFiltered = 0;
+    let totalTarget = 0;
+    let totalRegistered = 0;
+
+    allTypes.forEach(type => {
+        const inspectedFiltered = inspectedCounts[type] || 0;
+        const inspectedOverall = overallInspectedCounts[type] || 0;
+        const inspectedForCoverage = coverageInspectedCounts[type] || 0;
+
+        const target = targetCounts[type] || 0;
+        const registered = registeredCounts[type] || 0;
+
+        totalInspectedFiltered += inspectedFiltered;
+        totalTarget += target;
+        totalRegistered += registered;
+
+        const achievementPercent = target > 0 ? ((inspectedOverall / target) * 100).toFixed(1) : '0';
+        const achievementColor = achievementPercent < 50 ? '#e74c3c' : (achievementPercent < 100 ? '#f1c40f' : '#2ecc71');
+        const achievementClass = isAnyFilterApplied ? "blur-column" : "";
+
+        const coveragePercent = registered > 0 ? ((inspectedForCoverage / registered) * 100).toFixed(1) : 0;
+        const coverageColor = coveragePercent < 50 ? '#e74c3c' : (coveragePercent < 100 ? '#f1c40f' : '#2ecc71');
+        const coverageClass = isInspectionTypeFiltered ? "blur-column" : "";
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${type}</td>
+            <td>${inspectedFiltered}</td>
+            <td>${target}</td>
+            <td class="${achievementClass}" style="color:${achievementColor}; font-weight:bold;">${achievementPercent}%</td>
+            <td>${registered}</td>
+            <td class="${coverageClass}" style="color:${coverageColor}; font-weight:bold;">${coveragePercent}%</td>
+        `;
+        breakdownTable.appendChild(row);
+    });
+
+    const totalAchievementPercent = totalTarget > 0
+        ? ((Object.values(overallInspectedCounts).reduce((a, b) => a + b, 0) / totalTarget) * 100).toFixed(1)
+        : '0';
+
+    const totalCoveragePercent = totalRegistered > 0
+        ? ((Object.values(coverageInspectedCounts).reduce((a, b) => a + b, 0) / totalRegistered) * 100).toFixed(1)
+        : '0';
+
+    const totalRow = document.createElement('tr');
+    totalRow.style.fontWeight = 'bold';
+    totalRow.style.backgroundColor = '#f4f4f4';
+    totalRow.innerHTML = `
+        <td style="text-align:right;">TOTAL</td>
+        <td>${totalInspectedFiltered}</td>
+        <td>${totalTarget}</td>
+        <td class="${isAnyFilterApplied ? 'blur-column' : ''}" style="color:#3498db;">${totalAchievementPercent}%</td>
+        <td>${totalRegistered}</td>
+        <td class="${isInspectionTypeFiltered ? 'blur-column' : ''}" style="color:#3498db;">${totalCoveragePercent}%</td>
+    `;
+
+    breakdownTable.appendChild(totalRow);
+    contentDiv.appendChild(breakdownTable);
+}
+
+// ================== Quick Overview ==================
+// ================== Region-District Mapping ==================
+const REGIONS = {
+    "Mtwara": ["Mtwara MC", "Mtwara DC", "Masasi DC", "Masasi TC", "Nanyumbu", "Newala TC", "Newala DC", "Tandahimba", "Nanyamba"],
+    "Lindi": ["Lindi MC", "Kilwa", "Nachingwea", "Liwale", "Ruangwa", "Mtama"],
+    "Ruvuma": ["Songea MC", "Songea DC", "Mbinga TC", "Mbinga DC", "Madaba", "Nyasa", "Namtumbo", "Tunduru"]
+};
+
+// ================== Quick Overview Function ==================
+async function renderQuickOverview(selectedRegion='') {
+    const summaryContainer = document.getElementById('summary-cards');
+
+    // Clear old cards and create fresh left/right divs
+    summaryContainer.innerHTML = `
+        <div id="summary-left" style="flex:1; min-width:250px; padding:10px; border-radius:5px;"></div>
+        <div id="summary-right" style="flex:1; min-width:250px; padding:10px; border-radius:5px;"></div>
+    `;
+
+    const leftDiv = document.getElementById('summary-left');
+    const rightDiv = document.getElementById('summary-right');
+
+    let premises = [];
+    try {
+        const resp = await fetch('/get_premises');
+        if (resp.ok) premises = await resp.json();
+    } catch (e) {
+        console.error(e);
+        leftDiv.innerHTML = rightDiv.innerHTML = '<p class="empty-state">Failed to load premises data.</p>';
+        return;
+    }
+
+    // Filter premises by region
+    let regionDistricts = null;
+    if (selectedRegion && REGIONS[selectedRegion]) {
+        regionDistricts = REGIONS[selectedRegion].map(d => d.toLowerCase());
+        premises = premises.filter(p => regionDistricts.includes((p.district || '').toLowerCase()));
+    }
+
+    // Count registered per district
+    const registeredPerDistrict = {};
+    premises.forEach(p => {
+        const dist = p.district || 'Unknown';
+        registeredPerDistrict[dist] = (registeredPerDistrict[dist] || 0) + 1;
+    });
+
+    // Count inspected per district
+    const inspectedPerDistrict = {};
+    data.Inspections.forEach(ins => {
+        const districtName = (ins.District || '').toLowerCase();
+        if (regionDistricts && !regionDistricts.includes(districtName)) return;
+
+        const totalInspected = ins['Premises Data'].reduce((sum, p) => sum + p['Count'], 0);
+        inspectedPerDistrict[ins.District] = (inspectedPerDistrict[ins.District] || 0) + totalInspected;
+    });
+
+    // Compute coverage
+    const coverage = [];
+    for (let dist in registeredPerDistrict) {
+        const inspected = inspectedPerDistrict[dist] || 0;
+        const registered = registeredPerDistrict[dist];
+        const percent = registered > 0 ? (inspected / registered * 100).toFixed(1) : 0;
+        coverage.push({ district: dist, inspected, registered, percent: parseFloat(percent) });
+    }
+
+    if (coverage.length === 0) {
+        leftDiv.innerHTML = rightDiv.innerHTML = '<p class="empty-state">No coverage data available.</p>';
+        return;
+    }
+
+    // Sort coverage
+    // Sort coverage
+const sorted = coverage.sort((a, b) => a.percent - b.percent);
+const numToShow = selectedRegion ? 3 : 5;
+
+// Filter out districts with 0% coverage for top-performing
+const filteredCoverage = sorted.filter(d => d.percent > 0);
+
+const most = filteredCoverage.slice(-numToShow).reverse(); // top coverage
+const mostDistricts = new Set(most.map(d => d.district));
+const least = sorted.filter(d => !mostDistricts.has(d.district)).slice(0, numToShow);
+
+
+    // Build cards
+    leftDiv.style.background = '#e74c3c';  // red
+    leftDiv.style.color = '#fff';
+    leftDiv.innerHTML = `<h3 style="text-align:center;">Low  Coverage Districts</h3>
+                         <h4 style="text-align:center; margin-top:5px;">${selectedRegion ? `(${selectedRegion})` : ''}</h4>`;
+    const ulLeast = document.createElement('ul');
+    least.forEach(d => {
+        const li = document.createElement('li');
+        li.textContent = `${d.district}: ${d.percent}% (${d.inspected}/${d.registered})`;
+        ulLeast.appendChild(li);
+    });
+    leftDiv.appendChild(ulLeast);
+
+    rightDiv.style.background = '#2ecc71'; // green
+    rightDiv.style.color = '#fff';
+    rightDiv.innerHTML = `<h3 style="text-align:center;">Top Coverage Districts</h3>
+                          <h4 style="text-align:center; margin-top:5px;">${selectedRegion ? `(${selectedRegion})` : ''}</h4>`;
+    const ulMost = document.createElement('ul');
+    most.forEach(d => {
+        const li = document.createElement('li');
+        li.textContent = `${d.district}: ${d.percent}% (${d.inspected}/${d.registered})`;
+        ulMost.appendChild(li);
+    });
+    rightDiv.appendChild(ulMost);
+}
+
+// ================== Event Listener for Region Filter ==================
+document.getElementById('quickRegionFilter').addEventListener('change', e => {
+    renderQuickOverview(e.target.value);
+});
+
+// Initial load: show all regions
+renderQuickOverview();
+
+
+
+// ================== Defects Data ==================
+async function renderDefectsTable(inspections) {
+    const container = document.getElementById('defects-table-container');
+    container.innerHTML = '';
+
+    const selectedRegion = regionFilter.value;
+    const selectedDistrict = districtFilter.value;
+
+    // Filter inspections
+    let filteredInspections = inspections;
+    if (selectedRegion) filteredInspections = filteredInspections.filter(i => i.Region === selectedRegion);
+    if (selectedDistrict) filteredInspections = filteredInspections.filter(i => i.District === selectedDistrict);
+
+    if (!filteredInspections.length) {
+        container.innerHTML = '<p class="empty-state">No inspections for selected filters.</p>';
+        return;
+    }
+
+    // Fetch registered premises
+    let registeredPremisesData = [];
+    try {
+        const resp = await fetch('/get_premises');
+        if (resp.ok) registeredPremisesData = await resp.json();
+    } catch (e) { console.error(e); }
+
+    const registeredPremises = {};
+    registeredPremisesData.forEach(p => {
+        const region = (p.region || '').trim();
+        const district = (p.district || '').trim();
+        const category = (p.category || '').trim();
+        if ((!selectedRegion || region === selectedRegion) &&
+            (!selectedDistrict || district === selectedDistrict)) {
+            registeredPremises[category] = (registeredPremises[category] || 0) + 1;
+        }
+    });
+
+    // Determine all premises and defect keys
+    const allPremises = new Set();
+    const allDefects = new Set();
+    filteredInspections.forEach(ins => {
+        if (!ins['Defects Data']) return;
+        Object.keys(ins['Defects Data']).forEach(p => {
+            allPremises.add(p);
+            Object.keys(ins['Defects Data'][p]).forEach(k => allDefects.add(k));
+        });
+    });
+
+    if (allPremises.size === 0) {
+        container.innerHTML = '<p class="empty-state">No premises with defects for selected filters.</p>';
+        return;
+    }
+
+    const premisesArray = Array.from(allPremises).sort();
+
+    const defectLabels = {
+    gotMedicines: "GOT Medicines",
+    unregisteredMedicines: "Unregistered Medicines",
+    noQualifiedPersonnel: "No Qualified Personnel",
+    minimalRequirements: "Premise Doesn’t Meet Minimal GSP",
+    unregisteredPremise: "Unregistered Premises",
+    nopermitproduct: "No Product Permit",
+    intensity: "Non-conformance Intensity" // <-- new option
+};
+
+
+    const wrapper = document.createElement('div');
+    wrapper.style.overflowX = 'auto';
+    wrapper.style.marginTop = '10px';
+    wrapper.style.position = 'relative';
+
+    const table = document.createElement('table');
+    table.style.width = '100%';
+    table.style.borderCollapse = 'collapse';
+
+    const cellStyle = "border:1px solid #444;padding:6px;text-align:center;font-size:14px;";
+    const headerStyle = "border:1px solid #222;padding:6px;background:#ecf0f1;font-weight:bold;font-size:14px;text-align:center;";
+
+    const thead = document.createElement('thead');
+
+    // ===== Main Header =====
+    const headerRow = document.createElement('tr');
+    const thLabel = document.createElement('th');
+    thLabel.innerText = 'Observation';
+    thLabel.style = headerStyle + "position:sticky;left:0;background:#ecf0f1;z-index:3;text-align:left;white-space:normal;max-width:200px;";
+    headerRow.appendChild(thLabel);
+
+    premisesArray.forEach(p => {
+        const thGroup = document.createElement('th');
+        thGroup.colSpan = 2;
+        thGroup.style = headerStyle;
+        thGroup.innerText = p;
+        headerRow.appendChild(thGroup);
+    });
+
+    const thTotal = document.createElement('th');
+    thTotal.colSpan = 2;
+    thTotal.innerText = 'TOTAL';
+    thTotal.style = headerStyle + ";background:#dff0d8;";
+    headerRow.appendChild(thTotal);
+    thead.appendChild(headerRow);
+
+    // ===== Total Premises Row with Dropdown =====
+    const totalRefRow = document.createElement('tr');
+    const tdLabel = document.createElement('th');
+    tdLabel.style = headerStyle;
+    const select = document.createElement('select');
+    select.innerHTML = `
+        <option value="inspected">Total Premises Inspected</option>
+        <option value="registered">Total Premises Registered</option>
+        <option value="noncompliance">Non Compliance Premises</option>
+    `;
+    tdLabel.appendChild(select);
+    totalRefRow.appendChild(tdLabel);
+
+    premisesArray.forEach(_ => {
+        const td = document.createElement('th');
+        td.colSpan = 2;
+        td.style = headerStyle;
+        totalRefRow.appendChild(td);
+    });
+
+    const tdGrandTotal = document.createElement('th');
+    tdGrandTotal.colSpan = 2;
+    tdGrandTotal.style = headerStyle + "font-weight:bold;background:#dff0d8;";
+    totalRefRow.appendChild(tdGrandTotal);
+    thead.appendChild(totalRefRow);
+
+    // ===== Count / % Row for defect rows =====
+    const subHeaderRow = document.createElement('tr');
+    const emptyCell = document.createElement('th');
+    emptyCell.style = headerStyle;
+    subHeaderRow.appendChild(emptyCell);
+
+    premisesArray.forEach(_ => {
+        const thCount = document.createElement('th');
+        thCount.innerText = 'Count';
+        thCount.style = headerStyle;
+        subHeaderRow.appendChild(thCount);
+
+        const thPercent = document.createElement('th');
+        thPercent.innerText = '%';
+        thPercent.style = headerStyle;
+        subHeaderRow.appendChild(thPercent);
+    });
+
+    const emptyTotalCell = document.createElement('th');
+    emptyTotalCell.colSpan = 2;
+    emptyTotalCell.style = headerStyle;
+    subHeaderRow.appendChild(emptyTotalCell);
+
+    thead.appendChild(subHeaderRow);
+    table.appendChild(thead);
+
+    // ===== Table Body =====
+    const tbody = document.createElement('tbody');
+
+    function buildRows(reference) {
+        tbody.innerHTML = '';
+
+        const summedDefects = {};
+        filteredInspections.forEach(ins => {
+            if (!ins['Defects Data']) return;
+            for (const premise in ins['Defects Data']) {
+                for (const defectKey in ins['Defects Data'][premise]) {
+                    const defectName = defectLabels[defectKey] || defectKey;
+                    if (!summedDefects[defectName]) summedDefects[defectName] = {};
+                    if (!summedDefects[defectName][premise]) summedDefects[defectName][premise] = 0;
+                    summedDefects[defectName][premise] += ins['Defects Data'][premise][defectKey];
+                }
+            }
+        });
+
+        const uniqueDefectNames = Object.keys(summedDefects).sort();
+
+        uniqueDefectNames.forEach((defectName) => {
+            const row = document.createElement('tr');
+
+            const tdLabel = document.createElement('td');
+            tdLabel.innerText = defectName;
+            tdLabel.style = cellStyle + "font-weight:bold;text-align:left;white-space:normal;max-width:200px;position:sticky;left:0;background:#fff;z-index:3;";
+            row.appendChild(tdLabel);
+
+            let totalCount = 0;
+
+            premisesArray.forEach((p, i) => {
+                const count = summedDefects[defectName][p] || 0;
+                totalCount += count;
+                const bgColor = i % 2 === 0 ? "#eaf1f8" : "#f8eaea";
+
+                const tdCount = document.createElement('td');
+                tdCount.innerText = count;
+                tdCount.style = cellStyle + ";background:" + bgColor + ";";
+                row.appendChild(tdCount);
+
+                let referenceValue = 0;
+                if (reference === 'inspected') {
+                    filteredInspections.forEach(ins => {
+                        if (ins['Premises Data']) {
+                            ins['Premises Data'].filter(pd => pd['Premise Type'] === p)
+                                .forEach(pd => { referenceValue += pd['Count']; });
+                        }
+                    });
+                } else if (reference === 'registered') {
+                    referenceValue = registeredPremises[p] || 0;
+                } else if (reference === 'noncompliance') {
+                    filteredInspections.forEach(ins => {
+                        const defects = ins['Defects Data']?.[p];
+                        if (defects) referenceValue += Math.max(...Object.values(defects));
+                    });
+                }
+
+                const percent = referenceValue ? ((count / referenceValue) * 100).toFixed(1) : 0;
+                const tdPercent = document.createElement('td');
+                tdPercent.innerText = percent + '%';
+                tdPercent.style = cellStyle + ";background:" + bgColor + ";";
+                row.appendChild(tdPercent);
+            });
+
+            // Total column dynamic
+            const totalRefValue = (() => {
+                let sum = 0;
+                premisesArray.forEach(p => {
+                    if (reference === 'inspected') {
+                        filteredInspections.forEach(ins => {
+                            if (ins['Premises Data']) {
+                                ins['Premises Data'].filter(pd => pd['Premise Type'] === p)
+                                    .forEach(pd => { sum += pd['Count']; });
+                            }
+                        });
+                    } else if (reference === 'registered') {
+                        sum += registeredPremises[p] || 0;
+                    } else if (reference === 'noncompliance') {
+                        filteredInspections.forEach(ins => {
+                            const defects = ins['Defects Data']?.[p];
+                            if (defects) sum += Math.max(...Object.values(defects));
+                        });
+                    }
+                });
+                return sum;
+            })();
+
+            const bgColorTotal = "#dff0d8";
+            const tdTotalCount = document.createElement('td');
+            tdTotalCount.innerText = totalCount;
+            tdTotalCount.style = cellStyle + ";font-weight:bold;background:" + bgColorTotal + ";";
+            row.appendChild(tdTotalCount);
+
+            const tdTotalPercent = document.createElement('td');
+            tdTotalPercent.innerText = totalRefValue ? ((totalCount / totalRefValue) * 100).toFixed(1) + '%' : '0%';
+            tdTotalPercent.style = cellStyle + ";font-weight:bold;background:" + bgColorTotal + ";";
+            row.appendChild(tdTotalPercent);
+
+            tbody.appendChild(row);
+        });
+    }
+
+    function updateTotalRow(reference) {
+        let grandTotal = 0;
+        let grandRef = 0;
+
+        premisesArray.forEach((p, i) => {
+            let total = 0;
+            let refVal = 0;
+
+            if (reference === 'inspected') {
+                filteredInspections.forEach(ins => {
+                    if (ins['Premises Data']) {
+                        ins['Premises Data'].filter(pd => pd['Premise Type'] === p)
+                            .forEach(pd => { total += pd['Count']; refVal += pd['Count']; });
+                    }
+                });
+            } else if (reference === 'registered') {
+                total = registeredPremises[p] || 0;
+                refVal = total;
+            } else if (reference === 'noncompliance') {
+                filteredInspections.forEach(ins => {
+                    const defects = ins['Defects Data']?.[p];
+                    if (defects) {
+                        const maxDefect = Math.max(...Object.values(defects));
+                        total += maxDefect;
+                        refVal += maxDefect;
+                    }
+                });
+            }
+
+            grandTotal += total;
+            grandRef += refVal;
+
+            const td = totalRefRow.children[i + 1];
+            td.colSpan = 2;
+            td.innerText = total;
+        });
+
+        tdGrandTotal.colSpan = 2;
+        tdGrandTotal.innerText = grandTotal + ' / ' + (grandRef ? ((grandTotal / grandRef) * 100).toFixed(1) + '%' : '0%');
+    }
+
+    select.addEventListener('change', () => {
+        const ref = select.value;
+        buildRows(ref);
+        updateTotalRow(ref);
+    });
+
+    buildRows('inspected');
+    updateTotalRow('inspected');
+
+    table.appendChild(tbody);
+    wrapper.appendChild(table);
+    container.appendChild(wrapper);
+}
+
+// ================== Initialize Dashboard ==================
+(async function initDashboard() {
+    await loadTargets();
+    renderOverallSummary();
+    renderQuickOverview();
+    renderDefectsTable(data.Inspections);
+})();
+ 
+
+// ===== Prepare Defect Labels =====
+const defectLabels = {
+    gotMedicines: "GOT Medicines",
+    unregisteredMedicines: "Unregistered Medicines",
+    noQualifiedPersonnel: "No Qualified Personnel",
+    minimalRequirements: "Premise Doesn’t Meet Minimal GSP",
+    unregisteredPremise: "Unregistered Premises",
+    nopermitproduct: "No Product Permit"
+};
+
+// ===== Add Dropdown Above Chart (Defect + GroupBy + Region + District) =====
+const defectsChartContainer = document.getElementById("defectsChart").parentElement;
+const filterContainer = document.createElement('div');
+filterContainer.style.marginBottom = '10px';
+filterContainer.style.display = 'flex';
+filterContainer.style.gap = '10px';
+filterContainer.style.flexWrap = 'wrap';
+
+// ---- Regions mapping ----
+const chartRegions = {
+    "Mtwara": ["Mtwara Mc", "Mtwara DC", "Masasi DC", "Masasi TC", "Nanyumbu", "Newala TC", "Newala DC", "Tandahimba", "Nanyamba"],
+    "Lindi": ["Lindi MC", "Kilwa", "Nachingwea", "Liwale", "Ruangwa", "Mtama"],
+    "Ruvuma": ["Songea MC", "Songea DC", "Mbinga TC", "Mbinga DC", "Madaba", "Nyasa", "Namtumbo", "Tunduru"]
+};
+
+// ---- Defect selector ----
+// ---- Defect selector ----
+let defectSelect = document.getElementById('defectSelect');
+if (!defectSelect) {
+    defectSelect = document.createElement('select');
+    defectSelect.id = 'defectSelect';
+    defectSelect.innerHTML = `<option value="all">All Observation (Total)</option>`;
+    
+    // Add defect options
+    Object.keys(defectLabels).forEach(key => {
+        defectSelect.innerHTML += `<option value="${key}">${defectLabels[key]}</option>`;
+    });
+
+    // Add Non-conformance Intensity as an extra option
+    defectSelect.innerHTML += `<option value="intensity">Non-conformance Intensity</option>`;
+}
+filterContainer.appendChild(defectSelect);
+
+
+
+filterContainer.appendChild(defectSelect);
+
+// ---- Group-by selector ----
+let defectGroupBy = document.getElementById('defectGroupBy');
+if (!defectGroupBy) {
+    defectGroupBy = document.createElement('select');
+    defectGroupBy.id = 'defectGroupBy';
+    defectGroupBy.innerHTML = `
+        <option value="premise">By Premise Type</option>
+        <option value="region">By Region</option>
+        <option value="district">By District</option>
+    `;
+}
+filterContainer.appendChild(defectGroupBy);
+
+
+// ---- Region selector ----
+const regionSelect = document.createElement('select');
+regionSelect.id = 'regionSelect';
+regionSelect.style.display = 'inline-block';  // <-- always visible on page load
+regionSelect.innerHTML = `<option value="all">-- All Regions --</option>`;
+Object.keys(chartRegions).forEach(r => {
+    const o = document.createElement('option');
+    o.value = r;
+    o.textContent = r;
+    regionSelect.appendChild(o);
+});
+filterContainer.appendChild(regionSelect);
+
+
+
+// ---- District selector ----
+const districtSelect = document.createElement('select');
+districtSelect.id = 'districtSelect';
+districtSelect.style.display = 'none';
+districtSelect.innerHTML = `<option value="all">-- All Districts --</option>`;
+filterContainer.appendChild(districtSelect);
+
+// Insert above chart
+defectsChartContainer.insertBefore(filterContainer, document.getElementById("defectsChart"));
+
+// ---- Helper to populate districts ----
+function populateDistricts(regionName) {
+    districtSelect.innerHTML = `<option value="all">-- All Districts --</option>`;
+    if (!regionName || regionName === 'all') {
+        // Populate ALL 23 districts
+        Object.values(chartRegions).flat().forEach(d => {
+            const o = document.createElement('option');
+            o.value = d;
+            o.textContent = d;
+            districtSelect.appendChild(o);
+        });
+    } else {
+        // Populate ONLY selected region's districts
+        chartRegions[regionName].forEach(d => {
+            const o = document.createElement('option');
+            o.value = d;
+            o.textContent = d;
+            districtSelect.appendChild(o);
+        });
+    }
+}
+
+
+// ---- Event listeners ----
+defectGroupBy.addEventListener('change', () => {
+    if (defectGroupBy.value === 'district') {
+        // In "By District" mode → always show region dropdown
+        regionSelect.style.display = 'inline-block';
+
+        // If "All Regions" selected → hide district dropdown (we'll show all districts)
+        if (regionSelect.value === 'all') {
+            districtSelect.style.display = 'none';
+        } else {
+            // Show districts for selected region only
+            populateDistricts(regionSelect.value);
+            districtSelect.style.display = 'inline-block';
+        }
+    } else if (defectGroupBy.value === 'region') {
+        // In "By Region" mode → region filter visible, district hidden
+        regionSelect.style.display = 'inline-block';
+        districtSelect.style.display = 'none';
+    } else {
+        // In "By Premise Type" mode → region filter visible
+        regionSelect.style.display = 'inline-block';
+
+        // Show district dropdown only when a specific region is selected
+        if (regionSelect.value === 'all') {
+            districtSelect.style.display = 'none';
+        } else {
+            populateDistricts(regionSelect.value);
+            districtSelect.style.display = 'inline-block';
+        }
+    }
+
+    // Re-render chart
+    if (typeof renderDefectsChart === 'function') renderDefectsChart(defectSelect.value);
+});
+
+regionSelect.addEventListener('change', () => {
+    // Always refresh districts when region changes
+    populateDistricts(regionSelect.value);
+
+    // District dropdown shown only in 2 cases:
+    // 1. Group By = District AND a specific region selected
+    // 2. Group By = Premise Type AND a specific region selected
+    if (
+        (defectGroupBy.value === 'district' && regionSelect.value !== 'all') ||
+        (defectGroupBy.value === 'premise' && regionSelect.value !== 'all')
+    ) {
+        districtSelect.style.display = 'inline-block';
+    } else {
+        districtSelect.style.display = 'none';
+    }
+
+    // Re-render chart
+    if (typeof renderDefectsChart === 'function') renderDefectsChart(defectSelect.value);
+});
+
+districtSelect.addEventListener('change', () => {
+    // Re-render chart when district changes
+    if (typeof renderDefectsChart === 'function') renderDefectsChart(defectSelect.value);
+});
+
+defectSelect.addEventListener('change', () => {
+    // Re-render chart when defect changes
+    if (typeof renderDefectsChart === 'function') renderDefectsChart(defectSelect.value);
+});
+
+// ===== Add Event Listeners =====
+defectSelect.addEventListener('change', () => {
+    renderDefectsChart(defectSelect.value);
+});
+defectGroupBy.addEventListener('change', () => {
+    renderDefectsChart(defectSelect.value);
+});
+
+function renderDefectsChart(selectedDefect = 'all') {
+    const ctx = document.getElementById("defectsChart");
+    if (!ctx) return;
+    const ctx2D = ctx.getContext('2d');
+
+    const groupBy = defectGroupBy.value || 'premise';
+    const regionFilter = regionSelect.value || 'all';
+    const districtFilter = districtSelect.value || 'all';
+
+    let labels = [];
+    let counts = [];
+
+    // ===============================
+    // CASE 1: NON-CONFORMANCE INTENSITY MODE
+    // ===============================
+    if (selectedDefect === 'intensity') {
+        if (!premisesData || !premisesData.length) {
+            console.warn("Premises data not loaded yet.");
+            return;
+        }
+
+        let filteredPremises = premisesData.filter(p => {
+            if (regionFilter !== 'all' && p.region !== regionFilter) return false;
+            if (districtFilter !== 'all' && p.district !== districtFilter) return false;
+            return true;
+        });
+
+        const intensityGroups = {};
+        filteredPremises.forEach(p => {
+            let label;
+            if (groupBy === 'premise') label = p.category || 'Unknown';
+            else if (groupBy === 'region') label = p.region || 'Unknown';
+            else if (groupBy === 'district') label = p.district || 'Unknown';
+            else label = 'Unknown';
+
+            const avgIntensity = p.average_intensity || (p.observations?.length
+                ? (p.observations.reduce((sum, o) => sum + (o.intensity || 0), 0) / p.observations.length)
+                : 0);
+
+            if (!intensityGroups[label]) {
+                intensityGroups[label] = { total: 0, count: 0 };
+            }
+            intensityGroups[label].total += avgIntensity;
+            intensityGroups[label].count += 1;
+        });
+
+        labels = Object.keys(intensityGroups);
+        counts = labels.map(label => (intensityGroups[label].total / intensityGroups[label].count).toFixed(1));
+
+    } else {
+        // ===============================
+        // CASE 2: NORMAL DEFECT MODE
+        // ===============================
+        let filteredInspections = data.Inspections || [];
+        if (regionFilter !== 'all') filteredInspections = filteredInspections.filter(i => i.Region === regionFilter);
+        if (districtFilter !== 'all') filteredInspections = filteredInspections.filter(i => i.District === districtFilter);
+
+        const defectsAggregated = {};
+        filteredInspections.forEach(ins => {
+            if (!ins["Defects Data"]) return;
+
+            Object.keys(ins["Defects Data"]).forEach(premise => {
+                let label;
+                if (groupBy === 'premise') label = premise;
+                else if (groupBy === 'region') label = ins.Region || 'Unknown';
+                else if (groupBy === 'district') label = ins.District || 'Unknown';
+                else label = premise;
+
+                defectsAggregated[label] = defectsAggregated[label] || 0;
+
+                if (selectedDefect === 'all') {
+                    for (let key in ins["Defects Data"][premise])
+                        defectsAggregated[label] += ins["Defects Data"][premise][key];
+                } else {
+                    defectsAggregated[label] += ins["Defects Data"][premise][selectedDefect] || 0;
+                }
+            });
+        });
+
+        labels = Object.keys(defectsAggregated);
+        counts = Object.values(defectsAggregated);
+    }
+
+    // Handle empty data
+    if (!labels.length) {
+        labels = ['No Data'];
+        counts = [0];
+    }
+
+    // Generate distinct colors for both bars & legend
+    function generateDistinctColors(n) {
+        const baseColors = [
+            '#e6194b','#3cb44b','#ffe119','#4363d8','#f58231',
+            '#911eb4','#46f0f0','#f032e6','#bcf60c','#fabebe',
+            '#008080','#e6beff','#9a6324','#fffac8','#800000',
+            '#aaffc3','#808000','#ffd8b1','#000075','#808080'
+        ];
+        return Array.from({ length: n }, (_, i) => baseColors[i % baseColors.length]);
+    }
+    const colors = generateDistinctColors(labels.length);
+
+    // Destroy previous chart if exists
+    if (window.defectsChartInstance) {
+        window.defectsChartInstance.destroy();
+        window.defectsChartInstance = null;
+    }
+
+    // Create chart
+window.defectsChartInstance = new Chart(ctx2D, {
+    type: 'bar',
+    data: {
+        labels: labels.map((_, index) => index + 1), // X-axis numbers
+        datasets: [{
+            label: selectedDefect === 'intensity'
+                ? 'Average Non-conformance Intensity'
+                : selectedDefect === 'all'
+                    ? 'Total Defects'
+                    : defectLabels[selectedDefect] || selectedDefect,
+            data: counts,
+            backgroundColor: colors,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'bottom',
+                align: 'start',
+                labels: {
+                    font: { size: 10 },
+                    boxWidth: 12,
+                    padding: 10,
+                    generateLabels: (chart) => {
+                        return labels.map((category, i) => ({
+                            text: category,
+                            fillStyle: colors[i],
+                            strokeStyle: colors[i],
+                            hidden: false
+                        }));
+                    }
+                }
+            },
+            tooltip: {
+    callbacks: {
+        title: () => '', // <-- hides X-axis number in tooltip
+        label: (context) => {
+            const category = window.defectsChartInstance.originalCategories[context.dataIndex];
+            let value = context.raw;
+            if (selectedDefect === 'intensity') value += '%';
+            return `${category}: ${value}`;
+        }
+    }
+}
+
+        },
+        scales: {
+            x: { ticks: { display: true } },  // numbers on X-axis
+            y: { beginAtZero: true }
+        }
+    }
+});
+
+// Attach original categories to the chart instance
+window.defectsChartInstance.originalCategories = labels;
+
+}
+
+
+// ===== Initial Render =====
+renderDefectsChart();
+
+// ===== Update Chart When Dropdown Changes =====
+defectSelect.addEventListener('change', () => {
+    renderDefectsChart(defectSelect.value);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+// ----  INTENSITY SECTION Table ----
+let premisesData = [];
+let rowsToShow = 5; // number of rows to show initially
+let totalRows = 0;   // total grouped rows
+
+// ---- Load premises.json ----
+async function loadPremisesData() {
+    try {
+        const response = await fetch('/static/data/premises.json');
+        premisesData = await response.json();
+
+        populateRegionFilter();
+        renderIntensityTable();
+    } catch (err) {
+        console.error('Failed to load premises.json:', err);
+    }
+}
+
+// ---- Populate Region Dropdown ----
+function populateRegionFilter() {
+    const intensityRegionSelect = document.getElementById('intensityRegionSelect');
+    intensityRegionSelect.innerHTML = `<option value="all">-- All Regions --</option>`;
+    const regions = [...new Set(premisesData.map(p => p.region).filter(Boolean))];
+    regions.forEach(r => {
+        const o = document.createElement('option');
+        o.value = r;
+        o.textContent = r;
+        intensityRegionSelect.appendChild(o);
+    });
+}
+
+// ---- Populate District Dropdown ----
+function populateDistricts(regionName) {
+    const intensityDistrictSelect = document.getElementById('intensityDistrictSelect');
+    intensityDistrictSelect.innerHTML = `<option value="all">-- All Districts --</option>`;
+
+    let districts = premisesData
+        .filter(p => regionName === 'all' || p.region === regionName)
+        .map(p => p.district)
+        .filter(Boolean);
+
+    districts = [...new Set(districts)];
+    districts.forEach(d => {
+        const o = document.createElement('option');
+        o.value = d;
+        o.textContent = d;
+        intensityDistrictSelect.appendChild(o);
+    });
+
+    intensityDistrictSelect.style.display = (districts.length && regionName !== 'all') ? 'inline-block' : 'none';
+}
+
+// ---- Render INTENSITY Table ----
+function renderIntensityTable() {
+    const tbody = document.querySelector('#intensityTable tbody');
+    tbody.innerHTML = '';
+
+    const regionFilter = document.getElementById('intensityRegionSelect').value || 'all';
+    const districtFilter = document.getElementById('intensityDistrictSelect').value || 'all';
+
+    const filteredData = premisesData.filter(p => {
+        if (regionFilter !== 'all' && p.region !== regionFilter) return false;
+        if (districtFilter !== 'all' && p.district !== districtFilter) return false;
+        return true;
+    });
+
+    if (!filteredData.length) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="4" style="text-align:center;">No data available</td>`;
+        tbody.appendChild(row);
+        document.getElementById('showMoreBtn').style.display = 'none';
+        document.getElementById('showLessBtn').style.display = 'none';
+        return;
+    }
+
+    // ---- Group by category + region + district ----
+    const groupMap = {};
+    filteredData.forEach(p => {
+        const key = `${p.category || 'Unknown'}||${p.region || 'Unknown'}||${p.district || 'Unknown'}`;
+        const avgIntensity = p.average_intensity || (p.observations?.length
+            ? (p.observations.reduce((sum, o) => sum + (o.intensity || 0), 0) / p.observations.length)
+            : 0);
+
+        if (!groupMap[key]) {
+            groupMap[key] = {
+                category: p.category || 'Unknown',
+                region: p.region || '-',
+                district: p.district || '-',
+                totalIntensity: 0,
+                count: 0
+            };
+        }
+
+        groupMap[key].totalIntensity += avgIntensity;
+        groupMap[key].count += 1;
+    });
+
+    const tableData = Object.values(groupMap);
+    totalRows = tableData.length;
+
+    // Show only up to rowsToShow rows
+    const rowsToDisplay = tableData.slice(0, rowsToShow);
+
+    rowsToDisplay.forEach(data => {
+        const avg = (data.totalIntensity / data.count).toFixed(1);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${data.category}</td>
+            <td>${data.region}</td>
+            <td>${data.district}</td>
+            <td>${avg}</td>
+        `;
+        row.style.opacity = 0; // fade-in start
+        tbody.appendChild(row);
+
+        // Animate fade-in
+        setTimeout(() => {
+            row.style.transition = 'opacity 0.5s';
+            row.style.opacity = 1;
+        }, 50);
+    });
+
+    // ---- Show / Hide buttons ----
+    const showMoreBtn = document.getElementById('showMoreBtn');
+    const showLessBtn = document.getElementById('showLessBtn');
+
+    showMoreBtn.style.display = (rowsToShow < totalRows) ? 'inline-block' : 'none';
+    showLessBtn.style.display = (rowsToShow > 5) ? 'inline-block' : 'none';
+}
+
+// ---- Event Listeners ----
+document.getElementById('intensityRegionSelect').addEventListener('change', () => {
+    rowsToShow = 5; // reset rows on filter change
+    populateDistricts(document.getElementById('intensityRegionSelect').value);
+    renderIntensityTable();
+});
+
+document.getElementById('intensityDistrictSelect').addEventListener('change', () => {
+    rowsToShow = 5; // reset rows on filter change
+    renderIntensityTable();
+});
+
+// ---- Show More / Show Less Buttons ----
+document.getElementById('showMoreBtn').addEventListener('click', () => {
+    rowsToShow += 5;
+    if (rowsToShow > totalRows) rowsToShow = totalRows;
+    renderIntensityTable();
+});
+
+document.getElementById('showLessBtn').addEventListener('click', () => {
+    rowsToShow -= 5;
+    if (rowsToShow < 5) rowsToShow = 5;
+    renderIntensityTable();
+});
+
+// ---- Initial Load ----
+loadPremisesData();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let inspectionsData = [];
+
+// ------------------- Fetch Data -------------------
+fetch('/static/data/inspections_from_db.json')
+  .then(res => res.json())
+  .then(data => {
+    inspectionsData = data.Inspections;
+    populateFilters();
+    renderChargesTable(inspectionsData);
+    renderViolationRateTable(inspectionsData);
+  })
+  .catch(err => console.error('Error loading JSON:', err));
+
+// ------------------- Populate Filters -------------------
+function populateFilters() {
+    const regionFilter = document.getElementById('chargesRegionFilter');
+    const districtFilter = document.getElementById('chargesDistrictFilter');
+    const typeFilter = document.getElementById('chargesInspectionTypeFilter');
+
+    // Populate Region
+    Object.keys(regions).forEach(r => regionFilter.appendChild(new Option(r, r)));
+
+    // Populate Inspection Types dynamically
+    const inspectionTypes = [...new Set(inspectionsData.map(i => i["Inspection Type"]))];
+    inspectionTypes.forEach(t => typeFilter.appendChild(new Option(t, t)));
+
+    // Event listeners
+    regionFilter.addEventListener('change', () => {
+        const selectedRegion = regionFilter.value;
+        districtFilter.innerHTML = '<option value="">All</option>';
+        districtFilter.disabled = !selectedRegion;
+        if (selectedRegion && regions[selectedRegion]) {
+            regions[selectedRegion].forEach(d => districtFilter.appendChild(new Option(d, d)));
+        }
+        renderChargesTable(inspectionsData);
+    });
+
+    districtFilter.addEventListener('change', () => renderChargesTable(inspectionsData));
+    typeFilter.addEventListener('change', () => renderChargesTable(inspectionsData));
+}
+
+// ------------------- Format Currency -------------------
+function formatTsh(val) {
+    return `Tsh ${val.toLocaleString()}/=`;
+}
+
+// ------------------- Charges Table -------------------
+function renderChargesTable(data) {
+    const selectedRegion = document.getElementById('chargesRegionFilter').value;
+    const selectedDistrict = document.getElementById('chargesDistrictFilter').value;
+    const selectedType = document.getElementById('chargesInspectionTypeFilter').value;
+
+    const filteredData = data.filter(item =>
+        (!selectedRegion || item.Region === selectedRegion) &&
+        (!selectedDistrict || item.District === selectedDistrict) &&
+        (!selectedType || item["Inspection Type"] === selectedType)
+    );
+
+    if (!filteredData.length) {
+        document.getElementById('summary-table').innerHTML = '<p class="empty-state">No data for selected filters.</p>';
+        return;
+    }
+
+    const grouped = {};
+    filteredData.forEach(item => {
+        const id = item["Overall ID"];
+        if (!grouped[id]) grouped[id] = {
+            Region: item.Region,
+            District: item.District,
+            inspectionType: item["Inspection Type"],
+            dates: [],
+            totalCharges: 0,
+            dldm: 0,
+            got: 0,
+            unregistered: 0,
+            totalProducts: 0
+        };
+
+        if (item.Date) grouped[id].dates.push(item.Date);
+
+        const v = item["Charges & Confiscated Values"] || {};
+        grouped[id].totalCharges += v.total || 0;
+        grouped[id].dldm += v.dldm_value || 0;
+        grouped[id].got += v.got_value || 0;
+        grouped[id].unregistered += v.unregistered_value || 0;
+
+        grouped[id].totalProducts = grouped[id].dldm + grouped[id].got + grouped[id].unregistered;
+    });
+
+    // **Reset visible rows to default step whenever table is refreshed**
+    visibleChargesRows = step;
+
+    renderChargesTableFromGrouped(Object.values(grouped));
+    renderChargesPieChart(grouped);
+}
+
+// ------------------- Charges Table Render Helper -------------------
+let visibleChargesRows = 3;
+const step = 3;
+
+function renderChargesTableFromGrouped(groupedArray) {
+    const container = document.getElementById('summary-table');
+
+    const renderTable = () => {
+        let tableHTML = `<table>
+            <thead>
+                <tr>
+                    <th>S/No</th>
+                    <th>Region</th>
+                    <th>District</th>
+                    <th>Inspection Type</th>
+                    <th>Date</th>
+                    <th style="font-weight:bold;">Total Charges</th>
+                    <th>DLDM Not Allowed Products</th>
+                    <th>GOT Products</th>
+                    <th>Unregistered Products</th>
+                    <th style="font-weight:bold;">Total Product Value</th>
+                </tr>
+                <tr class="sort-row">
+                    <td colspan="5" style="text-align:right; font-weight:bold;">Sort:</td>
+                    <td>
+                        <span class="sort-arrow sort-arrow-up" data-field="totalCharges" data-order="desc">&#9650;</span>
+                        <span class="sort-arrow sort-arrow-down" data-field="totalCharges" data-order="asc">&#9660;</span>
+                    </td>
+                    <td>
+                        <span class="sort-arrow sort-arrow-up" data-field="dldm" data-order="desc">&#9650;</span>
+                        <span class="sort-arrow sort-arrow-down" data-field="dldm" data-order="asc">&#9660;</span>
+                    </td>
+                    <td>
+                        <span class="sort-arrow sort-arrow-up" data-field="got" data-order="desc">&#9650;</span>
+                        <span class="sort-arrow sort-arrow-down" data-field="got" data-order="asc">&#9660;</span>
+                    </td>
+                    <td>
+                        <span class="sort-arrow sort-arrow-up" data-field="unregistered" data-order="desc">&#9650;</span>
+                        <span class="sort-arrow sort-arrow-down" data-field="unregistered" data-order="asc">&#9660;</span>
+                    </td>
+                    <td>
+                        <span class="sort-arrow sort-arrow-up" data-field="totalProducts" data-order="desc">&#9650;</span>
+                        <span class="sort-arrow sort-arrow-down" data-field="totalProducts" data-order="asc">&#9660;</span>
+                    </td>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        let totalChargesSum = 0, totalDldm = 0, totalGot = 0, totalUnregistered = 0, totalProductsSum = 0;
+
+        groupedArray.forEach((g, i) => {
+            const sortedDates = [...g.dates].sort((a, b) => new Date(a) - new Date(b));
+            let dateStr = '';
+
+            if (sortedDates.length === 1) {
+                const d = new Date(sortedDates[0]);
+                dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            } else if (sortedDates.length > 1) {
+                const start = new Date(sortedDates[0]);
+                const end = new Date(sortedDates[sortedDates.length - 1]);
+                const startDay = start.toLocaleDateString('en-GB', { day: '2-digit' });
+                const endDay = end.toLocaleDateString('en-GB', { day: '2-digit' });
+                const startMonth = start.toLocaleDateString('en-GB', { month: 'short' });
+                const endMonth = end.toLocaleDateString('en-GB', { month: 'short' });
+                const startYear = start.getFullYear();
+                const endYear = end.getFullYear();
+
+                if (startMonth === endMonth && startYear === endYear) {
+                    dateStr = `${startDay} to ${endDay} ${startMonth} ${startYear}`;
+                } else if (startYear === endYear) {
+                    dateStr = `${startDay} ${startMonth} to ${endDay} ${endMonth} ${endYear}`;
+                } else {
+                    dateStr = `${startDay} ${startMonth} ${startYear} to ${endDay} ${endMonth} ${endYear}`;
+                }
+            }
+
+            totalChargesSum += g.totalCharges;
+            totalDldm += g.dldm;
+            totalGot += g.got;
+            totalUnregistered += g.unregistered;
+            totalProductsSum += g.totalProducts;
+
+            tableHTML += `<tr>
+                <td>${i + 1}</td>
+                <td>${g.Region}</td>
+                <td>${g.District}</td>
+                <td class="dynamic-cell" data-value="${g.inspectionType}">${g.inspectionType}</td>
+                <td>${dateStr}</td>
+                <td style="font-weight:bold; color:#2c3e50;">${formatTsh(g.totalCharges)}</td>
+                <td>${formatTsh(g.dldm)}</td>
+                <td>${formatTsh(g.got)}</td>
+                <td>${formatTsh(g.unregistered)}</td>
+                <td style="font-weight:bold; color:#2c3e50;">${formatTsh(g.totalProducts)}</td>
+            </tr>`;
+        });
+
+        tableHTML += `</tbody>
+            <tfoot>
+                <tr style="font-weight:bold; background:#f0f0f0;">
+                    <td colspan="5" style="text-align:right;">TOTAL</td>
+                    <td style="color:#2c3e50;">${formatTsh(totalChargesSum)}</td>
+                    <td>${formatTsh(totalDldm)}</td>
+                    <td>${formatTsh(totalGot)}</td>
+                    <td>${formatTsh(totalUnregistered)}</td>
+                    <td style="color:#2c3e50;">${formatTsh(totalProductsSum)}</td>
+                </tr>
+            </tfoot>
+        </table>`;
+
+        container.innerHTML = tableHTML;
+        updateDynamicCells();
+
+        // Show More button
+        const rows = container.querySelectorAll('tbody tr');
+        const showMoreBtnId = 'chargesShowMore';
+        let showMoreBtn = document.getElementById(showMoreBtnId);
+
+        if (!showMoreBtn) {
+            showMoreBtn = document.createElement('button');
+            showMoreBtn.id = showMoreBtnId;
+            showMoreBtn.style.marginTop = '10px';
+            container.insertAdjacentElement('afterend', showMoreBtn);
+        }
+
+        if (visibleChargesRows > rows.length) visibleChargesRows = rows.length;
+        rows.forEach((r, i) => r.style.display = i < visibleChargesRows ? '' : 'none');
+
+        const updateButtonText = () => {
+            const hiddenCount = Array.from(rows).filter(r => r.style.display === 'none').length;
+            showMoreBtn.textContent = hiddenCount === 0 ? 'Show Less' : `Show More (${hiddenCount} more)`;
+            showMoreBtn.style.display = rows.length > step ? '' : 'none';
+        };
+
+        updateButtonText();
+        showMoreBtn.onclick = () => {
+            const hiddenRows = Array.from(rows).filter(r => r.style.display === 'none');
+            if (hiddenRows.length === 0) {
+                visibleChargesRows = step;
+            } else {
+                visibleChargesRows += step;
+                if (visibleChargesRows > rows.length) visibleChargesRows = rows.length;
+            }
+            rows.forEach((r, i) => r.style.display = i < visibleChargesRows ? '' : 'none');
+            updateButtonText();
+        };
+
+        addSortListenersCharges(groupedArray, renderTable);
+    };
+
+    renderTable();
+}
+
+// ------------------- Sorting Charges Table -------------------
+function addSortListenersCharges(groupedArray, renderTableCallback) {
+    document.querySelectorAll('.sort-arrow').forEach(arrow => {
+        arrow.addEventListener('click', () => {
+            const field = arrow.dataset.field;
+            const order = arrow.dataset.order;
+
+            // Reset visible rows to default whenever sorted
+            visibleChargesRows = step;
+
+            groupedArray.sort((a, b) => order === 'asc' ? a[field] - b[field] : b[field] - a[field]);
+            renderTableCallback();
+        });
+    });
+}
+
+// ------------------- Update dynamic inspection type symbols -------------------
+function updateDynamicCells() {
+    document.querySelectorAll('.dynamic-cell').forEach(cell => {
+        const val = (cell.dataset.value || '').trim().toLowerCase();
+        if (val === 'approved') cell.innerText = '✔ Approved';
+        else if (val === 'pending') cell.innerText = '⏳ Pending';
+        else if (val === 'rejected') cell.innerText = '❌ Rejected';
+        else cell.innerText = cell.dataset.value;
+    });
+}
+
+// ------------------- Charges Pie Chart -------------------
+function renderChargesPieChart(groupedData) {
+    const ctx = document.getElementById('chargesPieChart').getContext('2d');
+
+    let totalDLDM = 0, totalGOT = 0, totalUnregistered = 0;
+    Object.values(groupedData).forEach(g => {
+        totalDLDM += g.dldm;
+        totalGOT += g.got;
+        totalUnregistered += g.unregistered;
+    });
+
+    const chartData = {
+        labels: ["DLDM Not Allowed Products","GOT Products","Unregistered Products"],
+        datasets: [{
+            data: [totalDLDM, totalGOT, totalUnregistered],
+            backgroundColor: ['#FF6384','#36A2EB','#FFCE56'],
+            hoverOffset: 10
+        }]
+    };
+
+    if (window.chargesPie) window.chargesPie.destroy();
+
+    window.chargesPie = new Chart(ctx, {
+        type: 'pie',
+        data: chartData,
+        options: {
+            responsive:true,
+            plugins:{legend:{display:true,position:'bottom',align:'start',labels:{boxWidth:20,padding:15,usePointStyle:true}},
+                     tooltip:{callbacks:{label: ctx => `${ctx.label}: ${formatTsh(ctx.raw)}`}}}
+        }
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===== Create Violation Rate Section =====
+const violationSection = document.createElement('div');
+violationSection.className = 'report-block';
+violationSection.id = 'violationRateSection';
+violationSection.innerHTML = `
+    <h3>
+        <input type="checkbox" class="section-checkbox" checked>
+        Violation Rate
+    </h3>
+    <div id="violationRateContent"></div>
+`;
+document.getElementById('summary-table').parentElement.insertAdjacentElement('afterend', violationSection);
+
+// ===== Helper: Build Filters Dynamically =====
+function buildViolationFilters(data, selectedRegion = 'all', selectedDistrict = 'all') {
+    const regions = [...new Set(data.map(r => r.Region))].sort();
+    let regionOptions = `<option value="all">All Regions</option>`;
+    regions.forEach(r => {
+        regionOptions += `<option value="${r}" ${r === selectedRegion ? 'selected' : ''}>${r}</option>`;
+    });
+
+    let districtOptions = `<option value="all">All Districts</option>`;
+    const filteredDistricts = selectedRegion === 'all'
+        ? [...new Set(data.map(r => r.District))].sort()
+        : [...new Set(data.filter(r => r.Region === selectedRegion).map(r => r.District))].sort();
+    filteredDistricts.forEach(d => {
+        districtOptions += `<option value="${d}" ${d === selectedDistrict ? 'selected' : ''}>${d}</option>`;
+    });
+
+    return `
+        <div class="violation-filters" style="margin-bottom:10px;">
+            <label>Region:
+                <select id="violationRegionFilter">${regionOptions}</select>
+            </label>
+            <label style="margin-left:20px;">District:
+                <select id="violationDistrictFilter">${districtOptions}</select>
+            </label>
+        </div>
+    `;
+}
+
+// ===== Helper: Build Table HTML =====
+function buildViolationTableHTML(tableData, showAverages = false) {
+    let tableHTML = `<table>
+        <thead>
+            <tr>
+                <th>S/No</th>
+                <th>Region</th>
+                <th>District</th>
+                <th style="width:120px;">Non-conformance Intensity</th>
+                <th>PVI (%)</th>
+                <th style="width:120px;">Violation Rate (%)</th>
+            </tr>
+            <tr class="sort-row">
+                <td colspan="3" style="text-align:right; font-weight:bold;">Sort:</td>
+                <td>
+                    <span class="sort-arrow sort-arrow-up" data-field="intensity" data-order="desc">&#9650;</span>
+                    <span class="sort-arrow sort-arrow-down" data-field="intensity" data-order="asc">&#9660;</span>
+                </td>
+                <td>
+                    <span class="sort-arrow sort-arrow-up" data-field="pvi" data-order="desc">&#9650;</span>
+                    <span class="sort-arrow sort-arrow-down" data-field="pvi" data-order="asc">&#9660;</span>
+                </td>
+                <td>
+                    <span class="sort-arrow sort-arrow-up" data-field="violationRate" data-order="desc">&#9650;</span>
+                    <span class="sort-arrow sort-arrow-down" data-field="violationRate" data-order="asc">&#9660;</span>
+                </td>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    tableData.forEach((row) => {
+        tableHTML += `<tr class="violation-row">
+            <td>${row.SNo}</td>
+            <td>${row.Region}</td>
+            <td>${row.District}</td>
+            <td>${row.intensity.toFixed(1)}%</td>
+            <td>${row.pvi.toFixed(1)}%</td>
+            <td>${row.violationRate.toFixed(1)}%</td>
+        </tr>`;
+    });
+
+    if (showAverages && tableData.length > 0) {
+        const avgIntensity = tableData.reduce((sum, r) => sum + r.intensity, 0) / tableData.length;
+        const avgPvi = tableData.reduce((sum, r) => sum + r.pvi, 0) / tableData.length;
+        const avgViolation = tableData.reduce((sum, r) => sum + r.violationRate, 0) / tableData.length;
+
+        tableHTML += `<tr style="font-weight:bold; background:#f0f0f0;">
+            <td colspan="3">Average</td>
+            <td>${avgIntensity.toFixed(1)}%</td>
+            <td>${avgPvi.toFixed(1)}%</td>
+            <td>${avgViolation.toFixed(1)}%</td>
+        </tr>`;
+    }
+
+    tableHTML += `</tbody></table>`;
+    return tableHTML;
+}
+
+// ===== Global Variables =====
+let violationTableData = [];
+
+
+// ===== Render Violation Rate Table =====
+function renderViolationRateTable(data, selectedRegion = 'all', selectedDistrict = 'all') {
+    if (!data || !data.length) {
+        document.getElementById('violationRateContent').innerHTML = '<p class="empty-state">No data available</p>';
+        return;
+    }
+
+    // Build intensity map
+    const intensityMap = {};
+    document.querySelectorAll('#intensityTable tbody tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 4) {
+            const region = cells[1].innerText.trim();
+            const district = cells[2].innerText.trim();
+            const intensity = parseFloat(cells[3].innerText) || 0;
+            const key = `${region}||${district}`;
+            if (!intensityMap[key]) intensityMap[key] = { total: 0, count: 0 };
+            intensityMap[key].total += intensity;
+            intensityMap[key].count += 1;
+        }
+    });
+
+    // Filter & group
+    const grouped = {};
+    data.filter(item =>
+        (selectedRegion === 'all' || item.Region === selectedRegion) &&
+        (selectedDistrict === 'all' || item.District === selectedDistrict)
+    ).forEach(item => {
+        const key = `${item.Region}||${item.District}`;
+        if (!grouped[key]) grouped[key] = { Region: item.Region, District: item.District, got: 0, unregistered: 0, dldm: 0 };
+        const v = item["Charges & Confiscated Values"] || {};
+        grouped[key].got += v.got_value || 0;
+        grouped[key].unregistered += v.unregistered_value || 0;
+        grouped[key].dldm += v.dldm_value || 0;
+    });
+
+    // Build table data
+    violationTableData = Object.values(grouped).map((g, i) => {
+        const total = g.dldm + g.got + g.unregistered;
+        const key = `${g.Region}||${g.District}`;
+        const intensityEntry = intensityMap[key] || { total: 0, count: 1 };
+        const intensity = intensityEntry.total / intensityEntry.count;
+
+        let pvi = 0;
+        if (total > 0) {
+            const gPerc = (g.got / total) * 100;
+            const uPerc = (g.unregistered / total) * 100;
+            const dPerc = (g.dldm / total) * 100;
+            pvi = 0.40 * gPerc + 0.40 * uPerc + 0.20 * dPerc;
+        }
+
+        const violationRate = 0.70 * intensity + 0.30 * pvi;
+
+        return {
+            SNo: i + 1,
+            Region: g.Region,
+            District: g.District,
+            intensity: intensity,
+            pvi: pvi,
+            violationRate: violationRate
+        };
+    });
+
+    // Render filters + table
+    document.getElementById('violationRateContent').innerHTML =
+        buildViolationFilters(data, selectedRegion, selectedDistrict) +
+        buildViolationTableHTML(violationTableData, selectedDistrict === 'all');
+
+    attachViolationSortListeners(selectedRegion, selectedDistrict);
+    attachViolationShowMoreListener();
+
+    // Filter listeners
+    document.getElementById('violationRegionFilter').addEventListener('change', e => {
+        renderViolationRateTable(data, e.target.value, 'all');
+    });
+    document.getElementById('violationDistrictFilter').addEventListener('change', e => {
+        const currentRegion = document.getElementById('violationRegionFilter').value;
+        renderViolationRateTable(data, currentRegion, e.target.value);
+    });
+}
+
+// ===== Sorters =====
+function attachViolationSortListeners(selectedRegion = 'all', selectedDistrict = 'all') {
+    document.querySelectorAll('#violationRateContent .sort-arrow').forEach(arrow => {
+        arrow.addEventListener('click', () => {
+            const field = arrow.dataset.field;
+            const order = arrow.dataset.order;
+
+            // Preserve currently visible rows
+            const visibleRows = Array.from(document.querySelectorAll('#violationRateContent .violation-row'))
+                .map(r => r.style.display !== 'none');
+
+            const sorted = [...violationTableData].sort((a, b) => {
+                if (typeof a[field] === 'string') {
+                    return order === 'asc' ? a[field].localeCompare(b[field]) : b[field].localeCompare(a[field]);
+                } else {
+                    return order === 'asc' ? a[field] - b[field] : b[field] - a[field];
+                }
+            });
+
+            sorted.forEach((row, i) => row.SNo = i + 1);
+
+            document.querySelector('#violationRateContent table').outerHTML =
+                buildViolationTableHTML(sorted, selectedDistrict === 'all');
+
+            // Restore visibility
+            const allRows = document.querySelectorAll('#violationRateContent .violation-row');
+            allRows.forEach((r, i) => r.style.display = visibleRows[i] ? '' : 'none');
+
+            attachViolationSortListeners(selectedRegion, selectedDistrict);
+            attachViolationShowMoreListener();
+        });
+    });
+}
+
+// ===== Show More / Show Less =====
+function attachViolationShowMoreListener() {
+    const rows = document.querySelectorAll('#violationRateContent .violation-row');
+    const step = 3;
+
+    // Create button if it doesn't exist
+    let btn = document.getElementById('violationShowMore');
+    if (!btn && rows.length > step) {
+        const container = document.createElement('div');
+        container.className = 'show-more-container';
+        container.innerHTML = `<button id="violationShowMore" class="show-more-btn">Show More (${rows.length - step} more)</button>`;
+        document.getElementById('violationRateContent').appendChild(container);
+        btn = document.getElementById('violationShowMore');
+    }
+    if (!btn) return;
+
+    // Remove previous listener
+    if (btn._listener) btn.removeEventListener('click', btn._listener);
+
+    // Initial display
+    rows.forEach((r, i) => r.style.display = i < step ? '' : 'none');
+    updateButtonText();
+
+    btn._listener = () => {
+        const hiddenRows = Array.from(rows).filter(r => r.style.display === 'none');
+        if (hiddenRows.length === 0) {
+            rows.forEach((r, i) => r.style.display = i < step ? '' : 'none');
+        } else {
+            hiddenRows.slice(0, step).forEach(r => r.style.display = '');
+        }
+        updateButtonText();
+    };
+    btn.addEventListener('click', btn._listener);
+
+    function updateButtonText() {
+        const hiddenCount = Array.from(rows).filter(r => r.style.display === 'none').length;
+        btn.textContent = hiddenCount === 0 ? "Show Less (Violation Rate)" : `Show More (${hiddenCount} more)`;
+    }
+}
+
+// ===== Load Data =====
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/static/data/inspections_from_db.json')
+        .then(res => res.json())
+        .then(data => {
+            inspectionsData = data.Inspections;
+            renderViolationRateTable(inspectionsData);
+        })
+        .catch(err => console.error('Error loading JSON:', err));
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===== Create Risk Based Summary Section ===== 
+const riskSection = document.createElement('div');
+riskSection.className = 'report-block';
+riskSection.id = 'riskSection';
+riskSection.innerHTML = `
+    <h3>
+        <input type="checkbox" class="section-checkbox" checked>
+        Risk Based Summary
+    </h3>
+    <div id="riskSummaryContent"></div>
+    <canvas id="riskSummaryChart" style="max-width:600px; margin-top:15px;"></canvas>
+`;
+document.getElementById('violationRateSection')?.insertAdjacentElement('afterend', riskSection);
+
+// ===== Create Modal =====
+let modal = document.createElement('div');
+modal.id = 'districtModal';
+modal.style.display = 'none';
+modal.style.position = 'fixed';
+modal.style.top = '0';
+modal.style.left = '0';
+modal.style.width = '100%';
+modal.style.height = '100%';
+modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+modal.style.justifyContent = 'center';
+modal.style.alignItems = 'center';
+modal.style.zIndex = '1000';
+modal.innerHTML = `
+    <div style="background:#fff; padding:20px; border-radius:8px; max-width:500px; width:90%; position:relative; max-height:80%; overflow-y:auto;">
+        <span id="closeModal" style="position:absolute; top:10px; right:15px; cursor:pointer; font-size:20px;">&times;</span>
+        <h3 id="modalTitle">District Details</h3>
+        <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+            <thead>
+                
+            </thead>
+            <tbody id="modalContent"></tbody>
+        </table>
+    </div>
+`;
+document.body.appendChild(modal);
+
+// Close modal
+document.getElementById('closeModal').onclick = () => { modal.style.display = 'none'; };
+
+// ===== Helper: Calculate coverage like Quick Overview =====
+async function calculateCoveragePerDistrict(selectedRegion = '') {
+    let premises = [];
+    try {
+        const resp = await fetch('/get_premises'); // adjust path if needed
+        if (resp.ok) premises = await resp.json();
+    } catch (e) {
+        console.error("Failed to fetch premises:", e);
+    }
+
+    // Count registered premises per district
+    const registeredPerDistrict = {};
+    premises.forEach(p => {
+        if (selectedRegion && p.region !== selectedRegion) return;
+        const dist = p.district || 'Unknown';
+        registeredPerDistrict[dist] = (registeredPerDistrict[dist] || 0) + 1;
+    });
+
+    // Count inspected premises per district
+    const inspectedPerDistrict = {};
+    inspectionsData.forEach(ins => {
+        if (selectedRegion && ins.Region !== selectedRegion) return;
+        const dist = ins.District || 'Unknown';
+        const totalInspected = ins['Premises Data'].reduce((sum, p) => sum + p['Count'], 0);
+        inspectedPerDistrict[dist] = (inspectedPerDistrict[dist] || 0) + totalInspected;
+    });
+
+    // Calculate coverage = inspected / registered × 100
+    const coveragePerDistrict = {};
+    Object.keys(registeredPerDistrict).forEach(dist => {
+        const inspected = inspectedPerDistrict[dist] || 0;
+        const registered = registeredPerDistrict[dist] || 0;
+        const percent = registered > 0 ? (inspected / registered * 100).toFixed(1) : 0;
+        coveragePerDistrict[dist] = parseFloat(percent);
+    });
+
+    return coveragePerDistrict;
+}
+
+// ===== Render Risk Section =====
+async function renderRiskSummary(premisesData) {
+    const rows = document.querySelectorAll('#violationRateContent tbody tr.violation-row');
+    const violationData = [];
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 6) {
+            const region = cells[1].innerText.trim();
+            const district = cells[2].innerText.trim();
+            const violationRate = parseFloat(cells[5].innerText) || 0;
+            violationData.push({ region, district, violationRate });
+        }
+    });
+
+    if (!violationData.length) {
+        document.getElementById('riskSummaryContent').innerHTML = '<p class="empty-state">No violation data available.</p>';
+        return;
+    }
+
+    // Top 7 districts by violation rate
+    const top7 = [...violationData].sort((a,b) => b.violationRate - a.violationRate).slice(0,7);
+
+    // Count unique Overall ID inspections per district
+    const inspectionCounts = {};
+    inspectionsData.forEach(item => {
+        const key = item.District;
+        if (!inspectionCounts[key]) inspectionCounts[key] = new Set();
+        if (item["Overall ID"]) inspectionCounts[key].add(item["Overall ID"]);
+    });
+
+    const inspectionCountsNumber = {};
+    for (const district in inspectionCounts) {
+        inspectionCountsNumber[district] = inspectionCounts[district].size;
+    }
+
+    // Fetch coverage per district using the correct function
+    const coveragePerDistrict = await calculateCoveragePerDistrict();
+    const top7WithCoverage = top7.map(d => ({
+        ...d,
+        coverage: coveragePerDistrict[d.district] || 0
+    }));
+
+    // Sort top7 by least inspections, tiebreaker: lowest coverage, pick top 3 risk districts
+    const top3Risk = [...top7WithCoverage].sort((a,b) => {
+        const diffInspections = (inspectionCountsNumber[a.district] || 0) - (inspectionCountsNumber[b.district] || 0);
+        if (diffInspections !== 0) return diffInspections;
+        return a.coverage - b.coverage;
+    }).slice(0,3);
+
+    // Narrative with clickable districts
+    const districtsNarrative = top3Risk.map(d => `<span class="district-btn" data-district="${d.district}">${d.district} (${d.region})</span>`).join(', ');
+    const narrative = `
+        <p>The following districts exhibit high violation rates with low premise coverage and fewer inspections conducted: <b>${districtsNarrative}</b>.</p>
+        <p>Recommended actions include:</p>
+        <ul>
+            <li>Increase inspection frequency in these districts, e.g., follow-up / special inspections.</li>
+            <li>Enhance monitoring and reporting mechanisms.</li>
+            <li>Focus on training staff and awareness campaigns to improve compliance.</li>
+        </ul>
+        <p><b>The chart below provides a graphical representation of these districts’ violation rates, inspection counts, and premise coverage.</b></p>
+    `;
+    document.getElementById('riskSummaryContent').innerHTML = narrative;
+
+    // Style district buttons
+    if (!document.getElementById('districtBtnStyle')) {
+        const style = document.createElement('style');
+        style.id = 'districtBtnStyle';
+        style.innerHTML = `
+            .district-btn { cursor:pointer; color:#3498db; text-decoration:underline; }
+            .district-btn:hover { color:#1d6fa5; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // ===== District Button Click & Modal Logic (your original detailed modal) =====
+   document.querySelectorAll('.district-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const districtName = btn.getAttribute('data-district');
+
+        // Filter premises for this district
+        const premises = premisesData.filter(p => p.district === districtName);
+
+        // 1️⃣ Suggested Premises
+        const suggestedPremises = premises
+            .sort((a,b) => (b.average_intensity||0) - (a.average_intensity||0))
+            .slice(0,10);
+
+        // 2️⃣ Pending Inspections
+        const locationsMap = {};
+        premises.forEach(p => {
+            const lastObsDate = p.observations.length
+                ? new Date(p.observations[p.observations.length-1].date)
+                : null;
+            const key = p.location || 'Unknown';
+            if (!locationsMap[key]) locationsMap[key] = { count:0, latest:null };
+            locationsMap[key].count += 1;
+            if (!locationsMap[key].latest || (lastObsDate && lastObsDate > locationsMap[key].latest)) {
+                locationsMap[key].latest = lastObsDate;
+            }
+        });
+
+        const pendingLocations = Object.entries(locationsMap)
+            .sort((a,b) => {
+                const diffCount = b[1].count - a[1].count;
+                if (diffCount !== 0) return diffCount;
+                const aDate = a[1].latest || new Date(0);
+                const bDate = b[1].latest || new Date(0);
+                return aDate - bDate;
+            })
+            .slice(0,5)
+            .map(([loc,data]) => ({ location: loc, premises: data.count, lastInspection: data.latest }));
+
+        // 3️⃣ Low Coverage Locations
+        const coverageMap = {};
+        premises.forEach(p => {
+            const loc = p.location || 'Unknown';
+            if (!coverageMap[loc]) coverageMap[loc] = { total: 0, inspected: 0 };
+            coverageMap[loc].total += 1;
+            if (p.observations && p.observations.length > 0) coverageMap[loc].inspected += 1;
+        });
+
+        const lowCoverage = Object.entries(coverageMap)
+            .map(([loc, data]) => ({
+                location: loc,
+                coverage: data.total > 0 ? Math.round((data.inspected / data.total) * 100) : 0,
+                premises: data.total
+            }))
+            .sort((a,b) => a.coverage - b.coverage)
+            .slice(0,5);
+
+        const tbody = document.getElementById('modalContent');
+        tbody.innerHTML = '';
+
+        const tableRowStyle = "padding:8px; border-bottom:1px solid #ddd; text-align:left; font-size:14px;";
+        const headerRowStyle = "padding:10px; font-weight:bold; background:#8DB600; color:white; font-size:15px; border-radius:5px;";
+
+        // --- Suggested Premises ---
+        tbody.innerHTML += `
+            <tr><td colspan="4" style="${headerRowStyle}">Suggested List of Premises that Requires Follow-up</td></tr>
+            <tr style="background:#eaeaea; font-weight:bold;">
+                <td style="padding:5px; width:5%;">S/No</td>
+                <td style="padding:5px; width:40%;">Premise Name</td>
+                <td style="padding:5px; width:25%;">Category</td>
+                <td style="padding:5px; width:30%;">Location</td>
+            </tr>
+            ${suggestedPremises.length
+                ? suggestedPremises.map((p,i)=>`
+                    <tr style="background:${i%2===0?'#ffffff':'#f9f9f9'};">
+                        <td style="${tableRowStyle}">${i+1}</td>
+                        <td style="${tableRowStyle}">${p.name||'-'}</td>
+                        <td style="${tableRowStyle}">${p.category||'-'}</td>
+                        <td style="${tableRowStyle}">${p.location||'-'}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="4" style="${tableRowStyle}">No data available</td></tr>`
+            }
+        `;
+
+        // --- Pending Inspections ---
+        tbody.innerHTML += `
+            <tr><td colspan="4" style="${headerRowStyle}">Locations with many premises but not inspected recently</td></tr>
+            <tr style="background:#eaeaea; font-weight:bold;">
+                <td style="padding:5px; width:5%;">S/No</td>
+                <td style="padding:5px; width:40%;">Location</td>
+                <td style="padding:5px; width:25%;">Number of Premises</td>
+                <td style="padding:5px; width:30%;">Last Inspection</td>
+            </tr>
+            ${pendingLocations.length
+                ? pendingLocations.map((l,i)=>`
+                    <tr style="background:${i%2===0?'#ffffff':'#f9f9f9'};">
+                        <td style="${tableRowStyle}">${i+1}</td>
+                        <td style="${tableRowStyle}">${l.location}</td>
+                        <td style="${tableRowStyle}">${l.premises}</td>
+                        <td style="${tableRowStyle}">${l.lastInspection ? l.lastInspection.toISOString().split('T')[0] : 'No inspection recorded'}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="4" style="${tableRowStyle}">No data available</td></tr>`
+            }
+        `;
+
+        // --- Low Coverage ---
+        tbody.innerHTML += `
+            <tr><td colspan="4" style="${headerRowStyle}">Locations with many premises but least coverage</td></tr>
+            <tr style="background:#eaeaea; font-weight:bold;">
+                <td style="padding:5px; width:5%;">S/No</td>
+                <td style="padding:5px; width:45%;">Location</td>
+                <td style="padding:5px; width:25%;">Premises</td>
+                <td style="padding:5px; width:25%;">Coverage (%)</td>
+            </tr>
+            ${lowCoverage.length
+                ? lowCoverage.map((l,i)=>`
+                    <tr style="background:${i%2===0?'#ffffff':'#f9f9f9'};">
+                        <td style="${tableRowStyle}">${i+1}</td>
+                        <td style="${tableRowStyle}">${l.location}</td>
+                        <td style="${tableRowStyle}">${l.premises}</td>
+                        <td style="${tableRowStyle}">${l.coverage}%</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="4" style="${tableRowStyle}">No data available</td></tr>`
+            }
+        `;
+
+        document.getElementById('modalTitle').innerText = `Quick Summary/Follow Up Overview for ${districtName}`;
+        modal.style.display = 'flex';
+    });
+});
+
+    // ===== Render Mini Chart =====
+const ctx = document.getElementById('riskSummaryChart').getContext('2d');
+
+// Take only top 3 districts
+const top3WithCoverage = top7WithCoverage.slice(0, 3);
+
+const labels = top3WithCoverage.map(d => d.district);
+const violationRates = top3WithCoverage.map(d => d.violationRate);
+const inspectionCountsArr = top3WithCoverage.map(d => inspectionCountsNumber[d.district] || 0);
+const coverageArr = top3WithCoverage.map(d => d.coverage);
+
+if (window.riskChart) window.riskChart.destroy();
+
+window.riskChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels,
+        datasets: [
+            { label: 'Number of Inspections', data: inspectionCountsArr, backgroundColor: '#3498db', yAxisID: 'y2' },
+            { label: 'Violation Rate (%)', data: violationRates, backgroundColor: '#e74c3c', yAxisID: 'y1' },
+            { label: 'Premise Coverage (%)', data: coverageArr, backgroundColor: '#f1c40f', yAxisID: 'y1' }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+        scales: {
+            y1: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Percentage (%)' } },
+            y2: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Number of Inspections' } }
+        }
+    }
+});
+}
+
+// ===== Trigger Risk Section after Violation Rate Table is Rendered =====
+function triggerRiskSection() {
+    const table = document.querySelector('#violationRateContent tbody');
+    if (table && table.querySelector('tr.violation-row')) {
+        // Fetch premises.json and render
+        fetch('/static/data/premises.json')
+            .then(res => res.json())
+            .then(premisesData => renderRiskSummary(premisesData))
+            .catch(err => console.error('Error loading premises JSON:', err));
+    } else {
+        setTimeout(triggerRiskSection, 200);
+    }
+}
+
+// Call after inspections data and violation rate table are ready
+fetch('/static/data/inspections_from_db.json')
+    .then(res => res.json())
+    .then(data => {
+        inspectionsData = data.Inspections;
+        renderViolationRateTable(inspectionsData);
+        triggerRiskSection();
+    })
+    .catch(err => console.error('Error loading inspections JSON:', err));
+
+
+
+    
+
+    
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const recallSection = document.createElement('div');
+    recallSection.className = 'report-block';
+    recallSection.id = 'recallSection';
+    recallSection.innerHTML = `
+        <h3>
+            <input type="checkbox" class="section-checkbox" checked>
+            Recall Inspections & Recalled Product Summary
+        </h3>
+        <div id="recallContent" style="overflow-x:auto;">
+            <p>Loading recall data...</p>
+        </div>
+    `;
+
+    const reportContainer = document.getElementById('reportContainer');
+    const disposalSection = document.getElementById('disposalSection');
+
+    if (reportContainer && disposalSection) {
+        reportContainer.insertBefore(recallSection, disposalSection);
+    } else if (reportContainer) {
+        reportContainer.appendChild(recallSection);
+    }
+
+    const recallContent = document.getElementById('recallContent');
+
+    recallSection.querySelector('.section-checkbox').addEventListener('change', (e) => {
+        recallContent.style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    fetch('../static/data/inspections_from_db.json')
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to load JSON');
+            return response.json();
+        })
+        .then(data => {
+            const inspections = data["Inspections"] || [];
+            const recallInspections = inspections.filter(i => i["Inspection Type"] === "Recall Inspection");
+
+            if (recallInspections.length === 0) {
+                recallContent.innerHTML = '<p>No recall inspections found.</p>';
+                return;
+            }
+
+            recallContent.innerHTML = '';
+
+            // Group inspections by Overall ID
+const groupedByOverallID = {};
+recallInspections.forEach(insp => {
+    const overallID = insp["Overall ID"];
+    if (!groupedByOverallID[overallID]) groupedByOverallID[overallID] = [];
+    groupedByOverallID[overallID].push(insp);
+});
+
+Object.keys(groupedByOverallID).forEach(overallID => {
+    const groupInspections = groupedByOverallID[overallID];
+    
+    // Compute total premises inspected for this Overall ID (sum of all inspections)
+const totalPremisesInspectedForOverallID = groupInspections.reduce((sum, insp) => {
+    const premisesCount = (insp["Premises Data"] || []).reduce((s, p) => s + (p.Count || 0), 0);
+    return sum + premisesCount;
+}, 0);
+
+
+    let aggregated = {};
+
+    // Aggregate products within same Overall ID
+    groupInspections.forEach(insp => {
+        (insp["Recall Products"] || []).forEach(prod => {
+            const key = `${prod.brandName}|${prod.genericName}|${prod.manufacturer}|${prod.batchNumber}`;
+
+            if (!aggregated[key]) {
+                aggregated[key] = {
+                    brandName: prod.brandName,
+                    genericName: prod.genericName,
+                    manufacturer: prod.manufacturer,
+                    batchNumber: prod.batchNumber,
+                    manufactureDate: prod.manufactureDate,
+                    expiryDate: prod.expiryDate,
+                    uom: prod.uom,
+                    reason: prod.reason,
+                    totalValue: 0,
+                    totalQuantity: 0,
+                    // Use the total from all inspections with same Overall ID
+                    totalPremisesInspected: totalPremisesInspectedForOverallID,
+                    premisesWithRecalled: {}
+                };
+            }
+
+            aggregated[key].totalValue += prod.value || 0;
+            aggregated[key].totalQuantity += prod.quantity || 0;
+            aggregated[key].premisesWithRecalled[prod.category] =
+                (aggregated[key].premisesWithRecalled[prod.category] || 0) + (prod.premises || 0);
+        });
+    });
+
+                const districts = [...new Set(groupInspections.map(i => i.District))].join(', ');
+                const regions = [...new Set(groupInspections.map(i => i.Region))].join(', ');
+                const dates = groupInspections.map(i => new Date(i.Date));
+                const minDate = new Date(Math.min(...dates));
+                const maxDate = new Date(Math.max(...dates));
+                const formatDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                const heading = `Recall Inspection  conducted in ${districts} - ${regions} from ${formatDate(minDate)} to ${formatDate(maxDate)}`;
+
+                let html = `<h4>${heading}</h4>`;
+                const items = Object.values(aggregated);
+
+                if (items.length === 0) {
+                    html += `<p>No recalled products were reported during this period.</p>`;
+                } else {
+                    html += `
+                        <div style="overflow-x:auto;">
+                        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse; min-width:1000px; table-layout: fixed; word-wrap: break-word; overflow-wrap: break-word;">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px;">SNO</th>
+                                    <th style="width:120px;">Brand Name</th>
+                                    <th style="width:120px;">Generic Name</th>
+                                    <th style="width:150px;">Manufacturer</th>
+                                    <th style="width:80px;">Batch</th>
+                                    <th style="width:90px;">MFD</th>
+                                    <th style="width:90px;">EXP</th>
+                                    <th style="width:80px;">UOM</th>
+                                    <th style="width:150px;">Reason</th>
+                                    <th style="width:120px;">Premises Inspected</th>
+                                    <th style="width:180px;">Premises with Recalled Product</th>
+                                    <th style="width:120px;">Value (Tsh)</th>
+                                    <th style="width:120px;">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    items.forEach((item, idx) => {
+                        const totalPremises = item.totalPremisesInspected;
+                        const premisesBreakdown = Object.entries(item.premisesWithRecalled)
+                            .filter(([_, count]) => count > 0)
+                            .map(([pType, count]) => `${pType} ${count}`)
+                            .join(', ');
+
+                        const premisesDisplay = `${Object.values(item.premisesWithRecalled).reduce((a,b)=>a+b,0)}${premisesBreakdown ? ` (${premisesBreakdown})` : ''}`;
+
+                        if (Object.values(item.premisesWithRecalled).reduce((a,b)=>a+b,0) === 0) return;
+
+                        html += `
+                            <tr>
+                                <td>${idx + 1}</td>
+                                <td>${item.brandName}</td>
+                                <td>${item.genericName}</td>
+                                <td>${item.manufacturer}</td>
+                                <td>${item.batchNumber}</td>
+                                <td>${item.manufactureDate}</td>
+                                <td>${item.expiryDate}</td>
+                                <td>${item.uom}</td>
+                                <td>${item.reason}</td>
+                                <td>${totalPremises}</td>
+                                <td>${premisesDisplay}</td>
+                                <td>${item.totalValue.toLocaleString()}</td>
+                                <td>${item.totalQuantity.toLocaleString()}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `</tbody></table></div>`;
+                }
+
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'recall-group';
+                groupDiv.innerHTML = html;
+                recallContent.appendChild(groupDiv);
+            });
+        })
+        .catch(error => {
+            recallContent.innerHTML = `<p style="color:red;">Error loading recall data: ${error.message}</p>`;
+            console.error(error);
+        });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const disposalSection = document.createElement('div');
+    disposalSection.className = 'report-block';
+    disposalSection.id = 'disposalSection';
+    disposalSection.innerHTML = `
+        <h3>
+            <input type="checkbox" class="section-checkbox" checked>
+            Disposal Activities Summary
+        </h3>
+        <div id="disposalFilters" style="margin-bottom:10px;"></div>
+        <div id="disposalContent" style="overflow-x:auto;">
+            <p>Loading disposal data...</p>
+        </div>
+    `;
+
+    const reportContainer = document.getElementById('reportContainer');
+    if (reportContainer) reportContainer.appendChild(disposalSection);
+
+    const disposalContent = document.getElementById('disposalContent');
+    const disposalFilters = document.getElementById('disposalFilters');
+
+    // Fetch JSON
+    fetch('../static/data/inspections_from_db.json')
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to load JSON');
+            return response.json();
+        })
+        .then(data => {
+            const disposals = data["Disposal Activities"];
+            if (!disposals || disposals.length === 0) {
+                disposalContent.innerHTML = '<p>No disposal activities available.</p>';
+                return;
+            }
+
+            // Extract unique filter options
+            const regions = [...new Set(disposals.map(d => d.region))].sort();
+            const types = [...new Set(disposals.map(d => d.type))].sort();
+
+            // Build filter dropdowns (district dropdown will be dynamic)
+            disposalFilters.innerHTML = `
+                Region: <select id="filterRegion"><option value="">All</option>${regions.map(r => `<option value="${r}">${r}</option>`).join('')}</select>
+                District: <select id="filterDistrict"><option value="">All</option></select>
+                Type: <select id="filterType"><option value="">All</option>${types.map(t => `<option value="${t}">${t}</option>`).join('')}</select>
+            `;
+
+            const filterRegion = document.getElementById('filterRegion');
+            const filterDistrict = document.getElementById('filterDistrict');
+            const filterType = document.getElementById('filterType');
+
+            // Format numbers with commas
+            function formatNumber(n) {
+                return n.toLocaleString();
+            }
+
+            // Function to populate district dropdown dynamically
+            function updateDistrictOptions(selectedRegion) {
+                let filteredDistricts;
+
+                if (selectedRegion) {
+                    filteredDistricts = [...new Set(
+                        disposals
+                            .filter(d => d.region === selectedRegion)
+                            .map(d => d.district)
+                    )].sort();
+                } else {
+                    filteredDistricts = [...new Set(disposals.map(d => d.district))].sort();
+                }
+
+                filterDistrict.innerHTML = `<option value="">All</option>` +
+                    filteredDistricts.map(d => `<option value="${d}">${d}</option>`).join('');
+            }
+
+            function renderTable(filter = {}) {
+                let filteredDisposals = disposals.filter(d => {
+                    return (!filter.region || d.region === filter.region) &&
+                           (!filter.district || d.district === filter.district) &&
+                           (!filter.type || d.type === filter.type);
+                });
+
+                // Group by disposal_id
+                const grouped = {};
+                filteredDisposals.forEach(d => {
+                    const key = d.disposal_id || d.id;
+                    if (!grouped[key]) grouped[key] = [];
+                    grouped[key].push(d);
+                });
+
+                // Build table
+                let html = `
+                    <div style="overflow-x:auto;">
+                    <table border="1" cellspacing="0" cellpadding="5" 
+                        style="border-collapse:collapse; min-width:800px; table-layout: fixed;">
+                        <thead>
+                            <tr>
+                                <th style="width:60px; word-wrap:break-word;">S/No</th>
+                                <th style="width:150px; word-wrap:break-word;">Region</th>
+                                <th style="width:150px; word-wrap:break-word;">District</th>
+                                <th style="width:180px; word-wrap:break-word;">Type</th>
+                                <th style="width:120px; word-wrap:break-word;">Weight (KG)</th>
+                                <th style="width:140px; word-wrap:break-word;">Value (Tsh)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                let sNo = 1;
+                let grandTotalWeight = 0;
+                let grandTotalValue = 0;
+
+                Object.values(grouped).forEach(group => {
+                    const rowspan = group.length;
+                    const region = group[0].region;
+                    const district = group[0].district;
+
+                    group.forEach((d, idx) => {
+                        grandTotalWeight += d.weight;
+                        grandTotalValue += d.value;
+
+                        html += '<tr>';
+                        if (idx === 0) {
+                            html += `<td rowspan="${rowspan}">${sNo++}</td>`;
+                            html += `<td rowspan="${rowspan}">${region}</td>`;
+                            html += `<td rowspan="${rowspan}">${district}</td>`;
+                        }
+                        html += `<td>${d.type}</td>`;
+                        html += `<td>${formatNumber(d.weight)} KG</td>`;
+                        html += `<td>Tsh ${formatNumber(d.value)}</td>`;
+                        html += '</tr>';
+                    });
+                });
+
+                // Add totals row
+                html += `
+                    <tr style="font-weight:bold; background-color:#f0f0f0;">
+                        <td colspan="4" style="text-align:right;">Total</td>
+                        <td>${formatNumber(grandTotalWeight)} KG</td>
+                        <td>Tsh ${formatNumber(grandTotalValue)}</td>
+                    </tr>
+                `;
+
+                html += `</tbody></table></div>`;
+                disposalContent.innerHTML = html;
+            }
+
+            // Initial setup
+            updateDistrictOptions(""); // Show all districts initially
+            renderTable();
+
+            // Event: Region change → Update districts + rerender table
+            filterRegion.addEventListener('change', () => {
+                updateDistrictOptions(filterRegion.value);
+                renderTable({
+                    region: filterRegion.value,
+                    district: filterDistrict.value,
+                    type: filterType.value
+                });
+            });
+
+            // Event: District change → Rerender table
+            filterDistrict.addEventListener('change', () => {
+                renderTable({
+                    region: filterRegion.value,
+                    district: filterDistrict.value,
+                    type: filterType.value
+                });
+            });
+
+            // Event: Type change → Rerender table
+            filterType.addEventListener('change', () => {
+                renderTable({
+                    region: filterRegion.value,
+                    district: filterDistrict.value,
+                    type: filterType.value
+                });
+            });
+        })
+        .catch(error => {
+            disposalContent.innerHTML = `<p style="color:red;">Error loading disposal data: ${error.message}</p>`;
+            console.error(error);
+        });
+});
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Create QA Section
+    const qaSection = document.createElement('div');
+    qaSection.className = 'report-block';
+    qaSection.id = 'qaSection';
+    qaSection.innerHTML = `
+        <h3>
+            <input type="checkbox" class="section-checkbox" checked>
+            Quality Assurance (QA) Activities
+        </h3>
+        <div id="qaFilters" style="margin-bottom:10px;"></div>
+        <div id="qaContent">
+            <p>Loading QA data...</p>
+        </div>
+        <canvas id="qaChart" style="margin-top:20px; max-height:400px;"></canvas>
+    `;
+
+    const reportContainer = document.getElementById('reportContainer');
+    if (reportContainer) reportContainer.appendChild(qaSection);
+
+    const qaContent = document.getElementById('qaContent');
+    const qaFilters = document.getElementById('qaFilters');
+    const qaChartCanvas = document.getElementById('qaChart');
+    let qaChart; // Chart.js instance
+
+    // Fetch QA Data and Targets
+    Promise.all([
+        fetch('../static/data/inspections_from_db.json').then(res => res.json()),
+        fetch('../static/data/QA_target.json').then(res => res.json())
+    ])
+    .then(([qaDataJSON, targetDataJSON]) => {
+        const qaActivities = qaDataJSON["QA Activities"];
+        if (!qaActivities || qaActivities.length === 0) {
+            qaContent.innerHTML = '<p>No QA activities available.</p>';
+            return;
+        }
+
+        // Map targets by center
+        const targetMap = {};
+        targetDataJSON.forEach(t => {
+            targetMap[t.center.trim().toUpperCase()] = {
+                medicine: t.medicine_target || 0,
+                device: t.device_target || 0
+            };
+        });
+
+        // Build filters
+        const centers = [...new Set(qaActivities.map(q => q.center.trim()))].sort();
+        const types = [...new Set(qaActivities.map(q => q.type.trim()))].sort();
+
+        qaFilters.innerHTML = `
+            Center: <select id="filterCenter"><option value="">All</option>${centers.map(c => `<option value="${c}">${c}</option>`).join('')}</select>
+            Type: <select id="filterQAType"><option value="">All</option>${types.map(t => `<option value="${t}">${t}</option>`).join('')}</select>
+            Metric: 
+            <select id="chartMetric">
+                <option value="passRate">Pass Rate (%)</option>
+                <option value="samples">Number of Samples</option>
+                <option value="achievement">Achievement (%)</option>
+            </select>
+        `;
+
+        const filterCenter = document.getElementById('filterCenter');
+        const filterQAType = document.getElementById('filterQAType');
+        const chartMetricSelect = document.getElementById('chartMetric');
+
+        function formatNumber(n) {
+            return n.toLocaleString();
+        }
+
+        function getColor(percent) {
+            const p = Number(percent);
+            if (p >= 100) return 'green';
+            if (p >= 50) return 'orange';
+            return 'red';
+        }
+
+        function renderQATableAndChart(filter = {}, metric = chartMetricSelect.value) {
+            let filteredQA = qaActivities.filter(q => {
+                return (!filter.center || q.center === filter.center) &&
+                       (!filter.type || q.type === filter.type);
+            });
+
+            const grouped = {};
+            filteredQA.forEach(q => {
+                const key = q.center.trim().toUpperCase() + '||' + q.type.trim().toUpperCase();
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(q);
+            });
+
+            // Assign distinct colors to centers
+            const centerColors = {};
+            const uniqueCenters = [...new Set(Object.values(grouped).map(group => group[0].center.trim()))];
+            uniqueCenters.forEach((center, index) => {
+                const hue = (index * 360 / uniqueCenters.length) % 360; // spread hues
+                centerColors[center] = `hsl(${hue}, 70%, 50%)`;
+            });
+
+            let html = `<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse; width:100%; table-layout:auto;">
+                <thead>
+                    <tr>
+                        <th>S/No</th>
+                        <th>Center</th>
+                        <th>Type</th>
+                        <th>No. of Samples</th>
+                        <th>Passed</th>
+                        <th>Failed</th>
+                        <th>Pass Rate (%)</th>
+                        <th>Target</th>
+                        <th>Achievement (%)</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            let sNo = 1;
+            let totalSamples = 0, totalPassed = 0, totalFailed = 0, totalTarget = 0, totalAchievement = 0;
+            const chartLabels = [];
+            const chartData = [];
+            const chartBackgroundColors = [];
+
+            Object.values(grouped).forEach(group => {
+                const center = group[0].center.trim();
+                const type = group[0].type.trim();
+                const centerKey = center.toUpperCase();
+                const targetObj = targetMap[centerKey] || {medicine:0, device:0};
+
+                let sumSamples = 0, sumPassed = 0;
+                group.forEach(q => {
+                    sumSamples += q.number_of_samples;
+                    sumPassed += q.passed;
+                });
+                const sumFailed = sumSamples - sumPassed;
+                const passRate = sumSamples > 0 ? ((sumPassed / sumSamples) * 100).toFixed(1) : "0.0";
+
+                let targetValue = 0;
+                const typeLower = type.toLowerCase();
+                if (typeLower.includes('medicine')) targetValue = targetObj.medicine;
+                else if (typeLower.includes('device')) targetValue = targetObj.device;
+
+                const percentAchievement = targetValue > 0 ? ((sumSamples / targetValue) * 100).toFixed(1) : "0.0";
+
+                html += `<tr>
+                    <td>${sNo++}</td>
+                    <td>${center}</td>
+                    <td>${type}</td>
+                    <td>${formatNumber(sumSamples)}</td>
+                    <td>${formatNumber(sumPassed)}</td>
+                    <td>${formatNumber(sumFailed)}</td>
+                    <td>${passRate}%</td>
+                    <td>${formatNumber(targetValue)}</td>
+                    <td style="color:${getColor(percentAchievement)}; font-weight:bold;">${percentAchievement}%</td>
+                </tr>`;
+
+                chartLabels.push(`${center} - ${type}`);
+                chartBackgroundColors.push(centerColors[center]);
+
+                if(metric === 'samples') chartData.push(sumSamples);
+                else if(metric === 'achievement') chartData.push(Number(percentAchievement));
+                else chartData.push(Number(passRate));
+            });
+
+            html += '</tbody></table>';
+            qaContent.innerHTML = html;
+
+            const maxY = metric === 'samples' ? undefined : 100; // auto-scale samples
+            if(qaChart){
+                qaChart.data.labels = chartLabels;
+                qaChart.data.datasets[0].data = chartData;
+                qaChart.data.datasets[0].backgroundColor = chartBackgroundColors;
+                qaChart.data.datasets[0].label = metric === 'samples' ? 'Number of Samples' :
+                                                 metric === 'achievement' ? 'Achievement (%)' :
+                                                 'Pass Rate (%)';
+                qaChart.options.scales.y.max = maxY;
+                qaChart.update();
+            } else {
+                qaChart = new Chart(qaChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: metric === 'samples' ? 'Number of Samples' :
+                                   metric === 'achievement' ? 'Achievement (%)' : 'Pass Rate (%)',
+                            data: chartData,
+                            backgroundColor: chartBackgroundColors
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true, max: maxY } }
+                    }
+                });
+            }
+        }
+
+        // Event listeners
+        filterCenter.addEventListener('change', () => renderQATableAndChart({center: filterCenter.value, type: filterQAType.value}, chartMetricSelect.value));
+        filterQAType.addEventListener('change', () => renderQATableAndChart({center: filterCenter.value, type: filterQAType.value}, chartMetricSelect.value));
+        chartMetricSelect.addEventListener('change', () => renderQATableAndChart({center: filterCenter.value, type: filterQAType.value}, chartMetricSelect.value));
+
+        // Initial render
+        renderQATableAndChart();
+    })
+    .catch(error => {
+        qaContent.innerHTML = `<p style="color:red;">Error loading QA data: ${error.message}</p>`;
+        console.error(error);
+    });
+});
+
+// ================== Export PDF ==================
+document.getElementById('exportPdfBtn').addEventListener('click', async function(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p','pt','a4');
+    const sections = Array.from(document.querySelectorAll('.report-block')).filter(sec=>sec.querySelector('.section-checkbox').checked);
+    if(sections.length===0){ alert('Select at least one section'); return; }
+
+    const tempContainer = document.createElement('div'); tempContainer.style.position='absolute'; tempContainer.style.left='-9999px';
+    document.body.appendChild(tempContainer);
+
+    for(let sec of sections){
+        const clone=sec.cloneNode(true);
+        clone.querySelector('.section-checkbox').style.display='none';
+        const canvases = sec.querySelectorAll('canvas');
+        canvases.forEach((c,idx)=>{
+            const img=document.createElement('img');
+            img.src=c.toDataURL('image/png');
+            img.style.width=c.style.width||'100%';
+            img.style.height=c.style.height||'auto';
+            clone.replaceChild(img, clone.querySelectorAll('canvas')[idx]);
+        });
+        tempContainer.appendChild(clone);
+    }
+
+    const canvas=await html2canvas(tempContainer,{scale:2});
+    const imgData=canvas.toDataURL('image/png');
+    const imgWidth=595;
+    const imgHeight=canvas.height*imgWidth/canvas.width;
+    doc.addImage(imgData,'PNG',0,0,imgWidth,imgHeight);
+    doc.save('data_analysis.pdf');
+    document.body.removeChild(tempContainer);
+});
+
+// ================== Back to Dashboard ==================
+document.getElementById('backDashboardBtn').addEventListener('click',()=>{ window.location.href='/dashboard'; });
+</script>
+</body>
+</html>

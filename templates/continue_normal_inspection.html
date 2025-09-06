@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Normal Inspection Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body, html { margin:0; padding:0; min-height:100%; font-family: Arial, sans-serif; background:#f5f5f5; color:#333; }
+        .main-content { padding:20px 40px; min-height:100vh; background:#fefefe; max-width:900px; margin:0 auto; }
+        .header { background:#4CAF50; color:white; padding:15px 25px; border-radius:5px; margin-bottom:20px; }
+        .card { background:white; padding:20px; margin-bottom:20px; border-radius:5px; box-shadow:0 0 10px rgba(0,0,0,0.05); }
+        .premises-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; }
+        label { display:block; margin:10px 0 5px; font-weight:bold; color:#2e7d32; }
+        input { padding:8px; border:1px solid #ccc; border-radius:4px; width:100%; box-sizing:border-box; font-size:14px; }
+        input[type="date"] { max-width:200px; }
+        button { background:#4CAF50; color:white; border:none; padding:10px 15px; margin:5px 5px 0 0; border-radius:4px; cursor:pointer; font-weight:600; transition:background 0.3s ease; opacity:0.5; }
+        button:hover:not(:disabled){ background:#388e3c; }
+        button.cancel-btn{ background:#6c757d; opacity:1; }
+        button.cancel-btn:hover{ background:#565e64; }
+        button.danger-btn{ background:#d32f2f; opacity:0.5; }
+        button.danger-btn:hover:not(:disabled){ background:#a52828; }
+    </style>
+</head>
+<body>
+<div class="main-content">
+    <input type="hidden" id="region" value="{{ region|default('') }}">
+    <input type="hidden" id="district" value="{{ district|default('') }}">
+    <input type="hidden" id="inspectionType" value="{{ inspection_type|default('Normal Inspection') }}">
+    <input type="hidden" id="inspectionName" value="{{ inspection_name|default('') }}">
+
+    <div class="header">
+        <h1>{{ inspection_type }}</h1>
+        <p>Region: <span id="regionDisplay">{{ region }}</span> | District: <span id="districtDisplay">{{ district }}</span></p>
+    </div>
+
+    <div class="card">
+        <h2>Inspection Date</h2>
+        <input type="date" id="inspectionDate" required>
+    </div>
+
+    <div class="card">
+        <h2>Premises Inspected</h2>
+        <div class="premises-grid">
+            {% for category in categories %}
+            <div>
+                <label>{{ category.name }}:</label>
+                <input type="number" min="0" data-category="{{ category.name }}" class="premises-input">
+            </div>
+            {% endfor %}
+        </div>
+        <p><strong>Total Premises: <span id="totalPremises">0</span></strong></p>
+    </div>
+
+    <div class="card">
+        <h2>Charges and Confiscated Product Information</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <label for="gotProductsValue">Value of GOT Products (Tsh)</label>
+                <input type="number" id="gotProductsValue" class="form-control" placeholder="Enter value of GOT Products">
+            </div>
+            <div class="col-md-6">
+                <label for="unregisteredProductsValue">Value of Unregistered Products (Tsh)</label>
+                <input type="number" id="unregisteredProductsValue" class="form-control" placeholder="Enter value of Unregistered Products">
+            </div>
+            <div class="col-md-6">
+                <label for="dldmNotAllowedValue">Value of DLDM Not Allowed Medicines (Tsh)</label>
+                <input type="number" id="dldmNotAllowedValue" class="form-control" placeholder="Enter value of DLDM Not Allowed Medicines">
+            </div>
+            <div class="col-md-6">
+                <label for="totalChargesValue">TOTAL CHARGES (Tsh)</label>
+                <input type="number" id="totalChargesValue" class="form-control" placeholder="Enter total charges">
+            </div>
+        </div>
+    </div>
+
+    <!-- Defect Confirmation Modal -->
+    <div class="modal fade" id="defectConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Defects Confirmation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Were there premises found with defects during inspection?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="defectConfirmNo" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" id="defectConfirmYes" class="btn btn-primary">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Defect Modal -->
+    <div class="modal fade" id="defectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="defectModalLabel">Defects for <span id="defectCategoryName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="defectCategoriesContainer"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveDefectBtn" disabled>Save Defects</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+    <div class="d-flex gap-2">
+        <button id="saveBtn" onclick="submitInspection()" disabled class="flex-fill">Save Inspection</button>
+        <button id="saveEndBtn" onclick="submitAndEndInspection()" class="danger-btn flex-fill" disabled>Save & End Inspection</button>
+        <button onclick="window.location.href='/dashboard'" class="cancel-btn flex-fill">Back to Dashboard</button>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+let flags = {};
+let currentDefectCategory = null;
+let confirmClicked = null; // null, "yes", "no"
+
+const defectConfirmModalEl = document.getElementById('defectConfirmModal');
+const defectConfirmModal = new bootstrap.Modal(defectConfirmModalEl);
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Prevent future date selection
+    const dateInput = document.getElementById('inspectionDate');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.setAttribute('max', today);
+
+    const categories = JSON.parse('{{ categories|tojson|safe }}');
+
+    categories.forEach(cat => {
+        const input = document.querySelector(`[data-category="${cat.name}"]`);
+
+        input.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g,'');
+            updateTotal();
+            toggleSaveButtons();
+        });
+
+        input.addEventListener('blur', function () {
+            const val = parseInt(this.value) || 0;
+            if (val > 0) {
+                currentDefectCategory = this.dataset.category;
+                confirmClicked = null;
+                defectConfirmModal.show();
+            }
+        });
+    });
+
+    // Add input listeners to charges fields
+    ['gotProductsValue', 'unregisteredProductsValue', 'dldmNotAllowedValue', 'totalChargesValue'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', toggleSaveButtons);
+    });
+
+    dateInput.addEventListener('input', toggleSaveButtons);
+});
+
+
+
+
+    document.getElementById("inspectionDate").addEventListener('input', toggleSaveButtons);
+
+    // Yes button opens defect modal
+    document.getElementById("defectConfirmYes").addEventListener("click", function () {
+        confirmClicked = "yes";
+        defectConfirmModal.hide();
+        if (currentDefectCategory) showDefectModal(currentDefectCategory);
+    });
+
+    // No button closes modal but keeps input
+    document.getElementById("defectConfirmNo").addEventListener("click", function () {
+        confirmClicked = "no";
+        defectConfirmModal.hide();
+    });
+
+
+// Clear input ONLY if closed by outside click/ESC
+defectConfirmModalEl.addEventListener('hidden.bs.modal', function () {
+    if (confirmClicked === null && currentDefectCategory) {
+        const input = document.querySelector(`[data-category="${currentDefectCategory}"]`);
+        if (input) input.value = "";
+        updateTotal();
+        toggleSaveButtons(); // Ensure buttons reflect cleared input
+    }
+});
+
+
+// Totals
+function updateTotal() {
+    let total = 0;
+    document.querySelectorAll(".premises-input").forEach(i => { total += parseInt(i.value) || 0; });
+    document.getElementById("totalPremises").textContent = total;
+}
+
+// Defect modal
+function showDefectModal(categoryName) {
+    const defectModalEl = document.getElementById('defectModal');
+    const defectModal = new bootstrap.Modal(defectModalEl);
+    const defectCategoryName = document.getElementById('defectModalLabel').querySelector('span');
+    const defectContainer = document.getElementById('defectCategoriesContainer');
+    defectCategoryName.textContent = categoryName;
+    defectContainer.innerHTML = "";
+
+    const fields = ['GOT Medicines','Unregistered Medicines','No Qualified Personnel','Premise Meets Minimal Requirements','Unregistered Premises'];
+    if(categoryName==='Pharmacy (Human)') fields.push('Medical Practices');
+    if(categoryName==='DLDM (Human)') fields.push('Medical Practices','DLDM Not Allowed Medicines');
+
+    fields.forEach(f=>{
+        const div=document.createElement('div'); div.classList.add('mb-3');
+        div.innerHTML=`<label class="form-label">${f}</label><input type="number" min="0" class="form-control" data-defect="${f}" placeholder="Enter number of defects" oninput="checkDefectInput()">`;
+        defectContainer.appendChild(div);
+    });
+
+    document.getElementById("saveDefectBtn").onclick = function() { 
+        saveDefects(categoryName); 
+        defectModal.hide(); 
+    };
+
+    defectModal.show();
+}
+
+function checkDefectInput() {
+    const valid = Array.from(document.querySelectorAll('[data-defect]')).some(i=>parseInt(i.value)>0);
+    document.getElementById("saveDefectBtn").disabled = !valid;
+}
+
+function saveDefects(categoryName) {
+    flags.defects = flags.defects||{};
+    const defects = {};
+    document.querySelectorAll('[data-defect]').forEach(i=>defects[i.dataset.defect]=parseInt(i.value)||0);
+    flags.defects[categoryName] = defects;
+}
+
+// Save buttons
+function toggleSaveButtons() {
+    const dateVal = document.getElementById('inspectionDate').value.trim();
+
+    // Check premises inputs
+    const premisesOk = Array.from(document.querySelectorAll(".premises-input"))
+        .every(i => i.value.trim() !== "" && !isNaN(i.value));
+
+    // Check charges inputs including TOTAL CHARGES
+    const chargesOk = ['gotProductsValue', 'unregisteredProductsValue', 'dldmNotAllowedValue', 'totalChargesValue']
+        .every(id => {
+            const val = document.getElementById(id).value.trim();
+            return val !== "" && !isNaN(val);
+        });
+
+    // Enable buttons only if date, premises, and charges are all filled
+    const enabled = dateVal && premisesOk && chargesOk;
+
+    ['saveBtn', 'saveEndBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        btn.disabled = !enabled;
+        btn.style.opacity = enabled ? 1 : 0.5;
+    });
+}
+
+
+// Gather data
+function gatherFormData(){
+    const date=document.getElementById('inspectionDate').value; if(!date) return null;
+    const premises={}; document.querySelectorAll(".premises-input").forEach(i=>premises[i.dataset.category]=parseInt(i.value)||0);
+    return {
+        inspection_type:document.getElementById('inspectionType').value,
+        inspection_date:date,
+        premises_inspected:premises,
+        defects:flags.defects||{},
+        charges:{
+    got_value: parseFloat(document.getElementById('gotProductsValue').value)||0,
+    unregistered_value: parseFloat(document.getElementById('unregisteredProductsValue').value)||0,
+    dldm_value: parseFloat(document.getElementById('dldmNotAllowedValue').value)||0,
+    total_charges: parseFloat(document.getElementById('totalChargesValue').value)||0
+},
+
+
+        region:document.getElementById('region').value,
+        district:document.getElementById('district').value,
+        inspection_name:document.getElementById('inspectionName').value||""
+    };
+}
+
+// Submit
+function submitInspection() {
+    const data=gatherFormData(); if(!data)return alert("Please fill all required fields correctly."); data.end=false;
+    fetch("/api/inspection/save",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    .then(res=>res.ok?res.json():Promise.reject("Server rejected request"))
+    .then(resp=>{if(resp.success){alert("Inspection saved successfully");window.location.href="/dashboard";}else{alert("Error saving inspection");}})
+    .catch(err=>alert("Server error: "+err));
+}
+
+function submitAndEndInspection() {
+    const data=gatherFormData(); if(!data)return alert("Please fill all required fields correctly."); data.end=true;
+    fetch("/api/inspection/save",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    .then(res=>res.ok?res.json():Promise.reject("Server rejected request"))
+    .then(resp=>{if(resp.success){alert("Inspection completed successfully");window.location.href="/dashboard";}else{alert("Error completing inspection");}})
+    .catch(err=>alert("Server error: "+err));
+}
+</script>
+
+</body>
+</html>

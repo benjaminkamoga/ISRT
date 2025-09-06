@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Recall Inspection Form</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        .main-content {
+            padding: 20px 40px;
+            min-height: 100vh;
+            background: #fefefe;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+        .premises-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        input[type="date"] { max-width: 200px; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s ease;
+            opacity: 0.5;
+        }
+        button:hover:not(:disabled) { background: #388e3c; }
+        button.cancel-btn { background: #6c757d; opacity: 1; }
+        button.cancel-btn:hover { background: #565e64; }
+        button.danger-btn { background: #d32f2f; opacity: 0.5; }
+        button.danger-btn:hover:not(:disabled) { background: #a52828; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 20px;
+            width: 450px;
+            border-radius: 5px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        table { border-collapse: collapse; width: 100%; }
+        table th, table td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+        table th { background: #f0f0f0; }
+    </style>
+</head>
+<body>
+
+<div class="main-content">
+    <input type="hidden" id="region" value="{{ region|default('') }}">
+    <input type="hidden" id="district" value="{{ district|default('') }}">
+    <input type="hidden" id="inspectionType" value="{{ inspection_type|default('') }}">
+
+    <div class="header">
+        <h1>{{ inspection_type }}</h1>
+        <p>Region: <span>{{ region }}</span> | District: <span>{{ district }}</span></p>
+    </div>
+
+    <div class="card">
+        <h2>Inspection Date</h2>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <input type="date" id="inspectionDate" required>
+            {% if is_new %}
+            <button id="enterRecallBtn" type="button">Enter Recalled Product Information</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Premises Inspected</h2>
+        <div class="premises-grid">
+            {% for category in categories %}
+            <div>
+                <label>{{ category }}:</label>
+                <input type="number" min="0" id="prem-{{ loop.index0 }}" data-category="{{ category }}" onchange="handlePremiseChange(this)" required>
+            </div>
+            {% endfor %}
+        </div>
+        <p>
+            <strong>Total Premises: <span id="totalPremises">0</span></strong> | 
+            <strong>Total Premises with Recalled Products: <span id="totalRecalled">0</span></strong>
+            <span id="recalledBreakdown"></span>
+        </p>
+        <p>
+            <strong>Total Value of Recalled Products (Tsh): <span id="totalRecalledValue">0</span></strong>
+        </p>
+        <p>
+            <strong>Total Quantity Recalled: <span id="totalRecalledQuantity">0</span></strong>
+        </p>
+    </div>
+
+    <div class="card">
+        <button id="saveBtn" onclick="submitInspection()" disabled>Save Inspection</button>
+        <button id="saveEndBtn" onclick="submitAndEndInspection()" class="danger-btn" disabled>Save and End Inspection</button>
+        <button onclick="window.location.href='/dashboard'" class="cancel-btn">Back to Dashboard</button>
+    </div>
+</div>
+
+<!-- Global Recalled Products Modal -->
+<div id="recalledProductsModal" class="modal">
+  <div class="modal-content" style="width:90%; max-width:1000px; max-height:90vh; overflow:auto; margin:5vh auto; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.3);">
+    <h3>Enter Recalled Product Information</h3>
+    <form id="recalledProductForm" onsubmit="return false;">
+      <label>Brand Name*</label>
+      <input type="text" id="brandName" required>
+      <label>Generic Name*</label>
+      <input type="text" id="genericName" required>
+      <label>Manufacturer*</label>
+      <input type="text" id="manufacturer" required>
+      <label>Reason*</label>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <select id="reasonSelect" required>
+          <option value="">Select Reason</option>
+          <option value="FALSIFIED PRODUCT">FALSIFIED PRODUCT</option>
+          <option value="SUBSTANDARD PRODUCT">SUBSTANDARD PRODUCT</option>
+        </select>
+        <button type="button" onclick="addCustomReason()">+</button>
+        <select id="uomSelect" required>
+          <option value="">Select UOM</option>
+          <option value="TABLETS">TABLETS</option>
+          <option value="CAPSULES">CAPSULES</option>
+          <option value="SUSPENSION">SUSPENSION</option>
+          <option value="AMPOULES">AMPOULES</option>
+          <option value="VIALS">VIALS</option>
+          <option value="PIECES">PIECES</option>
+        </select>
+        <button type="button" onclick="addCustomUOM()">+</button>
+      </div>
+
+      <h4>Batches</h4>
+      <table id="batchesTable" style="width:100%;">
+        <thead>
+          <tr>
+            <th>Batch Number*</th>
+            <th>Manufacture Date*</th>
+            <th>Expiry Date*</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" onclick="addBatchRow()">Add Batch</button>
+
+      <div style="margin-top:15px;">
+        <button type="button" onclick="prevProduct()" id="backProductBtn" disabled>Back</button>
+        <button type="button" onclick="addAnotherProduct()">Add Another Recalled Product</button>
+        <button type="button" onclick="saveRecalledProducts()" style="float:right;">Save</button>
+        <button type="button" onclick="closeRecalledProductsModal()" class="cancel-btn" style="float:right;margin-right:10px;">Cancel</button>
+      </div>
+    </form>
+
+    <h4 style="margin-top:30px;">Recalled Products Preview</h4>
+    <div style="overflow:auto; max-height:50vh; margin-top:10px;">
+      <table id="recalledProductsTable" style="width:100%; min-width:900px;">
+        <thead>
+          <tr>
+            <th>S/NO</th>
+            <th>Brand Name</th>
+            <th>Generic Name</th>
+            <th>Manufacturer</th>
+            <th>Reason</th>
+            <th>UOM</th>
+            <th>Batches (MF → EXP)</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Yes/No modal -->
+<div id="recallYesNoModal" class="modal">
+  <div class="modal-content">
+    <h3>Were any recalled products found in <span id="recallCategory"></span>?</h3>
+    <div style="margin-top:20px; text-align:right;">
+      <button onclick="confirmRecalledYes()">Yes</button>
+      <button onclick="confirmRecalledNo()" class="cancel-btn">No</button>
+    </div>
+  </div>
+</div>
+
+<!-- Category-specific Product Selection Modal -->
+<div id="categoryProductModal" class="modal">
+  <div class="modal-content" style="width:95%; max-width:1200px; max-height:90vh; overflow-y:auto;">
+    <h3>Products found in <span id="currentCategoryForSelection"></span></h3>
+
+    <table id="categoryProductBatchTable" style="width:100%; border-collapse:collapse; margin-top:15px;">
+      <thead>
+        <tr>
+          <th>Select</th>
+          <th>S/NO</th>
+          <th>Brand Name</th>
+          <th>Generic Name</th>
+          <th>Manufacturer</th>
+          <th>MFD</th>
+          <th>EXP</th>
+          <th>UOM</th>
+          <th>Premises with Recalled Product</th>
+          <th>Value (Tsh)</th>
+          <th>Quantity Recalled</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div style="margin-top:20px; text-align:right;">
+      <button onclick="saveCategoryProductSelection()">Save</button>
+      <button onclick="closeCategoryProductModal()" class="cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var categories = JSON.parse('{{ categories|tojson|safe }}');
+var inspectionName = "{{ inspection_name|default('') }}";
+var region = "{{ region|default('') }}";
+var district = "{{ district|default('') }}";
+var inspectionType = "{{ inspection_type|default('') }}";
+
+var currentCategory = null;
+var recallData = {};
+var recalledProducts = [];
+var currentProductIndex = null;
+
+// ---------- Global Recalled Products ----------
+function openRecalledProductsModal() { document.getElementById('recalledProductsModal').style.display = 'block'; currentProductIndex = currentProductIndex===null ? recalledProducts.length : currentProductIndex; loadProductToForm(currentProductIndex); updateProductListPreview(); toggleBackButton();}
+function closeRecalledProductsModal() {
+    try {
+        // Discard confirmation
+        if (!confirm("Discard changes to the current recalled product?")) return;
+
+        // Clear form
+        clearProductForm();
+        currentProductIndex = null;
+
+        // Hide modal
+        const modal = document.getElementById('recalledProductsModal');
+        if (modal) modal.style.display = 'none';
+
+        // Reset preview table
+        updateProductListPreview();
+
+        // Re-enable premise inputs if global products are already saved
+        if (recalledProducts.length > 0) {
+            categories.forEach((cat, i) => {
+                document.getElementById(`prem-${i}`).disabled = false;
+            });
+        }
+
+        // Update totals and buttons
+        updateTotal();
+        toggleSaveButtons();
+    } catch (err) {
+        console.error("Error closing modal:", err);
+    }
+}
+
+function loadProductToForm(index) { clearProductForm(); if(index>=0 && index<recalledProducts.length){ const prod=recalledProducts[index]; document.getElementById('brandName').value=prod.brandName; document.getElementById('genericName').value=prod.genericName; document.getElementById('manufacturer').value=prod.manufacturer; document.getElementById('reasonSelect').value=prod.reason||''; document.getElementById('uomSelect').value=prod.uom||''; prod.batches.forEach(batch=>addBatchRow(batch)); } else addBatchRow(); }
+function clearProductForm() { document.getElementById('brandName').value=''; document.getElementById('genericName').value=''; document.getElementById('manufacturer').value=''; document.querySelector('#batchesTable tbody').innerHTML=''; }
+function addBatchRow(batch=null){ const tbody=document.querySelector('#batchesTable tbody'); const tr=document.createElement('tr'); tr.innerHTML=`<td><input type="text" class="batchNumber" required style="width:100%;"></td><td><input type="date" class="manufactureDate" required></td><td><input type="date" class="expiryDate" required></td><td><button type="button" onclick="removeBatchRow(this)">Remove</button></td>`; tbody.appendChild(tr); if(batch){ tr.querySelector('.batchNumber').value=batch.batchNumber; tr.querySelector('.manufactureDate').value=batch.manufactureDate; tr.querySelector('.expiryDate').value=batch.expiryDate;} tr.querySelectorAll('input').forEach(inp=>inp.addEventListener('input', updateProductListPreview));}
+function removeBatchRow(btn){ btn.closest('tr').remove(); updateProductListPreview(); }
+
+// ---------- Save / Add Product ----------
+function getCurrentProductData(){ const brandName=document.getElementById('brandName').value.trim(); const genericName=document.getElementById('genericName').value.trim(); const manufacturer=document.getElementById('manufacturer').value.trim(); const reason=document.getElementById('reasonSelect').value; const uom=document.getElementById('uomSelect').value; if(!brandName||!genericName||!manufacturer||!reason||!uom){alert("Fill all fields"); return null;} const batchRows=document.querySelectorAll('#batchesTable tbody tr'); if(batchRows.length===0){alert("Add at least one batch"); return null;} for(const row of batchRows){ const batchNumber=row.querySelector('.batchNumber').value.trim(); const manufactureDate=row.querySelector('.manufactureDate').value; const expiryDate=row.querySelector('.expiryDate').value; if(!batchNumber||!manufactureDate||!expiryDate){alert("All batch fields required"); return null;} if(expiryDate<=manufactureDate){alert("Expiry after manufacture"); return null;} } const batches=Array.from(batchRows).map(row=>({batchNumber: row.querySelector('.batchNumber').value.trim(), manufactureDate: row.querySelector('.manufactureDate').value, expiryDate: row.querySelector('.expiryDate').value})); return {brandName,genericName,manufacturer,reason,uom,batches}; }
+function saveCurrentProduct(){ const data=getCurrentProductData(); if(!data) return false; if(currentProductIndex===recalledProducts.length) recalledProducts.push(data); else recalledProducts[currentProductIndex]=data; updateProductListPreview(); return true; }
+function addAnotherProduct(){ if(!saveCurrentProduct()) return; currentProductIndex=recalledProducts.length; clearProductForm(); addBatchRow(); toggleBackButton(); }
+
+// ---------- Custom Reason / UOM ----------
+let customReasons=[], customUOMs=[];
+function addCustomReason(){ const r=prompt("Enter custom reason:"); if(!r) return; const select=document.getElementById("reasonSelect"); if([...select.options].some(opt=>opt.value.toUpperCase()===r.toUpperCase())) return; const opt=document.createElement("option"); opt.value=r; opt.textContent=r; select.appendChild(opt); select.value=r; if(!customReasons.includes(r)) customReasons.push(r);}
+function addCustomUOM(){ const u=prompt("Enter custom UOM:"); if(!u) return; const select=document.getElementById("uomSelect"); if([...select.options].some(opt=>opt.value.toUpperCase()===u.toUpperCase())) return; const opt=document.createElement("option"); opt.value=u; opt.textContent=u; select.appendChild(opt); select.value=u; if(!customUOMs.includes(u)) customUOMs.push(u); }
+
+// ---------- Preview ----------
+function updateProductListPreview(){ const tbody=document.querySelector('#recalledProductsTable tbody'); tbody.innerHTML=''; recalledProducts.forEach((prod,i)=>{ const batchStr=prod.batches.map(b=>`${b.batchNumber} (${b.manufactureDate} → ${b.expiryDate})`).join('<br>'); const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${prod.brandName}</td><td>${prod.genericName}</td><td>${prod.manufacturer}</td><td>${prod.reason||''}</td><td>${prod.uom||''}</td><td>${batchStr}</td><td><button onclick="deleteProduct(${i})">Delete</button></td>`; tbody.appendChild(tr); });}
+
+// ---------- Delete / Prev ----------
+function deleteProduct(index){ if(!confirm("Delete?")) return; recalledProducts.splice(index,1); if(currentProductIndex===index||currentProductIndex===recalledProducts.length) currentProductIndex=null, clearProductForm(); else if(currentProductIndex>index) currentProductIndex--; categories.forEach((cat,i)=>{ document.getElementById("prem-"+i).value=''; recallData[cat]={total_premises_with_recalled:0,total_value_of_recalled:0,products_found:[]};}); updateTotal(); updateProductListPreview(); toggleBackButton();}
+function prevProduct(){ if(currentProductIndex===null||currentProductIndex===0) return; if(!saveCurrentProduct()) return; currentProductIndex--; loadProductToForm(currentProductIndex); toggleBackButton();}
+function toggleBackButton(){ document.getElementById('backProductBtn').disabled=currentProductIndex===null||currentProductIndex===0;}
+
+// ---------- Save Global Products ----------
+function saveRecalledProducts(){ if(!saveCurrentProduct()) return; if(recalledProducts.length===0){ alert("Add at least one product"); return;} recallData.recalled_products=recalledProducts; document.getElementById('recalledProductsModal').style.display='none'; categories.forEach((cat,i)=>{ document.getElementById("prem-"+i).disabled=false;}); updateTotal(); toggleSaveButtons();}
+
+// ---------- Premises / YesNo ----------
+function handlePremiseChange(input){ currentCategory=input.dataset.category; const val=parseInt(input.value); if(isNaN(val)||val<=0) return; document.getElementById("recallYesNoModal").style.display="block"; document.getElementById("recallCategory").textContent=currentCategory;}
+function confirmRecalledYes(){ document.getElementById("recallYesNoModal").style.display="none"; openCategoryProductModal(currentCategory);}
+function confirmRecalledNo(){ document.getElementById("recallYesNoModal").style.display="none"; recallData[currentCategory]={total_premises_with_recalled:0,total_value_of_recalled:0,products_found:[]}; updateTotal(); toggleSaveButtons();}
+
+// ---------- Category Product Modal ----------
+var currentCategoryForSelection=null;
+function openCategoryProductModal(category){ currentCategoryForSelection=category; document.getElementById("currentCategoryForSelection").textContent=category; document.getElementById("categoryProductModal").style.display="block"; const tbody=document.querySelector("#categoryProductBatchTable tbody"); tbody.innerHTML=""; recalledProducts.forEach((prod,prodIndex)=>{ prod.batches.forEach((batch,batchIndex)=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td><input type="checkbox" class="selectProductCheckbox" data-prod-index="${prodIndex}" data-batch-index="${batchIndex}" checked></td><td>${prodIndex+1}</td><td>${prod.brandName}</td><td>${prod.genericName}</td><td>${prod.manufacturer}</td><td>${batch.manufactureDate}</td><td>${batch.expiryDate}</td><td>${prod.uom}</td><td><input type="number" min="0" value="0" class="premisesFoundInput" style="width:60px;"></td><td><input type="number" min="0" value="0" class="valueInput" style="width:80px;"></td><td><input type="number" min="0" value="0" class="quantityInput" style="width:80px;"></td>`; tbody.appendChild(tr); });});}
+function closeCategoryProductModal(){ if(currentCategoryForSelection){ const idx=categories.indexOf(currentCategoryForSelection); if(idx!==-1 && (!recallData[currentCategoryForSelection]||recallData[currentCategoryForSelection].products_found.length===0)) document.getElementById(`prem-${idx}`).value=''; if(recallData[currentCategoryForSelection]&&recallData[currentCategoryForSelection].products_found.length===0) delete recallData[currentCategoryForSelection];} document.getElementById("categoryProductModal").style.display="none"; currentCategoryForSelection=null; toggleSaveButtons();}
+function saveCategoryProductSelection(){ const rows=document.querySelectorAll("#categoryProductBatchTable tbody tr"); const products_found=[]; let totalPremises=0,totalValue=0; rows.forEach(row=>{ const checkbox=row.querySelector(".selectProductCheckbox"); if(!checkbox.checked) return; const premises=parseInt(row.querySelector(".premisesFoundInput").value)||0; const value=parseInt(row.querySelector(".valueInput").value)||0; const quantity=parseInt(row.querySelector(".quantityInput").value)||0; if(premises>0){ products_found.push({product_index:parseInt(checkbox.dataset.prodIndex), batch_index:parseInt(checkbox.dataset.batchIndex), premises:premises, value:value, quantity:quantity}); totalPremises+=premises; totalValue+=value;} }); recallData[currentCategoryForSelection]={total_premises_with_recalled:totalPremises,total_value_of_recalled:totalValue,products_found:products_found}; closeCategoryProductModal(); updateTotal(); toggleSaveButtons();}
+
+
+function saveCategoryProductSelection() {
+    const rows = document.querySelectorAll("#categoryProductBatchTable tbody tr");
+    const products_found = [];
+    let totalPremises = 0, totalValue = 0, totalQuantity = 0;
+    const totalCategoryPremises = parseInt(document.getElementById(`prem-${categories.indexOf(currentCategoryForSelection)}`).value) || 0;
+
+    for (const row of rows) {
+        const checkbox = row.querySelector(".selectProductCheckbox");
+        if (!checkbox.checked) continue;
+
+        const premisesInput = row.querySelector(".premisesFoundInput");
+        const valueInput = row.querySelector(".valueInput");
+        const quantityInput = row.querySelector(".quantityInput");
+
+        // --- REQUIRED VALIDATION ---
+        if (premisesInput.value === "" || valueInput.value === "" || quantityInput.value === "") {
+            alert("All fields are required.");
+            return;
+        }
+
+        const premises = parseInt(premisesInput.value);
+        const value = parseInt(valueInput.value);
+        const quantity = parseInt(quantityInput.value);
+
+        // --- CHECK PREMISES LIMIT ---
+        if (premises <= 0 || premises > totalCategoryPremises) {
+            alert(`Premises with recalled product for ${currentCategoryForSelection} must be at least 1 and no more than ${totalCategoryPremises}.`);
+            return;
+        }
+
+        products_found.push({
+            product_index: parseInt(checkbox.dataset.prodIndex),
+            batch_index: parseInt(checkbox.dataset.batchIndex),
+            premises: premises,
+            value: value,
+            quantity: quantity
+        });
+
+        totalPremises += premises;
+        totalValue += value;
+        totalQuantity += quantity;
+    }
+
+    recallData[currentCategoryForSelection] = {
+        total_premises_with_recalled: totalPremises,
+        total_value_of_recalled: totalValue,
+        products_found: products_found
+    };
+
+    closeCategoryProductModal();
+    updateTotal();
+}
+
+
+// ---------- Totals ----------
+function updateTotal(){ let total=0,totalRecalled=0,totalRecalledValue=0,totalQuantity=0,breakdown=[]; categories.forEach((cat,i)=>{ const val=parseInt(document.getElementById("prem-"+i).value)||0; total+=val; const recall=recallData[cat]; if(recall&&recall.total_premises_with_recalled>0){ totalRecalled+=recall.total_premises_with_recalled; totalRecalledValue+=recall.total_value_of_recalled||0; recall.products_found.forEach(p=>totalQuantity+=p.quantity||0); breakdown.push(`${cat}:${recall.total_premises_with_recalled}`);}}); document.getElementById("totalPremises").textContent=total; document.getElementById("totalRecalled").textContent=totalRecalled; document.getElementById("recalledBreakdown").textContent=breakdown.length?`(${breakdown.join(", ")})`:""; document.getElementById("totalRecalledValue").textContent=totalRecalledValue; document.getElementById("totalRecalledQuantity").textContent=totalQuantity;}
+
+// ---------- Enable Save ----------
+function toggleSaveButtons(){ const dateVal=document.getElementById('inspectionDate').value.trim(); const premisesOk=categories.every((cat,i)=>{ const val=document.getElementById("prem-"+i).value.trim(); return val!==""; }); const enabled=dateVal && premisesOk; ['saveBtn','saveEndBtn'].forEach(id=>{ const btn=document.getElementById(id); btn.disabled=!enabled; btn.style.opacity=enabled?"1":"0.5"; }); }
+document.getElementById('inspectionDate').addEventListener('input',toggleSaveButtons); categories.forEach((cat,i)=>{ document.getElementById('prem-'+i).addEventListener('input',toggleSaveButtons); });
+
+// ---------- Gather Form Data ----------
+function gatherFormData(){ const inspectionDate=document.getElementById("inspectionDate").value; if(!inspectionDate) return null; let premisesInspected={}; categories.forEach((cat,i)=>{ const val=parseInt(document.getElementById("prem-"+i).value); premisesInspected[cat]=isNaN(val)?0:val; }); return {inspection_type:inspectionType, inspection_date:inspectionDate, premises_inspected:premisesInspected, defects:{}, charges:{}, recall_data:recallData, region:region, district:district, inspection_name:inspectionName};}
+
+// ---------- Submit ----------
+function submitInspection(){ const data=gatherFormData(); if(!data) return alert("Fill all required fields"); data.end=false; fetch("/api/inspection/save",{method:"POST", headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}).then(res=>res.ok?res.json():Promise.reject("Server rejected request")).then(resp=>{ if(resp.success){ alert("Saved"); if(!inspectionName&&resp.inspection_name) inspectionName=resp.inspection_name; window.location.href="/dashboard";} else alert("Error"); }).catch(err=>alert("Server error: "+err));}
+function submitAndEndInspection(){ const data=gatherFormData(); if(!data) return alert("Fill all required fields"); if(!inspectionName){ const d=new Date(data.inspection_date); inspectionName=`${data.inspection_type} - ${data.region} - ${data.district} - ${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}`; } data.inspection_name=inspectionName; data.end=true; fetch("/api/inspection/end",{method:"POST", headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}).then(res=>res.ok?res.json():Promise.reject("Server rejected request")).then(resp=>{ if(resp.success){ alert("Inspection ended"); window.location.href="/dashboard";} else alert("Error"); }).catch(err=>alert("Server error: "+err));}
+
+// ---------- Init ----------
+document.addEventListener('DOMContentLoaded',function(){ categories.forEach((cat,i)=>{ document.getElementById("prem-"+i).disabled=true; }); document.getElementById("enterRecallBtn")?.addEventListener('click',()=>{ openRecalledProductsModal(); });});
+</script>
+
+</body>
+</html>

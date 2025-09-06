@@ -1,0 +1,2382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspection Report Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { font-family: Arial, sans-serif; background:#f5f6fa; margin:0; padding:0; display:flex; justify-content:center; }
+.main-container { max-width:900px; width:100%; padding:15px; box-sizing:border-box; margin: 0 auto; }
+h1,h2,h3,h4 { color:#2c3e50; margin:5px 0;}
+.report-block { background:white; border-radius:6px; padding:15px; margin:15px auto; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width:100%; text-align:left; }
+.report-block table { border-collapse: collapse; margin-top:10px; width:100%; }
+.report-block th, .report-block td { border:1px solid #ddd; padding:5px; text-align:left; font-size:14px; }
+.report-block th { background:#ecf0f1; }
+canvas { display:block; margin:10px auto; }
+.empty-state { text-align: center; font-style: italic; color: #7f8c8d; margin-top: 50px;}
+.actions-taken ul { padding-left: 20px; margin-top: 10px; }
+.actions-taken li { margin-bottom: 12px; line-height: 1.5; }
+/* Keep + and 🗑️ side by side */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px; /* space between icons */
+}
+
+/* Style for buttons */
+.action-buttons button {
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s ease-in-out;
+}
+
+/* Hover effect */
+.action-buttons button:hover {
+    background-color: #e8e8e8;
+}
+
+/* 🗑️ button red hover */
+.action-buttons .deleteBtn:hover {
+    color: red;
+}
+
+/* ➕ button green hover */
+.action-buttons .addTypeBtn:hover {
+    color: green;
+}
+/* Make weight & value inputs fit neatly */
+.numeric-input {
+    width: 90%;            /* Fit within the cell */
+    max-width: 100%;       /* Never overflow */
+    padding: 4px 6px;      /* Compact padding */
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: right;     /* Align numbers neatly */
+    font-size: 14px;
+}
+
+/* Focus state for better UI */
+.numeric-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 3px rgba(0, 123, 255, 0.4);
+}
+
+
+</style>
+</head>
+<body>
+<div class="main-container">
+  <h1>TIME BASED  REPORTS DASHBOARD </h1>
+
+  <!-- Filters -->
+  <div style="margin-bottom:15px;">
+    <label for="reportTypeFilter"><strong>Report Type:</strong></label>
+    <select id="reportTypeFilter">
+  <option value="biweekly">Bi-Weekly</option>
+  <option value="monthly">Monthly</option>
+  <option value="quarterly">Quarterly</option>
+  <option value="semiannual">Semi-Annual</option>
+  <option value="annual" selected>Annual</option>
+</select>
+
+
+    <label for="monthFilter" id="monthLabel" style="margin-left:15px; display:none;"><strong>Select Month:</strong></label>
+<select id="monthFilter" style="display:none;">
+  <option value="0">January</option>
+  <option value="1">February</option>
+  <option value="2">March</option>
+  <option value="3">April</option>
+  <option value="4">May</option>
+  <option value="5">June</option>
+  <option value="6" selected>July</option>
+  <option value="7">August</option>
+  <option value="8">September</option>
+  <option value="9">October</option>
+  <option value="10">November</option>
+  <option value="11">December</option>
+</select>
+
+<label for="" id="biweeklyLabel" style="margin-left:15px; display:none;"><strong>Bi-Weekly Period:</strong></label>
+<select id="biweeklyFilter" style="display:none;">
+  <option value="1-15">1st to 15th</option>
+  <option value="16-end">16th to End</option>
+</select>
+
+<label for="quarterFilter" id="quarterLabel" style="margin-left:15px; display:none;"><strong>Select Quarter:</strong></label>
+<select id="quarterFilter" style="display:none;">
+  <option value="1">Q1 (Jul-Sep)</option>
+  <option value="2">Q2 (Oct-Dec)</option>
+  <option value="3">Q3 (Jan-Mar)</option>
+  <option value="4">Q4 (Apr-Jun)</option>
+</select>
+
+<label for="semiFilter" id="semiLabel" style="margin-left:15px; display:none;"><strong>Select Half:</strong></label>
+<select id="semiFilter" style="display:none;">
+  <option value="1">H1 (Jul-Dec)</option>
+  <option value="2">H2 (Jan-Jun)</option>
+</select>
+
+<label for="yearFilter" id="yearLabel" style="margin-left:15px; display:none;"><strong>Select Year:</strong></label>
+<select id="yearFilter" style="display:none;">
+  <option value="2025">2025/26</option>
+  <option value="2026">2026/27</option>
+  <option value="2027">2027/28</option>
+</select>
+
+
+  <div id="reportContent"></div>
+</div>
+
+
+
+
+
+
+
+
+<div id="officialReportSection" class="report-block" style="margin-top:20px;">
+    <h3>Official Report</h3>
+    <div style="display:flex;gap:10px; align-items:center; flex-wrap:wrap;">
+       
+        <!-- Export PDF -->
+        <button id="exportPDFBtn">📰 Export Report as PDF</button>
+
+        <!-- Back -->
+        <button id="backDashboardBtn">⬅️ Back to Dashboard</button>
+    
+</div>
+
+
+
+
+
+<script>
+let inspectionData = [];
+
+// Observation Labels
+const defectLabels = {
+    gotMedicines: "Premise Found with GOT Medicines",
+    unregisteredMedicines: "Premise Found with Unregistered Medicines",
+    noQualifiedPersonnel: "Premise With No Qualified Personnel",
+    minimalRequirements: "Premise Does Not Meet Minimal General Requirements",
+    unregisteredPremise: "Unregistered Premises",
+    dldmNotAllowed: "Premises with DLDM Not Allowed Medicines",
+    medicalPractices: "Premises found conducting Medical Practices against Law",
+    noPermitProduct: "No Permit Products"
+};
+
+// Observation Actions
+const observationActions = {
+    "Premise Found with GOT Medicines":
+      "The GOT Medicines / Medical Devices were confiscated. The owners were instructed to pay Disposal Fee + 2/3*Tsh 500,000/= as fine liable for selling GOT Products in private Facility. Likewise, they were given warning.", 
+    "Premise Found with Unregistered Medicines":
+      "The Unregistered Medicines / Medical Devices were confiscated. The owners were instructed to pay Disposal Fee + 2% FOB of total product value + 2/3*Tsh 500,000/= as fine liable for selling Unregistered Products.",
+    "Premise With No Qualified Personnel":
+      "For the premises with no Qualified personnel, the owners were instructed to hire qualified staff before providing services.",
+    "Premise Does Not Meet Minimal General Requirements":
+      "For Facilities which do not meet good GMP e.g. hygiene and premise air circulation, they were advised to upgrade to meet regulatory standards.",
+    "Unregistered Premises":
+      "For Unregistered Premises, operations were halted until registration is completed.",
+    "Premises with DLDM Not Allowed Medicines":
+      "The DLDM NOT ALLOWED MEDICINES were confiscated and owner has to pay Disposal fee i.e. 25% of total value of product confiscated. The owners were given the list of DLDM allowed medicines therefore to strictly rely on it.",
+    "Premises found conducting Medical Practices against Law":
+      "For Premises found conducting Medical practices against the law, strict warning issued; follow-up required."
+};
+
+// Load inspection JSON from API
+async function loadInspectionData() {
+    try {
+        const response = await fetch('/api/inspections');  
+        inspectionData = await response.json();
+        applyFilters();
+    } catch (err) {
+        console.error("Failed to load inspections JSON:", err);
+        document.getElementById('reportContent').innerHTML = '<p class="empty-state">Failed to load inspection data.</p>';
+    }
+}
+
+window.onload = loadInspectionData;
+
+// Show/hide additional dropdowns based on report type
+const reportTypeFilter = document.getElementById('reportTypeFilter');
+const biweeklyFilter = document.getElementById('biweeklyFilter');
+const monthFilter = document.getElementById('monthFilter');
+const quarterFilter = document.getElementById('quarterFilter');
+const semiFilter = document.getElementById('semiFilter');
+const biweeklyLabel = document.getElementById('biweeklyLabel');
+const monthLabel = document.getElementById('monthLabel');
+const quarterLabel = document.getElementById('quarterLabel');
+const semiLabel = document.getElementById('semiLabel');
+
+reportTypeFilter.addEventListener('change', () => {
+    const val = reportTypeFilter.value;
+
+    // Hide all optional dropdowns and labels initially
+    biweeklyFilter.style.display = 'none';
+    biweeklyLabel.style.display = 'none';
+    quarterFilter.style.display = 'none';
+    quarterLabel.style.display = 'none';
+    semiFilter.style.display = 'none';
+    semiLabel.style.display = 'none';
+    monthFilter.style.display = 'none';
+    monthLabel.style.display = 'none';
+
+    // Show Year selector always when a report type is chosen
+    yearFilter.style.display = 'inline';
+    yearLabel.style.display = 'inline';
+
+    // Show only the relevant controls
+    if (val === 'biweekly') {
+        biweeklyFilter.style.display = 'inline';
+        biweeklyLabel.style.display = 'inline';
+        biweeklyLabel.textContent = "Bi-Weekly Period:";
+
+        monthFilter.style.display = 'inline';
+        monthLabel.style.display = 'inline';
+        monthLabel.textContent = "Select Month:";
+    } else if (val === 'quarterly') {
+        quarterFilter.style.display = 'inline';
+        quarterLabel.style.display = 'inline';
+        quarterLabel.textContent = "Select Quarter:";
+    } else if (val === 'semiannual') {
+        semiFilter.style.display = 'inline';
+        semiLabel.style.display = 'inline';
+        semiLabel.textContent = "Select Half:";
+    } else if (val === 'monthly') {
+        monthFilter.style.display = 'inline';
+        monthLabel.style.display = 'inline';
+        monthLabel.textContent = "Select Month:";
+    } 
+    // annual: only yearFilter visible
+
+    applyFilters();
+});
+
+// --- NEW: dynamic update when year changes ---
+yearFilter.addEventListener('change', () => {
+    applyFilters();
+});
+
+
+// Apply filters when dropdowns change
+[biweeklyFilter, monthFilter, quarterFilter, semiFilter].forEach(el=>{
+    el.addEventListener('change', applyFilters);
+});
+
+function applyFilters() {
+    const selectedYear = parseInt(yearFilter.value); // FY start year
+    const fyStart = new Date(selectedYear, 6, 1); // July 1 of start year
+    const fyEnd = new Date(selectedYear + 1, 5, 30); // June 30 of next year
+
+    const selectedMonth = parseInt(monthFilter.value);
+    const selectedPeriod = biweeklyFilter.value;
+    const reportType = reportTypeFilter.value;
+    const selectedQuarter = parseInt(quarterFilter.value);
+    const selectedHalf = parseInt(semiFilter.value);
+
+    const filteredData = inspectionData.filter(d => {
+        const parts = d.Date.split('-');
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // 0-based
+        const day = parseInt(parts[2], 10);
+
+        const inspectionDate = new Date(year, month, day);
+
+        // Check if inspection is within selected financial year
+        if (inspectionDate < fyStart || inspectionDate > fyEnd) return false;
+
+        switch(reportType){
+            case 'biweekly':
+                if(month !== selectedMonth) return false;
+                return selectedPeriod === '1-15' ? day >= 1 && day <= 15 : day >= 16;
+
+            case 'monthly':
+                return month === selectedMonth;
+
+            case 'quarterly':
+                const quarterMonths = {
+                    1: [6,7,8],   // Jul-Sep
+                    2: [9,10,11], // Oct-Dec
+                    3: [0,1,2],   // Jan-Mar
+                    4: [3,4,5]    // Apr-Jun
+                };
+                return quarterMonths[selectedQuarter]?.includes(month);
+
+            case 'semiannual':
+                const semiH1 = [6,7,8,9,10,11]; // Jul-Dec
+                const semiH2 = [0,1,2,3,4,5];   // Jan-Jun
+                return selectedHalf === 1 ? semiH1.includes(month) : semiH2.includes(month);
+
+            case 'annual':
+                return true; // all inspections in FY already filtered by fyStart/fyEnd
+        }
+    
+    });
+
+    renderReport(filteredData);
+}
+
+
+// === Main Render Function ===
+function renderReport(data){
+    const container = document.getElementById('reportContent');
+    container.innerHTML = '';
+    if(!data.length){
+        container.innerHTML = '<div class="empty-state">No inspections available for selected period.</div>';
+        return;
+    }
+
+    // Aggregate Premises
+    const allPremises = {};
+    data.forEach(d => {
+        const premisesData = d["Premises Data"] || d.premises_data;
+        if(premisesData){
+            premisesData.forEach(p => {
+                const cat = p["Premise Type"];
+                allPremises[cat] = (allPremises[cat] || 0) + p.Count;
+            });
+        }
+    });
+
+    // Aggregate Defects
+    const defectsByCategory = {};
+    data.forEach(d => {
+        const defectsData = d["Defects Data"] || d.defects_data;
+        if(defectsData){
+            Object.keys(defectsData).forEach(cat => {
+                Object.keys(defectsData[cat]).forEach(defect => {
+                    defectsByCategory[defect] = (defectsByCategory[defect] || 0) + defectsData[cat][defect];
+                });
+            });
+        }
+    });
+
+    // Merge defects for labels
+    const mergedDefects = {};
+    Object.keys(defectsByCategory).forEach(key => {
+    if(defectsByCategory[key] > 0){
+        // Normalize key for consistent mapping
+        const normalizedKey = key.trim().toLowerCase();
+        let label = key; // fallback
+
+        if (normalizedKey === "nopermitproduct") label = "No Permit Products";
+        else if (defectLabels[key]) label = defectLabels[key];
+        
+        mergedDefects[label] = (mergedDefects[label] || 0) + defectsByCategory[key];
+    }
+});
+
+    // Charges
+    let got=0, unreg=0, dldm=0;
+    data.forEach(d=>{
+        const charges = d["Charges & Confiscated Values"] || d.charges_confiscated_values;
+        if(charges){
+            got += charges.got_value||0;
+            unreg += charges.unregistered_value||0;
+            dldm += charges.dldm_value||0;
+        }
+    });
+
+    // === Inspection Summary ===
+const summaryBlock = document.createElement('div');
+summaryBlock.className = 'report-block';
+
+// === Dynamic Period Header ===
+const reportType = reportTypeFilter.value;
+const selectedMonthIndex = parseInt(monthFilter.value);
+const selectedPeriod = biweeklyFilter.value;
+const selectedQuarter = parseInt(quarterFilter.value);
+const selectedHalf = parseInt(semiFilter.value);
+const selectedYear = parseInt(yearFilter.value);
+
+const monthNames = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+];
+
+// Determine period text for header
+let periodText = '';
+switch(reportType){
+    case 'biweekly':
+        periodText = (selectedPeriod === '1-15' ? 'First two weeks' : 'Second two weeks') +
+                     ' of ' + monthNames[selectedMonthIndex];
+        break;
+    case 'monthly':
+        periodText = monthNames[selectedMonthIndex];
+        break;
+    case 'quarterly':
+        const quarterLabels = {1:"First Quarter",2:"Second Quarter",3:"Third Quarter",4:"Fourth Quarter"};
+        periodText = quarterLabels[selectedQuarter] || '-';
+        break;
+    case 'semiannual':
+        periodText = selectedHalf === 1 ? 'First Half' : 'Second Half';
+        break;
+    case 'annual':
+        periodText = 'Annual period';
+        break;
+    default:
+        periodText = '';
+}
+
+// Build summary header with spacing below
+let summaryHeader = '';
+if(periodText.toLowerCase().includes('period')){
+    summaryHeader = `<h3 style="margin-bottom:20px;">Summary of inspections for ${periodText} of financial year ${selectedYear}/${selectedYear+1}</h3>`;
+} else {
+    summaryHeader = `<h3 style="margin-bottom:20px;">Summary of inspections for the period of ${periodText} of financial year ${selectedYear}/${selectedYear+1}</h3>`;
+}
+
+// Filter data to only include unique Overall IDs
+const uniqueData = [];
+const seenIDs = new Set();
+data.forEach(record => {
+    const id = record["Overall ID"] || '';
+    if(!seenIDs.has(id)){
+        seenIDs.add(id);
+        uniqueData.push(record);
+    }
+});
+
+// Determine inspection text based on unique Overall IDs
+let inspectionsText = '';
+const uniqueCount = uniqueData.length;
+if(uniqueCount === 1){
+    inspectionsText = `During this time <strong>ONE</strong> inspection was conducted as follows.`;
+} else {
+    inspectionsText = `During this time a total of <strong>${uniqueCount}</strong> inspections were conducted as follows.`;
+}
+
+// Insert into table with S/no column and alternating row colors
+let basicInfoTable = summaryHeader + `
+<h3>A: Inspections Conducted</h3>
+<p>${inspectionsText}</p>
+<table>
+    <tr>
+        <th>S/no</th>
+        <th>Inspection Type</th>
+        <th>Region</th>
+        <th>District</th>
+    </tr>`;
+
+uniqueData.forEach((record, index) => {
+    const rowColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff'; // alternating colors
+    basicInfoTable += `<tr style="background-color:${rowColor};">
+        <td>${index + 1}</td>
+        <td>${record["Inspection Type"] || '-'}</td>
+        <td>${record["Region"] || '-'}</td>
+        <td>${record["District"] || '-'}</td>
+    </tr>`;
+});
+
+basicInfoTable += `</table>`;
+summaryBlock.innerHTML = basicInfoTable;
+container.appendChild(summaryBlock);
+
+
+
+
+    // === Premises Inspected ===
+const premisesBlock = document.createElement('div'); 
+premisesBlock.className = 'report-block';
+
+const nonZeroCategories = Object.keys(allPremises).filter(cat => allPremises[cat] > 0);
+
+if (nonZeroCategories.length > 0) {
+    const premisesColors = {
+      "Dispensary": "#1abc9c", "Health Centre": "#e74c3c",
+      "Polyclinic": "#3498db", "Hospital": "#f39c12",
+      "Medical Lab (Private)": "#9b59b6", "Medical Lab (GOT)": "#16a085",
+      "Pharmacy (Human)": "#f1c40f", "Pharmacy (Vet)": "#8e44ad",
+      "DLDM (Human)": "#2ecc71", "DLDM (Vet)": "#e67e22"
+    };
+
+    const totalPremises = nonZeroCategories.reduce((a, b) => a + allPremises[b], 0);
+
+    let premisesHTML = `<h3>B: Premises Inspected</h3>
+        <p>During this period a total of <strong>${totalPremises}</strong> premises were inspected. The breakdown is as follows;</p>
+        <table>
+            <tr><th>Category</th><th>Count</th></tr>
+            ${nonZeroCategories.map((cat, index) => {
+                const rowColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff'; // alternating colors
+                return `<tr style="background-color:${rowColor};"><td>${cat}</td><td>${allPremises[cat]}</td></tr>`;
+            }).join('')}
+        </table>
+        <h4 style="margin-top:40px;">Visual Distribution</h4>
+        <canvas id="premisesChart" style="margin-top:20px;"></canvas>`;
+
+    premisesBlock.innerHTML = premisesHTML;
+    container.appendChild(premisesBlock);
+
+    const chartValues = nonZeroCategories.map(cat => allPremises[cat]);
+    const chartColors = nonZeroCategories.map(cat => premisesColors[cat] || '#bdc3c7');
+
+    new Chart(document.getElementById('premisesChart').getContext('2d'), { 
+        type: 'pie', 
+        data: { labels: nonZeroCategories, datasets: [{ data: chartValues, backgroundColor: chartColors }] },
+        options: { plugins: { legend: { position: 'right' } } }
+    });
+} else {
+    premisesBlock.innerHTML = `<h3>B: Premises Inspected</h3>
+        <p class="empty-state">No premises were inspected during this period.</p>`;
+    container.appendChild(premisesBlock);
+}
+
+   // === Observations Identified ===
+const defectsCount = Object.values(mergedDefects).reduce((a,b)=>a+b,0);
+if(defectsCount > 0){
+    const defectsBlock = document.createElement('div'); 
+    defectsBlock.className = 'report-block';
+
+    // === Build defect breakdown by category ===
+    const defectCategoryBreakdown = {};
+    data.forEach(d => {
+        const premisesData = d["Premises Data"] || d.premises_data;
+        const defectsData = d["Defects Data"] || d.defects_data;
+        if(!defectsData || !premisesData) return;
+
+        Object.keys(defectsData).forEach(cat => {
+            Object.keys(defectsData[cat]).forEach(defectKey => {
+                const count = defectsData[cat][defectKey];
+                if(count > 0){
+                    let label = defectLabels[defectKey] || defectKey;
+                    if(defectKey.trim().toLowerCase() === "nopermitproduct") label = "No Permit Products";
+
+                    if(!defectCategoryBreakdown[label]) defectCategoryBreakdown[label] = {};
+                    defectCategoryBreakdown[label][cat] = (defectCategoryBreakdown[label][cat] || 0) + count;
+                }
+            });
+        });
+    });
+
+    // === Build table HTML with breakdown and alternating row colors ===
+    let html = `<h3>Observations Identified</h3>
+                <table>
+                  <tr>
+                    <th>Observation</th>
+                    <th>Count</th>
+                    <th>Breakdown by Categories</th>
+                  </tr>`;
+
+    Object.keys(mergedDefects).forEach((defect, index)=>{
+        const breakdownObj = defectCategoryBreakdown[defect] || {};
+        const breakdownStr = Object.keys(breakdownObj)
+            .map(cat => `${cat} ${breakdownObj[cat]}`)
+            .join(", ") || "-";
+
+        // Alternating row colors
+        const rowColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+
+        html += `<tr style="background-color:${rowColor};">
+                    <td>${defect}</td>
+                    <td>${mergedDefects[defect]}</td>
+                    <td>${breakdownStr}</td>
+                 </tr>`;
+    });
+
+    html += `</table>
+             <h4 style="margin-top:30px;">Visual Distribution</h4>
+             <canvas id="defectsChart"></canvas>`;
+
+    defectsBlock.innerHTML = html;
+    container.appendChild(defectsBlock);
+
+    new Chart(document.getElementById('defectsChart').getContext('2d'), { 
+        type: 'pie', 
+        data: { 
+            labels: Object.keys(mergedDefects), 
+            datasets:[{ 
+                data: Object.values(mergedDefects), 
+                backgroundColor: ["#1abc9c","#e74c3c","#3498db","#f39c12","#9b59b6","#16a085","#d35400"] 
+            }]
+        },
+        options:{ plugins:{ legend:{ position:'right' } } }
+    });
+}
+
+
+   // === Actions Taken (Editable with Add, Delete, Fixed Final Bullet) ===
+const actionsBlock = document.createElement('div');
+actionsBlock.className = 'report-block actions-taken';
+
+// Header with pencil icon
+const header = document.createElement('h3');
+header.style.display = 'flex';
+header.style.justifyContent = 'space-between';
+header.style.alignItems = 'center';
+header.textContent = 'Actions Taken';
+
+const editIcon = document.createElement('span');
+editIcon.textContent = '✏️';
+editIcon.style.cursor = 'pointer';
+editIcon.style.marginLeft = '10px';
+header.appendChild(editIcon);
+actionsBlock.appendChild(header);
+
+// Instruction text
+const instruction = document.createElement('p');
+instruction.textContent = 'The following actions were taken due to the identified observations:';
+instruction.style.margin = '8px 0 12px 0';
+actionsBlock.appendChild(instruction);
+
+// List container
+const ul = document.createElement('ul');
+ul.style.listStyle = 'none';
+ul.style.paddingLeft = '0';
+actionsBlock.appendChild(ul);
+
+// Populate initial actions
+const actions = [];
+Object.keys(mergedDefects).forEach(obs => {
+    const action = observationActions[obs];
+    if (action) actions.push(action);
+});
+
+// Fixed mandatory action
+const fixedAction = "Education was given out to All Staffs/ Owners of the inspected premises and they were required to adhere the Laws, Rules and Regulations of the Authority.";
+
+// Render function
+function renderActions(editing = false) {
+    ul.innerHTML = '';
+    actions.forEach((action, i) => {
+        const li = document.createElement('li');
+        li.style.position = 'relative';
+        li.style.marginBottom = '12px';
+        li.style.lineHeight = '1.5';
+        li.style.display = 'flex';
+        li.style.alignItems = 'flex-start';
+        li.style.justifyContent = 'space-between';
+
+        const leftDiv = document.createElement('div');
+        leftDiv.style.display = 'flex';
+        leftDiv.style.alignItems = 'flex-start';
+        leftDiv.style.flex = '1'; // take full width
+
+        const check = document.createElement('span');
+        check.textContent = '✔';
+        check.style.color = '#27ae60';
+        check.style.marginRight = '8px';
+        leftDiv.appendChild(check);
+
+        if (editing) {
+            const input = document.createElement('textarea');
+            input.value = action;
+            input.style.width = '100%';
+            input.style.minWidth = '300px';
+            input.style.maxWidth = '800px';
+            input.style.height = '50px';
+            input.style.resize = 'vertical';
+            input.style.padding = '6px 10px';
+            input.style.fontSize = '14px';
+            input.style.lineHeight = '1.4';
+            input.addEventListener('input', (e) => {
+                actions[i] = e.target.value;
+            });
+            leftDiv.appendChild(input);
+        } else {
+            const span = document.createElement('span');
+            span.textContent = action;
+            leftDiv.appendChild(span);
+        }
+
+        li.appendChild(leftDiv);
+
+        // Delete button in edit mode
+        if (editing) {
+            const delBtn = document.createElement('span');
+            delBtn.textContent = '❌';
+            delBtn.style.cursor = 'pointer';
+            delBtn.style.marginLeft = '10px';
+            delBtn.addEventListener('click', () => {
+                actions.splice(i, 1);
+                renderActions(true);
+            });
+            li.appendChild(delBtn);
+        }
+
+        ul.appendChild(li);
+    });
+
+    // Add “+ Add Action” at the end in edit mode
+    if (editing) {
+        const addLi = document.createElement('li');
+        addLi.style.cursor = 'pointer';
+        addLi.style.color = '#3498db';
+        addLi.style.fontWeight = 'bold';
+        addLi.textContent = '+ Add Action';
+        addLi.addEventListener('click', () => {
+            actions.push(''); // add empty action
+            renderActions(true); // re-render in edit mode
+        });
+        ul.appendChild(addLi);
+    }
+
+    // Append fixed mandatory action (always last, non-editable)
+    const fixedLi = document.createElement('li');
+    fixedLi.style.marginTop = '12px';
+    fixedLi.style.lineHeight = '1.5';
+    fixedLi.style.display = 'flex';
+    fixedLi.style.alignItems = 'flex-start';
+
+    const checkFixed = document.createElement('span');
+    checkFixed.textContent = '✔';
+    checkFixed.style.color = '#27ae60';
+    checkFixed.style.marginRight = '8px';
+    fixedLi.appendChild(checkFixed);
+
+    const fixedSpan = document.createElement('span');
+    fixedSpan.textContent = fixedAction;
+    fixedLi.appendChild(fixedSpan);
+
+    ul.appendChild(fixedLi);
+}
+
+// Initial render
+let editing = false;
+renderActions(editing);
+
+// Toggle edit mode on pencil click
+editIcon.addEventListener('click', () => {
+    editing = !editing;
+    editIcon.textContent = editing ? '💾' : '✏️';
+    renderActions(editing);
+});
+
+// Append to container
+container.appendChild(actionsBlock);
+
+// === Recall Inspections (aggregated, scrollable table with Reason column) ===
+const recallBlock = document.createElement('div');
+recallBlock.className = 'report-block';
+
+const recallInspections = data.filter(d => (d["Inspection Type"] || "").toLowerCase().includes("recall"));
+
+if (recallInspections.length > 0) {
+    // Step 1: Flatten all products from all recall inspections
+    const allProducts = [];
+    recallInspections.forEach(record => {
+        const products = Array.isArray(record["Recall Products"]) ? record["Recall Products"] : [];
+        products.forEach(p => {
+            allProducts.push({
+                overallId: record["ID"] || record["Inspection ID"] || 'unknown',
+                brandName: p.brandName || '-',
+                genericName: p.genericName || '-',
+                manufacturer: p.manufacturer || '-',
+                uom: p.uom || '-',
+                batchNumber: p.batchNumber || '-',
+                manufactureDate: p.manufactureDate || '-',
+                expiryDate: p.expiryDate || '-',
+                reason: p.reason || '-', // Reason column
+                category: p.category ? [p.category] : [],
+                value: p.value || 0,
+                quantity: p.quantity || 0
+            });
+        });
+    });
+
+    if (allProducts.length > 0) {
+        // Step 2: Aggregate products by unique key
+        const aggregated = {};
+        allProducts.forEach(p => {
+            const key = `${p.brandName}|${p.genericName}|${p.manufacturer}|${p.uom}|${p.batchNumber}`;
+            if (!aggregated[key]) {
+                aggregated[key] = { ...p };
+            } else {
+                aggregated[key].value += p.value;
+                aggregated[key].quantity += p.quantity;
+                aggregated[key].category.push(...p.category);
+            }
+        });
+
+        // Step 3: Count premises found
+        const premisesByOverallId = {};
+        Object.values(aggregated).forEach(p => {
+            const overallId = p.overallId;
+            if (!premisesByOverallId[overallId]) premisesByOverallId[overallId] = {};
+
+            const categoryCounts = {};
+            p.category.forEach(c => {
+                categoryCounts[c] = (categoryCounts[c] || 0) + 1;
+            });
+
+            Object.entries(categoryCounts).forEach(([cat, count]) => {
+                if (!premisesByOverallId[overallId][cat] || count > premisesByOverallId[overallId][cat]) {
+                    premisesByOverallId[overallId][cat] = count;
+                }
+            });
+        });
+
+        let totalPremisesFound = 0;
+        Object.values(premisesByOverallId).forEach(categoryCounts => {
+            totalPremisesFound += Object.values(categoryCounts).reduce((a, b) => a + b, 0);
+        });
+
+        const aggregatedProducts = Object.values(aggregated);
+        const totalProducts = aggregatedProducts.length;
+
+        // Step 4: Build HTML with scrollable table
+        let html = `<h3>Recall Inspections</h3>
+<p>
+During this period, <strong>${totalProducts}</strong> ${totalProducts > 1 ? 'products were' : 'product was'} recalled from the market due to stated reasons. 
+A total of <strong>${totalPremisesFound}</strong> ${totalPremisesFound > 1 ? 'premises were' : 'premise was'} found with the recalled products during inspection. 
+The table below shows the detailed information:
+</p>
+<div style="overflow-x:auto;">
+<table>
+    <tr>
+        <th>S/No</th>
+        <th>Brand Name</th>
+        <th>Generic Name</th>
+        <th>Manufacturer</th>
+        <th>UOM</th>
+        <th>Batch Number</th>
+        <th>Mfg Date</th>
+        <th>Expiry Date</th>
+        <th>Reason</th>
+        <th>Premises With Recalled Product</th>
+        <th>Category</th>
+        <th>Value</th>
+        <th>Quantity</th>
+    </tr>`;
+
+        let serialNo = 1;
+        aggregatedProducts.forEach(p => {
+            const categoryCounts = {};
+            p.category.forEach(c => {
+                categoryCounts[c] = (categoryCounts[c] || 0) + 1;
+            });
+
+            const categoryStr = Object.entries(categoryCounts)
+                .map(([cat, count]) => `${cat} ${count}`)
+                .join(', ');
+
+            const totalPremises = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
+
+            html += `<tr>
+                <td>${serialNo++}</td>
+                <td>${p.brandName}</td>
+                <td>${p.genericName}</td>
+                <td>${p.manufacturer}</td>
+                <td>${p.uom}</td>
+                <td>${p.batchNumber}</td>
+                <td>${p.manufactureDate}</td>
+                <td>${p.expiryDate}</td>
+                <td>${p.reason}</td>
+                <td>${totalPremises}</td>
+                <td>${categoryStr}</td>
+                <td>${p.value.toLocaleString()}</td>
+                <td>${p.quantity}</td>
+            </tr>`;
+        });
+
+        html += `</table></div>`;
+
+        // Step 5: Add NOTE! comment
+        html += `<p style="margin-top:10px;"><strong>NOTE!</strong> The above recalled products were confiscated for the following regulatory procedures.</p>`;
+
+        recallBlock.innerHTML = html;
+
+    } else {
+        recallBlock.innerHTML = `<h3>Recall Inspections</h3><p>No recall inspection was conducted during this period.</p>`;
+    }
+
+} else {
+    recallBlock.innerHTML = `<h3>Recall Inspections</h3><p>No recall inspection was conducted during this period.</p>`;
+}
+
+container.appendChild(recallBlock);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// === Recall Inspections (aggregated, scrollable table with Reason column) ===
+
+recallBlock.className = 'report-block';
+
+
+
+if (recallInspections.length > 0) {
+
+    // Step 0: Compute narration totals
+let totalPremisesNarration = 0;
+let uniqueProductsSet = new Set();
+
+recallInspections.forEach(insp => {
+    const overallId = insp["ID"] || insp["Inspection ID"] || 'unknown';
+    const products = Array.isArray(insp["Recall Products"]) ? insp["Recall Products"] : [];
+    const premisesData = Array.isArray(insp["Premises Data"]) ? insp["Premises Data"] : [];
+
+    // Count total premises from Premises Data array
+    const premisesCount = premisesData.reduce((sum, p) => sum + (p.Count || 0), 0);
+    totalPremisesNarration += premisesCount;
+
+    products.forEach(p => {
+        const key = `${overallId}|${p.brandName}|${p.genericName}|${p.batchNumber}`;
+        uniqueProductsSet.add(key);
+    });
+});
+
+const totalProductsNarration = uniqueProductsSet.size;
+
+
+    // Step 1: Flatten all products from all recall inspections for table
+    const allProducts = [];
+    recallInspections.forEach(record => {
+        const products = Array.isArray(record["Recall Products"]) ? record["Recall Products"] : [];
+        products.forEach(p => {
+            allProducts.push({
+                overallId: record["ID"] || record["Inspection ID"] || 'unknown',
+                brandName: p.brandName || '-',
+                genericName: p.genericName || '-',
+                manufacturer: p.manufacturer || '-',
+                uom: p.uom || '-',
+                batchNumber: p.batchNumber || '-',
+                manufactureDate: p.manufactureDate || '-',
+                expiryDate: p.expiryDate || '-',
+                reason: p.reason || '-', // Reason column
+                category: p.category ? [p.category] : [],
+                value: p.value || 0,
+                quantity: p.quantity || 0,
+                premises: p.premises || 0 // explicit premises for table aggregation
+            });
+        });
+    });
+
+    if (allProducts.length > 0) {
+        // Step 2: Aggregate products by unique key for table
+        const aggregated = {};
+        allProducts.forEach(p => {
+            const key = `${p.brandName}|${p.genericName}|${p.manufacturer}|${p.uom}|${p.batchNumber}`;
+            if (!aggregated[key]) {
+                aggregated[key] = { ...p, premisesByCategory: {} };
+            } else {
+                aggregated[key].value += p.value;
+                aggregated[key].quantity += p.quantity;
+            }
+
+            aggregated[key].premisesByCategory[p.category[0]] =
+                (aggregated[key].premisesByCategory[p.category[0]] || 0) + p.premises;
+        });
+
+        const aggregatedProducts = Object.values(aggregated);
+
+        // Step 3: Build HTML with narration
+        let html = `<h3>Recall Inspections</h3>
+<p>
+During this period, <strong>${totalProductsNarration}</strong> ${totalProductsNarration > 1 ? 'products were' : 'product was'} recalled from the market due to stated reasons. 
+A total of <strong>${totalPremisesNarration}</strong> ${totalPremisesNarration > 1 ? 'premises were' : 'premise was'} found with the recalled products during inspection. 
+The table below shows the detailed information:
+</p>
+<div style="overflow-x:auto;">
+<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse; min-width:1000px;">
+    <tr>
+        <th>S/No</th>
+        <th>Brand Name</th>
+        <th>Generic Name</th>
+        <th>Manufacturer</th>
+        <th>UOM</th>
+        <th>Batch Number</th>
+        <th>Mfg Date</th>
+        <th>Expiry Date</th>
+        <th>Reason</th>
+        <th>Premises With Recalled Product</th>
+        <th>Category Breakdown</th>
+        <th>Value</th>
+        <th>Quantity</th>
+    </tr>`;
+
+        let serialNo = 1;
+        aggregatedProducts.forEach(p => {
+            const categoryBreakdown = Object.entries(p.premisesByCategory)
+                .map(([cat, count]) => `${cat} ${count}`)
+                .join(', ');
+
+            const totalPremises = Object.values(p.premisesByCategory).reduce((a, b) => a + b, 0);
+
+            html += `<tr>
+                <td>${serialNo++}</td>
+                <td>${p.brandName}</td>
+                <td>${p.genericName}</td>
+                <td>${p.manufacturer}</td>
+                <td>${p.uom}</td>
+                <td>${p.batchNumber}</td>
+                <td>${p.manufactureDate}</td>
+                <td>${p.expiryDate}</td>
+                <td>${p.reason}</td>
+                <td>${totalPremises}</td>
+                <td>${categoryBreakdown}</td>
+                <td>${p.value.toLocaleString()}</td>
+                <td>${p.quantity.toLocaleString()}</td>
+            </tr>`;
+        });
+
+        html += `</table></div>
+<p style="margin-top:10px;"><strong>NOTE!</strong> The above recalled products were confiscated for the following regulatory procedures.</p>`;
+
+        recallBlock.innerHTML = html;
+
+    } else {
+        recallBlock.innerHTML = `<h3>Recall Inspections</h3><p>No recall products were reported during this period.</p>`;
+    }
+
+} else {
+    recallBlock.innerHTML = `<h3>Recall Inspections</h3><p>No recall inspection was conducted during this period.</p>`;
+}
+
+container.appendChild(recallBlock);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // === Charges Section ===
+const chargesBlock = document.createElement('div'); 
+chargesBlock.className = 'report-block';
+
+// Unique variables to avoid conflicts
+let totalGot = 0, totalUnreg = 0, totalDldm = 0, totalNoPermit = 0, totalUserCharges = 0;
+
+data.forEach(record => {
+    const charges = record["Charges & Confiscated Values"] || {};
+
+    totalGot += charges.got_value || 0;
+    totalUnreg += charges.unregistered_value || 0;
+    totalDldm += charges.dldm_value || 0;
+    totalNoPermit += charges.no_permit_value || 0;
+
+    totalUserCharges += charges.total || charges["Total Charges"] || 0;
+});
+
+const totalConfiscated = totalGot + totalUnreg + totalDldm + totalNoPermit;
+
+if(totalConfiscated > 0){
+    let htmlCharges = `<h3>Total Charges and Confiscated Products</h3>
+        <p>
+        During this period, a total of <strong>Tsh ${totalUserCharges.toLocaleString()}/=</strong> in charges was collected from various penalties resulting from breaches of regulations and laws by premises owners. 
+        Products worth <strong>Tsh ${totalConfiscated.toLocaleString()}/=</strong> were also confiscated from the inspected premises. 
+        The table below shows a detailed breakdown:
+        </p>
+        <table style="border-collapse: collapse; width: 100%;">`;
+
+    htmlCharges += `<tr style="background-color:#ddd;"><th>Type</th><th>Value (Tsh)</th></tr>`;
+
+    const chartLabels = [], chartData = [], chartColors = ["#1abc9c","#e74c3c","#16a085","#f39c12"];
+    let rowIndex = 0;
+
+    if(totalGot > 0){
+        htmlCharges += `<tr style="background-color:${rowIndex % 2 === 0 ? '#f9f9f9' : '#fff'};"><td>Value of GOT Products Confiscated</td><td>${totalGot.toLocaleString()}</td></tr>`;
+        chartLabels.push("GOT Products"); chartData.push(totalGot); rowIndex++;
+    }
+    if(totalUnreg > 0){
+        htmlCharges += `<tr style="background-color:${rowIndex % 2 === 0 ? '#f9f9f9' : '#fff'};"><td>Value of Unregistered Products Confiscated</td><td>${totalUnreg.toLocaleString()}</td></tr>`;
+        chartLabels.push("Unregistered"); chartData.push(totalUnreg); rowIndex++;
+    }
+    if(totalDldm > 0){
+        htmlCharges += `<tr style="background-color:${rowIndex % 2 === 0 ? '#f9f9f9' : '#fff'};"><td>Value of DLDM NOT ALLOWED MEDICINE Confiscated</td><td>${totalDldm.toLocaleString()}</td></tr>`;
+        chartLabels.push("DLDM"); chartData.push(totalDldm); rowIndex++;
+    }
+    if(totalNoPermit > 0){
+        htmlCharges += `<tr style="background-color:${rowIndex % 2 === 0 ? '#f9f9f9' : '#fff'};"><td>Value of No Permit Products confiscated</td><td>${totalNoPermit.toLocaleString()}</td></tr>`;
+        chartLabels.push("No Permit"); chartData.push(totalNoPermit); rowIndex++;
+    }
+
+    htmlCharges += `</table>
+        <div style="margin-top:20px;">
+            <h4>Visual Distribution</h4>
+            <canvas id="confiscatedChart"></canvas>
+        </div>`;
+
+    chargesBlock.innerHTML = htmlCharges;
+    container.appendChild(chargesBlock);
+
+    if(chartData.length > 0){
+        new Chart(document.getElementById('confiscatedChart').getContext('2d'), { 
+          type: 'pie', 
+          data: { 
+              labels: chartLabels, 
+              datasets:[{ data: chartData, backgroundColor: chartColors.slice(0, chartData.length) }] 
+          },
+          options:{ plugins:{ legend:{ position:'right' } } }
+        });
+    }
+
+} else {
+    chargesBlock.innerHTML = `<h3>Total Charges and Confiscated Products</h3><p>No charges or confiscated products recorded.</p>`;
+    container.appendChild(chargesBlock);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+// === Disposal Activities Section ===
+const disposalBlock = document.createElement('div');
+disposalBlock.className = 'report-block';
+
+// Regions & districts
+const regions = { 
+    "Mtwara": ["Mtwara MC", "Mtwara DC", "Masasi DC", "Masasi TC", "Nanyumbu", "Newala TC", "Newala DC", "Tandahimba", "Nanyamba"],
+    "Lindi": ["Lindi MC", "Kilwa", "Nachingwea", "Liwale", "Ruangwa", "Mtama"],
+    "Ruvuma": ["Songea MC", "Songea DC", "Mbinga TC", "Mbinga DC", "Madaba", "Nyasa", "Namtumbo", "Tunduru"]
+};
+
+// Disposal types
+const disposalTypes = ["Medicine", "Medical Device"];
+let editMode = false;
+
+// === Helper: Calculate filtered end date safely (month-index safe) ===
+function getFilteredEndDate() {
+    const reportType = document.getElementById('reportTypeFilter')?.value || 'annual';
+    const fyYear = parseInt(document.getElementById('yearFilter')?.value) || new Date().getFullYear();
+
+    if(reportType === 'biweekly'){
+        const month = parseInt(document.getElementById('monthFilter')?.value || 6) + 1; // default July
+        const day = document.getElementById('biweeklyFilter')?.value === '1-15' ? 15 : new Date(fyYear, month, 0).getDate();
+        return new Date(`${fyYear}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T23:59:59`);
+    } 
+    else if(reportType === 'monthly'){
+        const month = parseInt(document.getElementById('monthFilter')?.value || 6) + 1; // default July
+        const lastDay = new Date(fyYear, month, 0).getDate();
+        return new Date(`${fyYear}-${String(month).padStart(2,'0')}-${lastDay}T23:59:59`);
+    } 
+    else if(reportType === 'quarterly'){
+        const q = document.getElementById('quarterFilter')?.value || "1";
+        let endMonth;
+        switch(q){
+            case "1": endMonth = 9; break;   // Jul-Sep
+            case "2": endMonth = 12; break;  // Oct-Dec
+            case "3": endMonth = 3; break;   // Jan-Mar
+            case "4": endMonth = 6; break;   // Apr-Jun
+        }
+        const endYear = endMonth <= 6 ? fyYear + 1 : fyYear;
+        const lastDay = new Date(endYear, endMonth, 0).getDate();
+        return new Date(`${endYear}-${String(endMonth).padStart(2,'0')}-${lastDay}T23:59:59`);
+    } 
+    else if(reportType === 'semiannual'){
+        const h = document.getElementById('semiFilter')?.value || "1";
+        const endMonth = h === "1" ? 12 : 6; // H1: Dec, H2: Jun
+        const endYear = endMonth <= 6 ? fyYear + 1 : fyYear;
+        const lastDay = new Date(endYear, endMonth, 0).getDate();
+        return new Date(`${endYear}-${String(endMonth).padStart(2,'0')}-${lastDay}T23:59:59`);
+    } 
+    else if(reportType === 'annual'){
+        // Full financial year end: June 30
+        return new Date(`${fyYear + 1}-06-30T23:59:59`);
+    } 
+    else {
+        return new Date();
+    }
+}
+
+
+
+function getFilteredStartDate() {
+    const reportType = document.getElementById('reportTypeFilter')?.value || 'annual';
+    const fyYear = parseInt(document.getElementById('yearFilter')?.value) || new Date().getFullYear();
+
+    if(reportType === 'biweekly'){
+        const month = parseInt(document.getElementById('monthFilter')?.value || 6) + 1; // default July
+        const day = document.getElementById('biweeklyFilter')?.value === '16-end' ? 16 : 1;
+        return new Date(`${fyYear}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T00:00:00`);
+    } 
+    else if(reportType === 'monthly'){
+        const month = parseInt(document.getElementById('monthFilter')?.value || 6) + 1; // default July
+        return new Date(`${fyYear}-${String(month).padStart(2,'0')}-01T00:00:00`);
+    } 
+    else if(reportType === 'quarterly'){
+        const q = document.getElementById('quarterFilter')?.value || "1";
+        let startMonth;
+        switch(q){
+            case "1": startMonth = 7; break;  // Q1: Jul-Sep
+            case "2": startMonth = 10; break; // Q2: Oct-Dec
+            case "3": startMonth = 1; break;  // Q3: Jan-Mar
+            case "4": startMonth = 4; break;  // Q4: Apr-Jun
+        }
+        const startYear = startMonth <= 6 ? fyYear + 1 : fyYear; // Jan–Jun belongs to next FY
+        return new Date(`${startYear}-${String(startMonth).padStart(2,'0')}-01T00:00:00`);
+    } 
+    else if(reportType === 'semiannual'){
+        const h = document.getElementById('semiFilter')?.value || "1";
+        const startMonth = h === "1" ? 7 : 1; // H1: Jul, H2: Jan
+        const startYear = startMonth <= 6 ? fyYear + 1 : fyYear;
+        return new Date(`${startYear}-${String(startMonth).padStart(2,'0')}-01T00:00:00`);
+    } 
+    else if(reportType === 'annual'){
+        // Full financial year: July 1 → June 30
+        return new Date(`${fyYear}-07-01T00:00:00`);
+    } 
+    else {
+        return new Date(`${fyYear}-01-01T00:00:00`);
+    }
+}
+
+
+
+// Generate unique disposal ID
+function generateDisposalID() {
+    const now = new Date();
+    return 'DISP-' + now.getFullYear().toString().slice(-2) +
+           ('0'+(now.getMonth()+1)).slice(-2) +
+           ('0'+now.getDate()).slice(-2) +
+           now.getTime().toString().slice(-5);
+}
+
+
+// --- Fetch and build table ---
+function buildDisposalTable() {
+    fetch('/static/data/inspections_from_db.json')
+    .then(resp => resp.json())
+    .then(data => {
+        const disposalActivities = data['Disposal Activities'] || [];
+
+        const startDate = getFilteredStartDate();
+        const endDate = getFilteredEndDate();
+
+        const filtered = disposalActivities.filter(a => {
+            const d = new Date(a.period_date + 'T00:00:00');
+            return d >= startDate && d <= endDate;
+        });
+
+        let html = `
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">
+            Disposal Activities
+            <span id="editDisposal" style="cursor:pointer;color:#007bff;">✏️</span>
+        </h3>`;
+
+        if(filtered.length === 0){
+    html += `<p id="noDisposal">No disposal activities recorded for this period</p>`;
+} else {
+    // --- Aggregate summary ---
+    const uniqueDisposalIds = [...new Set(filtered.map(a => a.disposal_id))].length;
+    const uniqueDistricts = [...new Set(filtered.map(a => a.district))].length;
+    const totalValue = filtered.reduce((sum,a)=>sum + (parseFloat(a.value)||0),0);
+    const totalWeight = filtered.reduce((sum,a)=>sum + (parseFloat(a.weight)||0),0);
+
+    const activityWord = uniqueDisposalIds === 1 ? 'activity' : 'activities';
+    const verb = uniqueDisposalIds === 1 ? 'was' : 'were';
+    const districtWord = uniqueDistricts === 1 ? 'district' : 'districts';
+
+    html += `<p>
+        During this time, <strong>${uniqueDisposalIds}</strong> disposal ${activityWord} ${verb} conducted in 
+        <strong>${uniqueDistricts}</strong> ${districtWord}. 
+        The products worth <strong>${totalValue.toLocaleString()} Tsh</strong> and weighing 
+        <strong>${totalWeight.toLocaleString()} kg</strong> were disposed off. 
+        The following is a detailed breakdown.
+    </p>`;
+
+    html += createDisposalTableHTML(filtered);
+}
+
+
+        disposalBlock.innerHTML = html;
+        if(!container.contains(disposalBlock)) container.appendChild(disposalBlock);
+
+        const editBtn = document.getElementById('editDisposal');
+        if(editBtn) editBtn.addEventListener('click', toggleEditMode);
+    })
+    .catch(e => {
+        disposalBlock.innerHTML = `<h3>Disposal Activities</h3><p>Error: ${e.message}</p>`;
+        if(!container.contains(disposalBlock)) container.appendChild(disposalBlock);
+    });
+}
+
+// --- Helper: create table HTML ---
+function createDisposalTableHTML(rows){
+    let html = `
+    <table id="disposalTable" style="border-collapse: collapse; width:100%; table-layout: fixed;">
+        <thead>
+            <tr style="background-color:#ddd;">
+                <th style="width:5%;">S/No</th>
+                <th style="width:15%;">Type</th>
+                <th style="width:14%;">Region</th>
+                <th style="width:14%;">District</th>
+                <th style="width:10%;">Weight (kg)</th>
+                <th style="width:10%;">Value (Tsh)</th>
+                <th style="width:15%;">Date</th>
+                <th style="width:15%; display:none;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    rows.forEach((a,i) => html += createDataRow(a,i,false));
+    html += `</tbody></table>`;
+    return html;
+}
+
+// --- Toggle edit mode ---
+function toggleEditMode() {
+    editMode = !editMode;
+
+    // Hide "No data" message if exists
+    const noMsg = document.getElementById('noDisposal');
+    if(noMsg) noMsg.style.display = 'none';
+
+    // Create table if it doesn't exist (no data initially)
+    if(!document.querySelector('#disposalTable')){
+        disposalBlock.innerHTML += createDisposalTableHTML([]);
+    }
+
+    const table = document.querySelector('#disposalTable');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.rows);
+    tbody.innerHTML = '';
+
+    rows.forEach((row,i) => {
+        const a = {
+            id: row.dataset.id || null,
+            disposal_id: row.dataset.disposalId,
+            type: row.cells[1].innerText,
+            region: row.cells[2].innerText,
+            district: row.cells[3].innerText,
+            weight: row.cells[4].innerText,
+            value: row.cells[5].innerText,
+            period_date: new Date(row.cells[6].innerText).toISOString().split('T')[0],
+            lockDate: false,
+            lockRegion: false,
+            lockType: false,
+            canAddOtherType: !rows.some(r => r.cells[1].innerText !== row.cells[1].innerText)
+        };
+        tbody.insertAdjacentHTML('beforeend', createDataRow(a,i,editMode));
+    });
+
+    attachRowEvents();
+    renumberRows();
+
+    const editBtn = document.getElementById('editDisposal');
+    if(editBtn) editBtn.style.display = editMode ? 'none' : 'inline';
+
+    // Add Add/Save buttons in edit mode
+    if(editMode){
+        if(!document.getElementById('addDisposalBtn')){
+            const addBtn = document.createElement('button');
+            addBtn.id = 'addDisposalBtn';
+            addBtn.innerText = '+ Add Disposal Activity';
+            addBtn.style.marginTop = '10px';
+            addBtn.onclick = ()=>addNewDisposalRow();
+            disposalBlock.appendChild(addBtn);
+        }
+        if(!document.getElementById('saveAllBtn')){
+            const saveBtn = document.createElement('button');
+            saveBtn.id = 'saveAllBtn';
+            saveBtn.innerText = '💾 Save';
+            saveBtn.style.marginTop = '10px';
+            saveBtn.style.marginLeft = '10px';
+            saveBtn.onclick = ()=>saveAllRows();
+            disposalBlock.appendChild(saveBtn);
+        }
+    } else {
+        document.getElementById('addDisposalBtn')?.remove();
+        document.getElementById('saveAllBtn')?.remove();
+    }
+}
+
+// --- Add new disposal row ---
+function addNewDisposalRow(){
+    if(!document.querySelector('#disposalTable')){
+        disposalBlock.innerHTML += createDisposalTableHTML([]);
+    }
+    const table = document.querySelector('#disposalTable tbody');
+    const newIndex = table.rows.length + 1;
+    const newRow = {
+        id:'new',
+        disposal_id: generateDisposalID(),
+        type: '',
+        region: '',
+        district: '',
+        weight: 0,
+        value: 0,
+        period_date: new Date().toISOString().split('T')[0],
+        lockDate:false,
+        lockRegion:false,
+        lockType:false,
+        canAddOtherType: true
+    };
+    table.insertAdjacentHTML('beforeend', createDataRow(newRow,newIndex,true));
+    attachRowEvents();
+    renumberRows();
+}
+
+
+// === Create table row ===
+function createDataRow(a,index,isEdit){
+    const bg = index%2===0 ? '#f9f9f9' : '#ffffff';
+    const typeField = isEdit ? `<select name="type"${a.lockType?' disabled':''}>${disposalTypes.map(t=>`<option value="${t}" ${t===a.type?'selected':''}>${t}</option>`).join('')}</select>` : a.type;
+    const regionField = isEdit ? `<select name="region"${a.lockRegion?' disabled':''}>${Object.keys(regions).map(r=>`<option value="${r}" ${r===a.region?'selected':''}>${r}</option>`).join('')}</select>` : a.region;
+    const districtField = isEdit ? `<select name="district"${a.lockRegion?' disabled':''}>${(regions[a.region]||[]).map(d=>`<option value="${d}" ${d===a.district?'selected':''}>${d}</option>`).join('')}</select>` : a.district;
+    const weightField = isEdit 
+    ? `<input name="weight" class="numeric-input" value="${a.weight || 0}">` 
+    : (a.weight || 0);
+
+const valueField = isEdit 
+    ? `<input name="value" class="numeric-input" value="${a.value || 0}">` 
+    : (a.value || 0);
+
+    const dateField = isEdit ? `<input type="date" name="period_date" value="${new Date(a.period_date).toISOString().split('T')[0]}" ${a.lockDate?'disabled':''}>` : new Date(a.period_date).toLocaleDateString();
+   const actions = isEdit 
+    ? `
+        <div class="action-buttons">
+            <button class="deleteBtn" title="Delete">🗑️</button>
+            ${a.canAddOtherType ? `<button class="addTypeBtn" title="Add Other Type">+</button>` : ''}
+        </div>
+      `
+    : '';
+
+
+    return `<tr data-id="${a.id}" data-disposal-id="${a.disposal_id}" style="background-color:${bg};">
+        <td>${index+1}</td>
+        <td>${typeField}</td>
+        <td>${regionField}</td>
+        <td>${districtField}</td>
+        <td>${weightField}</td>
+        <td>${valueField}</td>
+        <td>${dateField}</td>
+        <td class="actionColumn" style="display:${isEdit?'inline-block':'none'};">${actions}</td>
+    </tr>`;
+}
+
+
+// Attach events
+function attachRowEvents(){
+    document.querySelectorAll('.deleteBtn').forEach(btn => btn.onclick = ()=>deleteRow(btn));
+    document.querySelectorAll('.addTypeBtn').forEach(btn => btn.onclick = ()=>addOtherTypeRow(btn));
+    document.querySelectorAll('select[name=region]').forEach(sel=> sel.onchange = ()=>updateDistrict(sel));
+}
+
+// Update district dropdown
+function updateDistrict(sel){
+    const row = sel.closest('tr');
+    const districtSelect = row.querySelector('[name=district]');
+    const districts = regions[sel.value] || [];
+    districtSelect.innerHTML = districts.map(d=>`<option value="${d}">${d}</option>`).join('');
+}
+
+
+// Add other type row (same disposal_id)
+function addOtherTypeRow(btn) {
+    if (!editMode) return;
+
+    const row = btn.closest('tr');
+
+    // Get all required inputs from the original row
+    const type = row.querySelector('[name="type"]').value.trim();
+    const region = row.querySelector('[name="region"]').value.trim();
+    const district = row.querySelector('[name="district"]').value.trim();
+    const date = row.querySelector('[name="period_date"]').value.trim();
+
+    // Validate required fields
+    if (!type || !region || !district || !date) {
+        alert("⚠️ Please fill all fields in the current row before adding another type.");
+        return;
+    }
+
+    const table = row.closest('tbody');
+    const newType = disposalTypes.find(t => t !== type);
+
+    if (!newType) {
+        alert("No other disposal type available to add.");
+        return;
+    }
+
+    const newIndex = Array.from(table.rows).indexOf(row) + 2;
+
+    const newRow = {
+        id: 'new',                          // will be saved as new row
+        disposal_id: row.dataset.disposalId, // SAME disposal_id
+        type: newType,                       // other type
+        region: region,                      // pre-fill
+        district: district,                  // pre-fill
+        weight: 0,                           // empty for new row
+        value: 0,                            // empty for new row
+        period_date: date,                   // pre-fill original date
+        lockDate: true,                      // cannot edit date
+        lockRegion: true,                    // cannot edit region
+        lockType: true,                      // cannot edit type
+        canAddOtherType: false
+    };
+
+    // Insert new row just after original row
+    row.insertAdjacentHTML('afterend', createDataRow(newRow, newIndex, true));
+
+    // Set dataset correctly for the new row
+    const insertedRow = row.nextElementSibling;
+    insertedRow.dataset.disposalId = row.dataset.disposalId;
+
+    // Hide the "+" button on the original row
+    btn.style.display = 'none';
+
+    attachRowEvents();
+    renumberRows();
+}
+
+
+// Save all rows
+function saveAllRows(){
+    const rows = document.querySelectorAll('#disposalTable tbody tr');
+    const data = [];
+
+    for (let row of rows) {
+        const type = row.querySelector('[name="type"]').value.trim();
+        const region = row.querySelector('[name="region"]').value.trim();
+        const district = row.querySelector('[name="district"]').value.trim();
+        const weight = parseFloat(row.querySelector('[name="weight"]').value) || 0;
+        const value = parseFloat(row.querySelector('[name="value"]').value) || 0;
+        const date = row.querySelector('[name="period_date"]').value.trim();
+
+        // Check for incomplete data
+        if (!type || !region || !district || !date) {
+            alert("⚠️ Please fill all fields in all rows before saving.");
+            return; // stop saving
+        }
+
+        data.push({
+            id: row.dataset.id === 'new' ? null : row.dataset.id,
+            disposal_id: row.dataset.disposalId, // always take from dataset
+            type: type,
+            region: region,
+            district: district,
+            weight: weight,
+            value: value,
+            period_date: date
+        });
+    }
+
+    // Send to server
+    fetch('/save_disposal',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(data)
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.status==='success'){
+            alert('All rows saved successfully');
+            buildDisposalTable(); // rebuild with current filter
+            editMode = false;
+
+            // Show edit button again
+            const editBtn = document.getElementById('editDisposal');
+            if(editBtn) editBtn.style.display = 'inline';
+        } else {
+            alert('Error saving: ' + d.message);
+        }
+    })
+    .catch(err=>{
+        alert('Error saving: ' + err.message);
+    });
+}
+
+// Delete row
+function deleteRow(btn){
+    if(!confirm('Delete this disposal activity?')) return;
+    const row = btn.closest('tr');
+    const disposal_id = row.dataset.disposalId;
+    const type = row.querySelector('[name="type"]').value;
+
+    fetch('/delete_disposal',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({disposal_id, type})
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.status === 'success'){
+            alert('Deleted successfully');
+            row.remove();
+            renumberRows();
+        }
+    });
+}
+
+// Renumber rows
+function renumberRows(){
+    document.querySelectorAll('#disposalTable tbody tr').forEach((tr,i)=>tr.cells[0].innerText = i+1);
+}
+
+// Initialize
+buildDisposalTable();
+
+
+
+
+
+
+
+
+
+
+
+
+
+// === QA Activities Section with Screened / Passed / % ===
+const qaBlock = document.createElement('div');
+qaBlock.className = 'report-block';
+
+const qaTypes = ["Medicine", "Medical Device"];
+const qaCentres = {
+    "Ligula RRH": "Mtwara",
+    "Sokoine RRH": "Lindi",
+    "Songea RRH": "Ruvuma"
+};
+
+let qaEditMode = false;
+
+// --- Helper: financial-year-aware dates ---
+function getQAFilteredStartDate() {
+    const reportType = document.getElementById('reportTypeFilter')?.value || 'annual';
+    const fyYear = parseInt(document.getElementById('yearFilter')?.value) || new Date().getFullYear();
+
+    if(reportType==='biweekly'){
+        const month = parseInt(document.getElementById('monthFilter')?.value || 6)+1;
+        const day = document.getElementById('biweeklyFilter')?.value==='16-end'?16:1;
+        return new Date(`${fyYear}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T00:00:00`);
+    } else if(reportType==='monthly'){
+        const month = parseInt(document.getElementById('monthFilter')?.value || 6)+1;
+        return new Date(`${fyYear}-${String(month).padStart(2,'0')}-01T00:00:00`);
+    } else if(reportType==='quarterly'){
+        const q = document.getElementById('quarterFilter')?.value || "1";
+        let startMonth;
+        switch(q){ case "1": startMonth=7; break; case "2": startMonth=10; break; case "3": startMonth=1; break; case "4": startMonth=4; break; }
+        const startYear = startMonth<=6? fyYear+1: fyYear;
+        return new Date(`${startYear}-${String(startMonth).padStart(2,'0')}-01T00:00:00`);
+    } else if(reportType==='semiannual'){
+        const h = document.getElementById('semiFilter')?.value || "1";
+        const startMonth = h==="1"?7:1;
+        const startYear = startMonth<=6? fyYear+1: fyYear;
+        return new Date(`${startYear}-${String(startMonth).padStart(2,'0')}-01T00:00:00`);
+    } else if(reportType==='annual'){
+        return new Date(`${fyYear}-07-01T00:00:00`);
+    } else {
+        return new Date(`${fyYear}-01-01T00:00:00`);
+    }
+}
+
+function getQAFilteredEndDate() {
+    const reportType = document.getElementById('reportTypeFilter')?.value || 'annual';
+    const fyYear = parseInt(document.getElementById('yearFilter')?.value) || new Date().getFullYear();
+
+    if(reportType==='biweekly'){
+        const month = parseInt(document.getElementById('monthFilter')?.value || 6)+1;
+        const day = document.getElementById('biweeklyFilter')?.value==='1-15'?15:new Date(fyYear, month, 0).getDate();
+        return new Date(`${fyYear}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T23:59:59`);
+    } else if(reportType==='monthly'){
+        const month = parseInt(document.getElementById('monthFilter')?.value || 6)+1;
+        const lastDay = new Date(fyYear, month, 0).getDate();
+        return new Date(`${fyYear}-${String(month).padStart(2,'0')}-${lastDay}T23:59:59`);
+    } else if(reportType==='quarterly'){
+        const q = document.getElementById('quarterFilter')?.value || "1";
+        let endMonth;
+        switch(q){ case "1": endMonth=9; break; case "2": endMonth=12; break; case "3": endMonth=3; break; case "4": endMonth=6; break; }
+        const endYear = endMonth<=6? fyYear+1: fyYear;
+        const lastDay = new Date(endYear, endMonth,0).getDate();
+        return new Date(`${endYear}-${String(endMonth).padStart(2,'0')}-${lastDay}T23:59:59`);
+    } else if(reportType==='semiannual'){
+        const h = document.getElementById('semiFilter')?.value || "1";
+        const endMonth = h==="1"?12:6;
+        const endYear = endMonth<=6? fyYear+1: fyYear;
+        const lastDay = new Date(endYear, endMonth,0).getDate();
+        return new Date(`${endYear}-${String(endMonth).padStart(2,'0')}-${lastDay}T23:59:59`);
+    } else if(reportType==='annual'){
+        return new Date(`${fyYear+1}-06-30T23:59:59`);
+    } else { return new Date(); }
+}
+
+// --- Generate unique sample ID ---
+function generateQASampleID(){
+    const now = new Date();
+    return 'QA-' + now.getFullYear().toString().slice(-2) +
+           ('0'+(now.getMonth()+1)).slice(-2) +
+           ('0'+now.getDate()).slice(-2) +
+           now.getTime().toString().slice(-5);
+}
+
+// --- Update % Passed dynamically ---
+function updatePercent(row){
+    const screened = parseInt(row.querySelector('.screened-input')?.value) || 0;
+    const passed = parseInt(row.querySelector('.passed-input')?.value) || 0;
+    const percentSpan = row.querySelector('.percent-passed');
+    if(percentSpan){
+        percentSpan.innerText = screened > 0 ? `${Math.round((passed/screened)*100)}%` : '0%';
+        // Real-time validation: passed should not exceed screened
+        if(passed > screened){
+            row.querySelector('.passed-input').style.borderColor = 'red';
+        } else {
+            row.querySelector('.passed-input').style.borderColor = '';
+        }
+    }
+}
+
+
+// --- Build QA Table ---
+function buildQATable(){
+    fetch('/api/qa_samples')
+    .then(resp => resp.json())
+    .then(data => {
+        const startDate = getQAFilteredStartDate();
+        const endDate = getQAFilteredEndDate();
+
+        const filtered = data.filter(a=>{
+            const d = new Date(a.screening_date);
+            d.setHours(0,0,0,0);
+            return d >= startDate && d <= endDate;
+        });
+
+        // --- Calculate total samples screened ---
+        const totalScreened = filtered.reduce((sum, a) => sum + (a.screened ?? a.number_of_samples ?? 0), 0);
+
+        // --- New summary text ---
+        let summaryText;
+        if(filtered.length === 0){
+            summaryText = "No QA activities recorded for this period";
+        } else {
+            summaryText = `During this period, a total of <b>${totalScreened}</b> samples were screened at QA Centers as shown below:`;
+        }
+
+        let html = `
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">
+            QA Activities
+            <span id="editQA" style="cursor:pointer;color:#007bff;">✏️</span>
+        </h3>
+        <p>${summaryText}</p>`; // removed italic style
+
+        if(filtered.length === 0){
+            html += `<p id="noQA">${summaryText}</p>`;
+        } else {
+            html += createQATableHTML(filtered);
+        }
+
+        qaBlock.innerHTML = html;
+        if(!container.contains(qaBlock)) container.appendChild(qaBlock);
+
+        const editBtn = document.getElementById('editQA');
+        if(editBtn) editBtn.addEventListener('click', toggleQAEditMode);
+    })
+    .catch(e=>{
+        qaBlock.innerHTML = `<h3>QA Activities</h3><p>Error: ${e.message}</p>`;
+        if(!container.contains(qaBlock)) container.appendChild(qaBlock);
+    });
+}
+
+// --- Helper: create table HTML ---
+function createQATableHTML(rows){
+    let html = `
+    <table id="qaTable" style="border-collapse: collapse; width:100%; table-layout: fixed;">
+        <thead>
+            <tr style="background-color:#ddd;">
+                <th rowspan="2" style="width:5%;">S/No</th>
+                <th rowspan="2" style="width:20%;">Type</th>
+                <th rowspan="2" style="width:25%;">QA Centre</th>
+                <th colspan="3" style="width:25%;">Screened Samples</th>
+                <th rowspan="2" style="width:15%;">Date</th>
+                <th rowspan="2" style="width:15%; display:none;">Actions</th>
+            </tr>
+            <tr style="background-color:#ddd;">
+                <th style="width:8%;">Screened</th>
+                <th style="width:8%;">Passed</th>
+                <th style="width:9%;">%</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    rows.forEach((a,i) => html += createQADataRow(a,i,false));
+    html += `</tbody></table>`;
+    return html;
+}
+
+// --- Toggle Edit Mode ---
+function toggleQAEditMode(){
+    qaEditMode = !qaEditMode;
+
+    // Hide "No QA activities" message if exists
+    const noMsg = document.getElementById('noQA');
+    if(noMsg) noMsg.style.display = 'none';
+
+    let table = document.querySelector('#qaTable');
+
+    // If table doesn't exist (no data initially), create it
+    if(!table){
+        qaBlock.innerHTML += createQATableHTML([]);
+        table = document.querySelector('#qaTable');
+    }
+
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.rows);
+    tbody.innerHTML = '';
+
+    rows.forEach((row,i)=>{
+        const screenedCell = row.querySelector('[name="screened"]') || row.cells[3];
+        const passedCell = row.querySelector('[name="passed"]') || row.cells[4];
+
+        const screened = parseInt(screenedCell.value ?? screenedCell.innerText) || 0;
+        const passed = parseInt(passedCell.value ?? passedCell.innerText) || 0;
+
+        const a = {
+            id: row.dataset.id || null,
+            sample_id: row.dataset.sampleId,
+            type: row.querySelector('[name="type"]')?.value ?? row.cells[1].innerText,
+            center: row.querySelector('[name="centre"]')?.value ?? row.cells[2].innerText.split(' (')[0],
+            screened: screened,
+            passed: passed,
+            screening_date: row.querySelector('[name="screening_date"]')?.value 
+                             ?? new Date(row.cells[6].innerText).toISOString().split('T')[0],
+        };
+
+        const readOnly = row.querySelector('[name="type"]')?.disabled || false;
+        tbody.insertAdjacentHTML('beforeend', createQADataRow(a,i,qaEditMode, readOnly));
+    });
+
+    attachQARowEvents();
+    renumberQARows();
+
+    // Add Add / Save buttons
+    if(qaEditMode){
+        if(!document.getElementById('addQABtn')){
+            const addBtn = document.createElement('button');
+            addBtn.id='addQABtn';
+            addBtn.innerText='+ Add QA Activity';
+            addBtn.style.marginTop='10px';
+            addBtn.onclick = ()=>addNewQARow();
+            qaBlock.appendChild(addBtn);
+        }
+        if(!document.getElementById('saveQABtn')){
+            const saveBtn = document.createElement('button');
+            saveBtn.id='saveQABtn';
+            saveBtn.innerText='💾 Save';
+            saveBtn.style.marginTop='10px';
+            saveBtn.style.marginLeft='10px';
+            saveBtn.onclick = ()=>saveAllQARows();
+            qaBlock.appendChild(saveBtn);
+        }
+    } else {
+        document.getElementById('addQABtn')?.remove();
+        document.getElementById('saveQABtn')?.remove();
+    }
+}
+
+// --- Add new QA row ---
+function addNewQARow(){
+    // Ensure table exists
+    if(!document.querySelector('#qaTable')){
+        qaBlock.innerHTML += createQATableHTML([]);
+    }
+
+    const table = document.querySelector('#qaTable tbody');
+    const newIndex = table.rows.length + 1;
+
+    const newRow = {
+        id:'new',
+        sample_id: generateQASampleID(),
+        type:'', 
+        center:'',
+        screened:0,
+        passed:0,
+        screening_date:new Date().toISOString().split('T')[0],
+    };
+
+    table.insertAdjacentHTML('beforeend', createQADataRow(newRow, newIndex, true, false));
+    attachQARowEvents();
+    renumberQARows();
+}
+
+
+function createQATableHTML(rows){
+    let html = `
+    <table id="qaTable" style="border-collapse: collapse; width:100%; table-layout: fixed;">
+        <thead>
+            <tr style="background-color:#ddd;">
+                <th rowspan="2" style="width:5%;">S/No</th>
+                <th rowspan="2" style="width:20%;">Type</th>
+                <th rowspan="2" style="width:20%;">QA Centre</th>
+                <th colspan="3" style="width:25%;">Screened Samples</th>
+                <th rowspan="2" style="width:15%;">Date</th>
+                <th rowspan="2" style="width:15%; display:none;">Actions</th>
+            </tr>
+            <tr style="background-color:#ddd;">
+                <th style="width:8%;">Screened</th>
+                <th style="width:8%;">Passed</th>
+                <th style="width:9%;">%</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    rows.forEach((a,i) => html += createQADataRow(a,i,false));
+    html += `</tbody></table>`;
+    return html;
+}
+
+// --- Create QA Table Row ---
+// --- Create QA Table Row ---
+function createQADataRow(a, index, isEdit, readOnlyFields=false){
+    const bg = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+
+    const screenedValue = a.screened ?? (a.number_of_samples ?? 0);
+    const passedValue = a.passed ?? 0;
+
+    // Type, Centre, Date fields
+    const typeField = readOnlyFields
+        ? a.type
+        : (isEdit ? `<select name="type">${qaTypes.map(t=>`<option value="${t}" ${t===a.type?'selected':''}>${t}</option>`).join('')}</select>` : a.type);
+
+    const centreField = readOnlyFields
+        ? `${a.center} (${qaCentres[a.center]||''})`
+        : (isEdit ? `<select name="centre">${Object.keys(qaCentres).map(c=>`<option value="${c}" ${c===a.center?'selected':''}>${c} (${qaCentres[c]})</option>`).join('')}</select>` : `${a.center} (${qaCentres[a.center]||''})`);
+
+    const dateField = readOnlyFields
+        ? new Date(a.screening_date).toLocaleDateString()
+        : (isEdit ? `<input type="date" name="screening_date" value="${new Date(a.screening_date).toISOString().split('T')[0]}">` : new Date(a.screening_date).toLocaleDateString());
+
+    // Screened / Passed fields: editable in edit mode, even if read-only row
+    const screenedField = isEdit
+        ? `<input name="screened" class="numeric-input screened-input" value="${screenedValue}">`
+        : screenedValue;
+
+    const passedField = isEdit
+        ? `<input name="passed" class="numeric-input passed-input" value="${passedValue}">`
+        : passedValue;
+
+    const percentField = `<span class="percent-passed">${screenedValue > 0 ? Math.round((passedValue / screenedValue) * 100) + '%' : '0%'}</span>`;
+
+    const actions = isEdit
+        ? `<div class="action-buttons">
+                <button class="deleteBtn" title="Delete">🗑️</button>
+                ${!readOnlyFields ? '<button class="addTypeBtn" title="Add Other Type">+</button>' : ''}
+           </div>`
+        : '';
+
+    return `<tr data-id="${a.id}" data-sample-id="${a.sample_id}" style="background-color:${bg};">
+        <td>${index+1}</td>
+        <td>${typeField}</td>
+        <td>${centreField}</td>
+        <td>${screenedField}</td>
+        <td>${passedField}</td>
+        <td>${percentField}</td>
+        <td>${dateField}</td>
+        <td class="actionColumn" style="display:${isEdit?'inline-block':'none'};">${actions}</td>
+    </tr>`;
+}
+
+
+// --- Attach QA Row Events ---
+function attachQARowEvents(){
+    document.querySelectorAll('.deleteBtn').forEach(btn=>btn.onclick=()=>deleteQARow(btn));
+    document.querySelectorAll('.addTypeBtn').forEach(btn=>btn.onclick=()=>addOtherQATypeRow(btn));
+
+    // Live % Passed calculation & validation
+    document.querySelectorAll('.screened-input, .passed-input').forEach(input=>{
+    input.oninput = (e)=>{
+        const row = e.target.closest('tr');
+        updatePercent(row);
+    };
+});
+
+}
+
+
+
+// --- Add Other Type row ---
+function addOtherQATypeRow(btn){
+    if(!qaEditMode) return;
+
+    const row = btn.closest('tr');
+    const type = row.querySelector('[name="type"]').value;
+    const center = row.querySelector('[name="centre"]').value;
+    const screened = parseInt(row.querySelector('[name="screened"]').value);
+    const passed = parseInt(row.querySelector('[name="passed"]').value);
+    const date = row.querySelector('[name="screening_date"]').value;
+
+    if(!type || !center || isNaN(screened) || isNaN(passed) || !date){
+        alert("⚠️ Fill all fields first");
+        return;
+    }
+
+    // Determine next available type
+    const newType = qaTypes.find(t => t !== type && !Array.from(document.querySelectorAll('#qaTable tbody tr'))
+                                      .some(r => r.dataset.sampleId === row.dataset.sampleId && r.querySelector('[name="type"]').value === t));
+
+    if(!newType){
+        alert("No other type available for this sample");
+        return;
+    }
+
+    const table = row.closest('tbody');
+    const newIndex = Array.from(table.rows).indexOf(row) + 2;
+
+    const newRow = {
+        id: 'new',
+        sample_id: row.dataset.sampleId,
+        type: newType,
+        center: center,
+        screened: screened, // numeric
+        passed: passed,     // numeric
+        screening_date: date
+    };
+
+    // readOnlyFields=true → Type, Centre, Date read-only
+    row.insertAdjacentHTML('afterend', createQADataRow(newRow, newIndex, true, true));
+    btn.style.display = 'none'; // hide + button for this row
+    attachQARowEvents();
+    renumberQARows();
+}
+
+// --- Save all QA rows ---
+function saveAllQARows(){
+    const rows = document.querySelectorAll('#qaTable tbody tr');
+    const data = [];
+
+    for(let row of rows){
+        const type = row.querySelector('[name="type"]').value.trim();
+        const center = row.querySelector('[name="centre"]').value.trim();
+        const screened = parseInt(row.querySelector('[name="screened"]').value)||0;
+        const passed = parseInt(row.querySelector('[name="passed"]').value)||0;
+        const date = row.querySelector('[name="screening_date"]').value.trim();
+
+        if(!type||!center||isNaN(screened)||isNaN(passed)||!date){
+            alert("⚠️ Fill all fields before saving"); return;
+        }
+        if(passed>screened){
+            alert("⚠️ Passed cannot exceed Screened"); return;
+        }
+
+        data.push({
+            id: row.dataset.id==='new'?null:row.dataset.id,
+            sample_id: row.dataset.sampleId,
+            type:type,
+            center:center,
+            number_of_samples:screened,
+            passed:passed,
+            screening_date:date
+        });
+    }
+
+    fetch('/save_qa',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(data)
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.status==='success'){
+            alert('All QA rows saved successfully');
+            buildQATable();
+            qaEditMode=false;
+        } else {
+            alert('Error: '+d.message);
+        }
+    });
+}
+
+// --- Delete QA row ---
+// --- Delete QA row (instant removal on table) ---
+function deleteQARow(btn){
+    const row = btn.closest('tr');
+    const sample_id = row.dataset.sampleId;
+    const type = row.querySelector('[name="type"]')?.value || row.cells[1].innerText;
+
+    if(!confirm('Delete this QA activity?')) return;
+
+    // Instant removal from table
+    row.remove();
+    renumberQARows();
+
+    // Background API call
+    fetch('/delete_qa',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ sample_id: sample_id, type: type })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if(d.status !== 'success'){
+            alert('Error deleting row on server: ' + d.message);
+            // Optional: you can choose to rebuild table to sync server if needed
+            // buildQATable();
+        }
+    })
+    .catch(err=>{
+        alert('Error deleting row on server: ' + err.message);
+        // Optional: rebuild table if necessary
+        // buildQATable();
+    });
+}
+
+// --- Renumber QA Rows ---
+function renumberQARows(){
+    const rows = document.querySelectorAll('#qaTable tbody tr');
+    rows.forEach((r,i)=>r.cells[0].innerText=i+1);
+}
+
+// --- Init ---
+buildQATable();
+
+
+
+
+
+
+
+
+
+// === Progressive Report Section ===
+async function buildProgressiveReport() {
+    // Fetch targets from API
+    const targets = await (async () => {
+        try {
+            const response = await fetch('/api/targets');
+            if (!response.ok) throw new Error('Failed to fetch targets');
+            const data = await response.json();
+            const obj = {};
+            data.forEach(item => {
+                obj[item.category] = item.annual_target; // Use annual_target
+            });
+            return obj;
+        } catch (err) {
+            console.error(err);
+            return {}; // fallback empty targets
+        }
+    })();
+
+    const progressiveBlock = document.createElement('div');
+    progressiveBlock.className = 'report-block';
+
+    // Determine filtered end date
+    let filteredEndDate;
+    const reportType = reportTypeFilter.value;
+    const currentYear = new Date().getFullYear();
+
+    if(data.length === 0){
+        filteredEndDate = new Date();
+    } else {
+        switch(reportType){
+            case 'biweekly':
+                const selectedMonth = parseInt(monthFilter.value);
+                if(biweeklyFilter.value === '1-15'){
+                    filteredEndDate = new Date(currentYear, selectedMonth, 15);
+                } else {
+                    const lastDay = new Date(currentYear, selectedMonth+1, 0).getDate();
+                    filteredEndDate = new Date(currentYear, selectedMonth, lastDay);
+                }
+                break;
+            case 'monthly':
+                const month = parseInt(monthFilter.value);
+                const lastDayOfMonth = new Date(currentYear, month+1, 0).getDate();
+                filteredEndDate = new Date(currentYear, month, lastDayOfMonth);
+                break;
+            case 'quarterly':
+                const quarterMonths = {
+                    1: [6,7,8],
+                    2: [9,10,11],
+                    3: [0,1,2],
+                    4: [3,4,5]
+                };
+                const qMonths = quarterMonths[parseInt(quarterFilter.value)];
+                filteredEndDate = new Date(currentYear, Math.max(...qMonths)+1, 0);
+                break;
+            case 'semiannual':
+                if(parseInt(semiFilter.value) === 1){
+                    filteredEndDate = new Date(currentYear, 5, 30);
+                } else {
+                    filteredEndDate = new Date(currentYear, 11, 31);
+                }
+                break;
+            case 'annual':
+                filteredEndDate = new Date(currentYear, 11, 31);
+                break;
+            default:
+                filteredEndDate = new Date();
+        }
+    }
+
+    const reportStartDate = new Date('2025-07-01');
+
+    // Prepare table
+    const categories = Object.keys(allPremises).sort();
+    let progressiveHTML = `<h3>Progressively Report</h3>
+    <table>
+        <tr>
+            <th>Premise Category</th>
+            <th>Target</th>
+            <th>Premises Inspected<br>in Filtered Period</th>
+            <th>Cumulative<br>Premises Inspected</th>
+            <th>Achievement</th>
+        </tr>`;
+
+    const categoryMap = {
+        "Dispensary": "Dispensaries",
+        "Hospital": "Hospitals",
+        "Medical Lab (GOT)": "Laboratory (GOT)",
+        "Medical Lab (Private)": "Laboratory (Private)"
+    };
+
+    // Totals
+    let totalTarget = 0;
+    let totalInspectedInPeriod = 0;
+    let totalCumulative = 0;
+
+    categories.forEach((cat, index) => {
+        const inspectedInPeriod = allPremises[cat] || 0;
+
+        let cumulative = 0;
+        inspectionData.forEach(d => {
+            const inspectionDate = new Date(d.Date);
+            if (inspectionDate >= reportStartDate && inspectionDate <= filteredEndDate) {
+                const premisesData = d["Premises Data"] || d.premises_data;
+                if (premisesData) {
+                    premisesData.forEach(p => {
+                        if (p["Premise Type"] === cat) {
+                            cumulative += p.Count || 0;
+                        }
+                    });
+                }
+            }
+        });
+
+        const mappedCat = categoryMap[cat] || cat;
+        const targetValue = targets[mappedCat] || 0;
+
+        let achievementText = '—';
+        let achievementColor = '#888'; // grey for no target
+        if (targetValue > 0) {
+            const percent = Math.min((cumulative / targetValue) * 100, 100);
+            achievementText = percent.toFixed(1) + '%';
+
+            if (percent >= 100) achievementColor = '#28a745'; // green
+            else if (percent >= 50) achievementColor = '#ffc107'; // yellow
+            else achievementColor = '#dc3545'; // red
+        }
+
+        // Alternate row colors
+        const rowColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+
+        progressiveHTML += `<tr style="background-color:${rowColor};">
+            <td style="font-weight:bold;">${cat}</td>
+            <td>${targetValue}</td>
+            <td>${inspectedInPeriod}</td>
+            <td>${cumulative}</td>
+            <td style="color:${achievementColor}; font-weight:bold;">${achievementText}</td>
+        </tr>`;
+
+        // Add to totals
+        totalTarget += targetValue;
+        totalInspectedInPeriod += inspectedInPeriod;
+        totalCumulative += cumulative;
+    });
+
+    // Total row
+    let overallAchievement = totalTarget > 0 ? ((totalCumulative / totalTarget) * 100).toFixed(1) + '%' : '—';
+    let overallColor = '#888';
+    if (totalTarget > 0) {
+        const percent = (totalCumulative / totalTarget) * 100;
+        if (percent >= 100) overallColor = '#28a745';
+        else if (percent >= 50) overallColor = '#ffc107';
+        else overallColor = '#dc3545';
+    }
+
+    progressiveHTML += `<tr style="background-color:#dcdcdc; font-weight:bold;">
+        <td>Total</td>
+        <td>${totalTarget}</td>
+        <td>${totalInspectedInPeriod}</td>
+        <td>${totalCumulative}</td>
+        <td style="color:${overallColor}; font-weight:bold;">${overallAchievement}</td>
+    </tr>`;
+
+    progressiveHTML += `</table>`;
+    progressiveBlock.innerHTML = progressiveHTML;
+    container.appendChild(progressiveBlock);
+
+
+
+    
+}
+
+// Build report on page load
+buildProgressiveReport();
+  
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Back to dashboard
+document.getElementById('backDashboardBtn').onclick = () => {
+    window.location.href = '/dashboard';
+};
+
+// Export PDF
+document.getElementById('exportPDFBtn').onclick = () => {
+    const reportType = document.getElementById('reportTypeFilter')?.value || 'annual';
+    const year = document.getElementById('yearFilter')?.value || new Date().getFullYear();
+    const month = document.getElementById('monthFilter')?.value || '';
+    const quarter = document.getElementById('quarterFilter')?.value || '';
+    const semi = document.getElementById('semiFilter')?.value || '';
+    const biweekly = document.getElementById('biweeklyFilter')?.value || '';
+
+    const query = new URLSearchParams({ reportType, year, month, quarter, semi, biweekly }).toString();
+    window.open(`/export_report_pdf?${query}`, '_blank');
+};
+
+
+
+</script>
+
+
+</body>
+</html>

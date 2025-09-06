@@ -1,0 +1,20 @@
+[
+  {
+    "center": "LIGULA RRH",
+    "region": "Mtwara",
+    "medicine_target": 200,
+    "device_target": 50
+  },
+  {
+    "center": "SONGEA RRH",
+    "region": "Ruvuma",
+    "medicine_target": 0,
+    "device_target": 0
+  },
+  {
+    "center": "SOKOINE RRH",
+    "region": "Lindi",
+    "medicine_target": 0,
+    "device_target": 0
+  }
+]

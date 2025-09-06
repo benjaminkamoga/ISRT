@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>POE Inspection</title>
+    <style>
+        body, html { margin:0; padding:0; font-family:Arial,sans-serif; background:#f5f5f5; height:100%; }
+        .container { max-width:700px; margin:0 auto; padding:0; box-sizing:border-box; }
+        .header { background:#4CAF50; color:white; padding:10px 20px; border-left:4px solid #388E3C; border-radius:0 0 5px 5px; width:100%; }
+        .header h1, .header h3 { margin:0; }
+        .content { padding:40px 20px; background:transparent; width:100%; }
+        .card { background:white; padding:20px; margin-bottom:20px; border-radius:5px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+        label { display:block; margin-top:10px; font-weight:bold; }
+        input, select, textarea { width:100%; padding:8px; margin-top:4px; box-sizing:border-box; }
+        .checkbox-item { display:flex; align-items:center; margin-top:10px; }
+        .checkbox-item label { font-weight:normal; cursor:pointer; user-select:none; margin:0; flex:1; white-space:nowrap; }
+        .checkbox-item input[type="checkbox"] { margin-left:10px; cursor:pointer; flex-shrink:0; }
+        .checkbox-value { margin-left:0; margin-top:6px; padding-left:2px; max-width:400px; }
+        button { background:#4CAF50; color:white; padding:10px 15px; margin-right:10px; border:none; border-radius:3px; cursor:pointer; }
+        button:hover { background:#45a049; }
+        button.cancel-btn { background:#6c757d; }
+        button.cancel-btn:hover { background:#565e64; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>POE Inspection</h1>
+        <h3 id="locationHeader"></h3>
+    </div>
+
+    <div class="content">
+        <div class="card">
+            <h2>Inspection Details</h2>
+            <label>Name of POE:</label>
+            <input type="text" id="poeName" required>
+            <label>Date of Inspection:</label>
+            <input type="date" id="inspectionDate" required>
+        </div>
+
+        <div class="card">
+            <h2>Products Confiscated</h2>
+            <label>Were any products confiscated?</label>
+            <select id="productsConfiscated" onchange="toggleProductDetails()" required>
+                <option value="" disabled selected>Select</option>
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+            </select>
+
+            <div id="productDetails" style="display:none;">
+                <div class="checkbox-group">
+                    <h3>Type of Products:</h3>
+
+                    <div class="checkbox-item">
+                        <label for="gotProducts">GOT Products</label>
+                        <input type="checkbox" id="gotProducts">
+                    </div>
+                    <div id="gotValueField" class="checkbox-value">
+                        <label>Value of GOT Products (Tsh):</label>
+                        <input type="number" min="0" id="gotValue">
+                    </div>
+
+                    <div class="checkbox-item">
+                        <label for="unregisteredProducts">Unregistered Products</label>
+                        <input type="checkbox" id="unregisteredProducts">
+                    </div>
+                    <div id="unregisteredValueField" class="checkbox-value">
+                        <label>Value of Unregistered Products (Tsh):</label>
+                        <input type="number" min="0" id="unregisteredValue">
+                    </div>
+
+                    <div class="checkbox-item">
+                        <label for="noPermitProducts">No Import/Export Permit</label>
+                        <input type="checkbox" id="noPermitProducts">
+                    </div>
+                    <div id="noPermitValueField" class="checkbox-value">
+                        <label>Value of No Permit Products (Tsh):</label>
+                        <input type="number" min="0" id="noPermitValue">
+                    </div>
+                </div>
+
+                <label>Description:</label>
+                <textarea id="productDescription" rows="3"></textarea>
+
+                <label>Total Charges (Tsh):</label>
+                <input type="number" min="0" id="totalCharges" required>
+            </div>
+        </div>
+
+        <div class="card">
+            <button onclick="submitInspection()">Save Inspection</button>
+            <button class="cancel-btn" onclick="window.history.back()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let regionParam = "";
+let districtParam = "";
+
+window.onload = function () {
+    const params = new URLSearchParams(window.location.search);
+    regionParam = params.get('region') || '';
+    districtParam = params.get('district') || '';
+
+    document.getElementById("locationHeader").textContent =
+        (regionParam ? `Region: ${regionParam}` : "") +
+        (districtParam ? ` | District: ${districtParam}` : "");
+};
+
+function toggleProductDetails() {
+    const show = document.getElementById("productsConfiscated").value === "yes";
+    document.getElementById("productDetails").style.display = show ? "block" : "none";
+}
+
+function submitInspection() {
+    const poeName = document.getElementById("poeName").value.trim();
+    const inspectionDate = document.getElementById("inspectionDate").value;
+    const productsConfiscatedSelect = document.getElementById("productsConfiscated").value;
+
+    if (!poeName) { alert("Please enter the Name of POE"); return; }
+    if (!inspectionDate) { alert("Please select the Date of Inspection"); return; }
+    if (!productsConfiscatedSelect) { alert("Please select whether products were confiscated"); return; }
+
+    const productsConfiscated = productsConfiscatedSelect === "yes";
+
+    let totalCharges = 0;
+    if (productsConfiscated) {
+        const totalChargesValue = document.getElementById("totalCharges").value;
+        if (!totalChargesValue || isNaN(totalChargesValue) || parseFloat(totalChargesValue) < 0) {
+            alert("Please enter a valid Total Charges amount");
+            return;
+        }
+        totalCharges = parseFloat(totalChargesValue);
+    }
+
+    function getNumericValue(id) {
+        const el = document.getElementById(id);
+        if (!el) return 0;
+        const val = el.value.trim();
+        return val === "" ? 0 : parseFloat(val);
+    }
+
+    const inspectionData = {
+        poe_name: poeName,
+        inspection_date: inspectionDate,
+        region: regionParam,
+        district: districtParam,
+        products_confiscated: productsConfiscated,
+        total_charges: totalCharges,
+        poe_products: {
+            got_products: document.getElementById("gotProducts").checked,
+            unregistered_products: document.getElementById("unregisteredProducts").checked,
+            no_permit_products: document.getElementById("noPermitProducts").checked,
+            description: document.getElementById("productDescription").value.trim(),
+            got_value: getNumericValue("gotValue"),
+            unregistered_value: getNumericValue("unregisteredValue"),
+            no_permit_value: getNumericValue("noPermitValue")
+        }
+    };
+
+    fetch('/api/poe_inspection/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inspectionData)
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            alert(`POE Inspection saved!\nName: ${result.inspection_name}\nSummary ID: ${result.summary_id}`);
+            window.location.href = "/dashboard";
+        } else {
+            alert("Error: " + (result.error || "Unknown error"));
+        }
+    })
+    .catch(err => { alert("Failed to save inspection"); console.error(err); });
+}
+</script>
+</body>
+</html>

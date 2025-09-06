@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create New Account</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    input[type=text], input[type=password], select {
+      width: 300px;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    input[type=submit] {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    input[type=submit]:hover {
+      background-color: #45a049;
+    }
+    .flash {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    .flash.danger { color: red; }
+    .flash.success { color: green; }
+  </style>
+</head>
+<body>
+
+  <h2>Create New User Account</h2>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul>
+        {% for category, message in messages %}
+          <li class="flash {{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  <form action="{{ url_for('create_account') }}" method="POST">
+    <label for="new_username">Username:</label>
+    <input type="text" id="new_username" name="new_username" required>
+
+    <label for="new_password">Password:</label>
+    <input type="password" id="new_password" name="new_password" required>
+
+    <label for="new_role">Role:</label>
+    <select id="new_role" name="new_role" required>
+      <option value="admin">Admin</option>
+      <option value="champion">Champion</option>
+      <option value="user">User</option>
+    </select>
+
+    <input type="submit" value="Create Account">
+  </form>
+
+  <p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+
+</body>
+</html>

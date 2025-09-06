@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Continue Inspection</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="p-3">
+
+  <h2>Continue from Previous Inspection</h2>
+
+  <select id="inspectionSelect" class="form-select mb-3">
+    <option value="" disabled selected>Loading inspections...</option>
+  </select>
+
+  <button type="button" id="continueBtn" class="btn btn-success" disabled>Continue</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const inspectionSelect = document.getElementById('inspectionSelect');
+    const continueBtn = document.getElementById('continueBtn');
+
+    // Fetch unfinished inspections
+    fetch('/unfinished_inspections')
+      .then(response => response.json())
+      .then(data => {
+        inspectionSelect.innerHTML = '';
+
+        if (data.length === 0) {
+          const option = document.createElement('option');
+          option.text = 'No unfinished inspections found';
+          option.disabled = true;
+          option.selected = true;
+          inspectionSelect.add(option);
+          continueBtn.disabled = true;
+          return;
+        }
+
+        const defaultOption = document.createElement('option');
+        defaultOption.text = 'Select an inspection';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        inspectionSelect.add(defaultOption);
+
+        data.forEach(insp => {
+          const option = document.createElement('option');
+          option.value = insp.summary_id || insp.id;
+          option.text = insp.inspection_name;
+
+          // Pass extra info as data attributes
+          option.dataset.region = insp.region;
+          option.dataset.district = insp.district;
+          option.dataset.inspectionType = insp.inspection_type;
+
+          inspectionSelect.add(option);
+        });
+
+        continueBtn.disabled = true;
+      })
+      .catch(err => {
+        inspectionSelect.innerHTML = '';
+        const option = document.createElement('option');
+        option.text = 'Error loading inspections';
+        option.disabled = true;
+        option.selected = true;
+        inspectionSelect.add(option);
+        continueBtn.disabled = true;
+        console.error('Failed to load inspections:', err);
+      });
+
+    inspectionSelect.addEventListener('change', () => {
+      continueBtn.disabled = !inspectionSelect.value;
+    });
+
+    continueBtn.addEventListener('click', () => {
+      const selectedOption = inspectionSelect.selectedOptions[0];
+      if (!selectedOption) return;
+
+      const id = selectedOption.value;
+      const region = selectedOption.dataset.region;
+      const district = selectedOption.dataset.district;
+      const type = selectedOption.dataset.inspectionType;
+
+      if (type.toLowerCase() === 'recall inspection') {
+        // Redirect to Flask route for recall inspections
+        const recallUrl = `/continue_recall_inspection?inspection_name=${encodeURIComponent(selectedOption.text)}&region=${encodeURIComponent(region)}&district=${encodeURIComponent(district)}&inspection_type=${encodeURIComponent(type)}`;
+        window.location.href = recallUrl;
+      } else {
+        // Redirect to normal inspection
+        const normalUrl = `/continue_normal_inspection?inspection_name=${encodeURIComponent(selectedOption.text)}&region=${encodeURIComponent(region)}&district=${encodeURIComponent(district)}&inspection_type=${encodeURIComponent(type)}`;
+        window.location.href = normalUrl;
+      }
+    });
+  </script>
+
+</body>
+</html>

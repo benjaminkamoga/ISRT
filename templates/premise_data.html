@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Premise Data</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 20px;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+    .tab {
+      padding: 6px 10px;
+      background-color: #ddd;
+      cursor: pointer;
+      border-radius: 5px 5px 0 0;
+      user-select: none;
+      font-size: 0.9rem;
+    }
+    .tab.active {
+      background-color: #fff;
+      border-bottom: 2px solid white;
+      font-weight: bold;
+    }
+    .tab-content {
+      background-color: #fff;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-top: none;
+      border-radius: 0 5px 5px 5px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+      table-layout: fixed;
+      font-size: 0.85rem;
+      line-height: 1.1;
+    }
+    th, td {
+      padding: 2px 4px;
+      border: 1px solid #ccc;
+      text-align: left;
+      overflow-wrap: break-word;
+      vertical-align: middle;
+    }
+    th {
+      background-color: #eee;
+      font-size: 0.85rem;
+      line-height: 1.1;
+    }
+    td {
+      font-size: 0.8rem;
+      line-height: 1.1;
+    }
+    .filters {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .filters select, .filters input {
+      padding: 3px 5px;
+      font-size: 0.85rem;
+    }
+    .actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 4px 8px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 0.85rem;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .action-icons {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .action-icons button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #4caf50;
+      padding: 0;
+      font-size: 1rem;
+      line-height: 1;
+      vertical-align: middle;
+    }
+    .action-icons button:hover {
+      color: #2e7d32;
+    }
+    /* Column widths */
+    /* Column widths */
+.col-sno { width: 4%; }
+.col-name { width: 22%; }
+.col-category { width: 18%; }
+.col-region { width: 13%; }
+.col-district { width: 13%; }
+.col-location { width: 18%; }   /* reduced from 25% to 18% */
+.col-observation { width: 12%; } /* increased from 8% to 12% */
+.col-map { width: 5%; text-align: center; padding: 0; }
+.col-actions { width: 5%; text-align: center; padding: 2px 0; }
+
+    .col-map {
+      width: 5%;
+      text-align: center;
+      padding: 0;
+    }
+    .col-map button {
+      font-weight: bold;
+      font-size: 1.1rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #4caf50;
+      line-height: 1;
+      vertical-align: middle;
+      padding: 0;
+      margin: 0 auto;
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      text-align: center;
+      user-select: none;
+    }
+    .col-map button:hover {
+      color: #2e7d32;
+    }
+    .col-actions {
+      width: 5%;
+      text-align: center;
+      padding: 2px 0;
+    }
+    /* Modal styling */
+    #premiseModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    #premiseModal > div {
+      background: #fff;
+      max-width: 450px;
+      margin: 100px auto;
+      padding: 20px;
+      border-radius: 5px;
+      position: relative;
+    }
+    #premiseModal label {
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    #premiseModal input[type="text"], #premiseModal select {
+      width: 100%;
+      padding: 6px;
+      font-size: 0.9rem;
+      margin-top: 3px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    #premiseModal button[type="submit"], #premiseModal button[type="button"] {
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    #premiseModal button[type="submit"] {
+      background-color: #28a745;
+      color: white;
+      border: none;
+    }
+    #premiseModal button[type="button"] {
+      background-color: #ccc;
+      border: none;
+      margin-left: 10px;
+    }
+    #premiseModal button[type="submit"]:hover {
+      background-color: #218838;
+    }
+    #premiseModal button[type="button"]:hover {
+      background-color: #999;
+    }
+    #mapModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 2000;
+}
+
+#mapModal > div {
+  background: #fff;
+  max-width: 600px;
+  margin: 80px auto;
+  padding: 10px;
+  border-radius: 6px;
+  position: relative;
+}
+
+#mapModal .close-btn {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* Observation column */
+.col-observation {
+  width: 8%;      /* Adjust as needed */
+  text-align: center;
+  white-space: nowrap;  /* Keep + and view icon on same line */
+}
+
+.col-observation .action-icons {
+  justify-content: center; /* center buttons horizontally */
+  gap: 4px;
+}
+
+.col-observation .action-icons button {
+  font-size: 1rem;   /* small icon buttons */
+  padding: 2px 4px;
+}
+
+.intensity-cards-container {
+    display: inline-flex;      /* align badges horizontally */
+    gap: 2px;                  /* space between badges */
+    vertical-align: middle;
+}
+
+.intensity-card {
+    width: 12px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #333;
+    display: inline-block;
+}
+
+
+
+    
+  </style>
+</head>
+<body>
+
+<h2>Premise Data</h2>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('targetsTab')">Annual Targets</div>
+  <div class="tab" onclick="showTab('premisesTab')">Premises in a Zone</div>
+</div>
+
+<!-- Annual Targets Tab -->
+
+
+<div id="targetsTab" class="tab-content">
+  <h4>Annual Targets</h4>
+  <table>
+    <thead>
+      <tr>
+        <th class="col-sno">S/No</th>
+        <th>Premise Category</th>
+        <th>Annual Target</th>
+      </tr>
+    </thead>
+    <tbody id="targetsTable"></tbody>
+  </table>
+
+  <h4 style="margin-top:20px;">QA Targets</h4>
+  <table>
+    <thead>
+      <tr>
+        <th class="col-sno">S/No</th>
+        <th>QA Centre</th>
+        <th>Region</th>
+        <th>Medicine Target</th>
+        <th>Medical Device Target</th>
+      </tr>
+    </thead>
+    <tbody id="qaTargetsTable">
+      <tr>
+        <td>1</td>
+        <td>LIGULA RRH</td>
+        <td>Mtwara</td>
+        <td><input type="number" value="0" min="0" onchange="updateQATarget('LIGULA RRH','medicine', this.value)" style="width:80px;text-align:right;"></td>
+        <td><input type="number" value="0" min="0" onchange="updateQATarget('LIGULA RRH','device', this.value)" style="width:80px;text-align:right;"></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>SONGEA RRH</td>
+        <td>Ruvuma</td>
+        <td><input type="number" value="0" min="0" onchange="updateQATarget('SONGEA RRH','medicine', this.value)" style="width:80px;text-align:right;"></td>
+        <td><input type="number" value="0" min="0" onchange="updateQATarget('SONGEA RRH','device', this.value)" style="width:80px;text-align:right;"></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>SOKOINE RRH</td>
+        <td>Lindi</td>
+        <td><input type="number" value="0" min="0" onchange="updateQATarget('SOKOINE RRH','medicine', this.value)" style="width:80px;text-align:right;"></td>
+        <td><input type="number" value="0" min="0" onchange="updateQATarget('SOKOINE RRH','device', this.value)" style="width:80px;text-align:right;"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+
+
+
+
+
+
+
+<!-- Premises in a Zone Tab -->
+<div id="premisesTab" class="tab-content" style="display:none;">
+  <div class="filters">
+    <select id="regionFilter" onchange="updateDistricts()">
+      <option value="All">All Regions</option>
+      <option value="Mtwara">Mtwara</option>
+      <option value="Lindi">Lindi</option>
+      <option value="Ruvuma">Ruvuma</option>
+    </select>
+    <select id="districtFilter" onchange="filterPremises()">
+      <option value="All">All Districts</option>
+    </select>
+    <select id="categoryFilter" onchange="filterPremises()">
+      <option value="All">All Categories</option>
+      <option>DLDM (Human)</option>
+      <option>DLDM (Vet)</option>
+      <option>Pharmacy (Human)</option>
+      <option>Pharmacy (Vet)</option>
+      <option>Hospital</option>
+      <option>Health Centre</option>
+      <option>Dispensary</option>
+      <option>Medical Lab (GOT)</option>
+      <option>Medical Lab (Private)</option>
+      <option>Polyclinic</option>
+      <option>Ware House</option>
+      <option>Medical Device Shops</option>
+    </select>
+    <input type="text" id="searchBox" placeholder="Search..." onkeyup="filterPremises()">
+  </div>
+
+  <div class="actions">
+    <button onclick="openAddModal()">Add Premise</button>
+    <button onclick="exportToExcel()">Export to Excel</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="col-sno">S/No</th>
+        <th class="col-name">Name of Premise</th>
+        <th class="col-category">Premise Category</th>
+        <th class="col-region">Region</th>
+        <th class="col-district">District</th>
+        <th class="col-location">Physical Location</th>
+        <th class="col-observation">Observation</th>
+<th class="col-map">Map</th>
+<th class="col-actions">Actions</th>
+
+
+      </tr>
+    </thead>
+    <tbody id="premiseTable">
+      <!-- Filled dynamically -->
+    </tbody>
+  </table>
+</div>
+
+<!-- Add/Edit Premise Modal -->
+<div id="premiseModal">
+  <div>
+    <h3 id="modalTitle">Add Premise</h3>
+    <form id="premiseForm">
+      <label for="modalName">Name of Premise</label><br>
+      <input type="text" id="modalName" name="name" required>
+      <label for="modalCategory">Premise Category</label><br>
+      <select id="modalCategory" name="category" required>
+        <option value="" disabled selected>Select Category</option>
+        <option>DLDM (Human)</option>
+        <option>DLDM (Vet)</option>
+        <option>Pharmacy (Human)</option>
+        <option>Pharmacy (Vet)</option>
+        <option>Hospital</option>
+        <option>Health Centre</option>
+        <option>Dispensary</option>
+        <option>Medical Lab (Private)</option>
+        <option>Medical Lab (GOT)</option>
+        <option>Polyclinic</option>
+        <option>Ware House</option>
+        <option>Medical Device Shop</option>
+      </select>
+      <label for="modalRegion">Region</label><br>
+      <select id="modalRegion" name="region" required onchange="modalUpdateDistricts()">
+        <option value="" disabled selected>Select Region</option>
+        <option value="Mtwara">Mtwara</option>
+        <option value="Lindi">Lindi</option>
+        <option value="Ruvuma">Ruvuma</option>
+      </select>
+      <label for="modalDistrict">District</label><br>
+      <select id="modalDistrict" name="district" required>
+        <option value="" disabled selected>Select District</option>
+      </select>
+      <label for="modalLocation">Physical Location</label><br>
+      <input type="text" id="modalLocation" name="location" required>
+      <input type="hidden" id="premiseId" name="id">
+      <div style="margin-top:10px; text-align:right;">
+        <button type="submit">Save</button>
+        <button type="button" onclick="closeModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Map Modal -->
+<div id="mapModal">
+  <div>
+    <span class="close-btn" onclick="closeMapModal()">&times;</span>
+    <iframe id="mapFrame" width="100%" height="400" style="border:0;" allowfullscreen loading="lazy"></iframe>
+  </div>
+</div>
+
+<!-- Add Observation Modal -->
+<div id="observationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:5000;">
+  <div style="background:#fff; max-width:450px; margin:80px auto; padding:20px; border-radius:8px; position:relative;">
+    <span style="position:absolute; top:5px; right:10px; cursor:pointer; font-size:1.5rem;" onclick="closeObservationModal()">&times;</span>
+    <h3>Add Observation for <span id="obsPremiseName"></span></h3>
+    <label>Date:</label><br>
+    <input type="date" id="obsDate" required style="width:100%; margin-bottom:10px;"><br>
+    <label><input type="checkbox" id="obsGot"> GOT Medicines</label><br>
+    <label><input type="checkbox" id="obsUnreg"> Unregistered Medicines</label><br>
+    <label><input type="checkbox" id="obsPersonnel"> No Qualified Personnel</label><br>
+    <label><input type="checkbox" id="obsRequirements"> Premise doesn't meet GSP Requirement</label><br>
+    <label><input type="checkbox" id="obsUnregPremise"> Unregistered Premise</label><br>
+    <label><input type="checkbox" id="obsMedicalPractices"> Medical Practices</label><br>
+    <label><input type="checkbox" id="obsDldmNotAllowed"> DLDM NOT ALLOWED Medicines</label><br>
+    <div style="margin-top:10px; text-align:right;">
+      <button onclick="saveObservation()" style="padding:6px 12px; background:#28a745; color:#fff; border:none; border-radius:3px; cursor:pointer;">Save</button>
+      <button onclick="closeObservationModal()" style="padding:6px 12px; background:#ccc; border:none; border-radius:3px; cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Observations Modal -->
+<div id="viewObsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:4000;">
+  <div style="background:#fff; max-width:500px; margin:80px auto; padding:20px; border-radius:5px; position:relative; max-height:80%; overflow-y:auto;">
+    <span style="position:absolute; top:5px; right:10px; cursor:pointer; font-size:1.5rem;" onclick="closeViewObsModal()">&times;</span>
+    <h3>Observations for<span id="viewObsPremiseName"></span></h3>
+    <table id="viewObsTable" style="width:100%; border-collapse:collapse; margin-top:10px;">
+      <thead>
+        <tr style="background:#eee;">
+          <th>Date</th>
+          <th>Observations</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+
+
+<script>
+  const districtsByRegion = {
+    "Mtwara": ["Mtwara Mc", "Mtwara DC", "Masasi DC", "Masasi TC", "Nanyumbu", "Newala TC", "Newala DC", "Tandahimba", "Nanyamba"],
+    "Lindi": ["Lindi MC", "Kilwa", "Nachingwea", "Liwale", "Ruangwa", "Mtama"],
+    "Ruvuma": ["Songea MC", "Songea DC", "Mbinga TC", "Mbinga DC", "Madaba", "Nyasa", "Namtumbo", "Tunduru"]
+  };
+
+  let premises = [];
+
+  // Utility: Capitalize first letter of each word, rest lower
+  function toTitleCase(str) {
+    return str.trim().toLowerCase().split(' ').filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+  }
+
+function showTab(tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+
+  const activeTabButton = Array.from(document.querySelectorAll('.tab'))
+    .find(t => t.getAttribute('onclick')?.includes(tabId));
+  if (activeTabButton) activeTabButton.classList.add('active');
+
+  const activeTabContent = document.getElementById(tabId);
+  if (activeTabContent) activeTabContent.style.display = 'block';
+}
+
+// Initialize first tab automatically
+document.addEventListener('DOMContentLoaded', () => {
+  const firstTab = document.querySelector('.tab');
+  if (firstTab) firstTab.click();
+});
+
+  function updateDistricts() {
+    const region = document.getElementById('regionFilter').value;
+    const districtSelect = document.getElementById('districtFilter');
+    districtSelect.innerHTML = '<option value="All">All Districts</option>';
+    if (region !== 'All') {
+      districtsByRegion[region].forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        districtSelect.appendChild(opt);
+      });
+    }
+    filterPremises();
+  }
+
+  function modalUpdateDistricts() {
+    const region = document.getElementById('modalRegion').value;
+    const districtSelect = document.getElementById('modalDistrict');
+    districtSelect.innerHTML = '<option value="" disabled selected>Select District</option>';
+    if (districtsByRegion[region]) {
+      districtsByRegion[region].forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        districtSelect.appendChild(opt);
+      });
+    }
+  }
+
+  function filterPremises() {
+    const regionFilter = document.getElementById('regionFilter').value.toLowerCase();
+    const districtFilter = document.getElementById('districtFilter').value.toLowerCase();
+    const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
+    const searchText = document.getElementById('searchBox').value.toLowerCase();
+
+    const tbody = document.getElementById('premiseTable');
+    tbody.innerHTML = '';
+    let count = 0;
+
+    premises.forEach(p => {
+      const regionMatch = (regionFilter === 'all' || p.region.toLowerCase() === regionFilter);
+      const districtMatch = (districtFilter === 'all' || p.district.toLowerCase() === districtFilter);
+      const categoryMatch = (categoryFilter === 'all' || p.category.toLowerCase() === categoryFilter);
+      const searchMatch = p.name.toLowerCase().includes(searchText) || p.location.toLowerCase().includes(searchText);
+
+      if (regionMatch && districtMatch && categoryMatch && searchMatch) {
+        count++;
+        let mapCell = '';
+        if (!p.latitude || !p.longitude) {
+          mapCell = `<button title="Set Location" onclick="confirmSetLocation(${p.id})">+</button>`;
+        } else {
+          mapCell = `<button title="Show Coordinates" onclick="showCoordinates(${p.latitude},${p.longitude})">📍</button>`;
+        }
+        const tr = document.createElement('tr');
+tr.innerHTML = `
+  <td class="col-sno">${count}</td>
+  <td class="col-name">${p.name}</td>
+  <td class="col-category">${p.category}</td>
+  <td class="col-region">${p.region}</td>
+  <td class="col-district">${p.district}</td>
+  <td class="col-location">${p.location || '<i>Not set</i>'}</td>
+  <td class="col-observation">
+  <div class="action-icons">
+    <button title="Add Observation" onclick="openObservationModal(${p.id})">+</button>
+    <button title="View Observations" onclick="viewObservations(${p.id})">&#128065;</button>
+    <div id="intensity-card-${p.id}" class="intensity-cards-container"></div>
+
+  </div>
+</td>
+
+</td>
+
+  </div>
+</td>
+
+<td class="col-map">${mapCell}</td>
+<td class="col-actions">
+  <div class="action-icons">
+    <button title="Edit" onclick="openEditModal(${p.id})">&#9998;</button>
+    <button title="Delete" onclick="confirmDelete(${p.id})">&#128465;</button>
+  </div>
+</td>
+
+`;
+
+        tbody.appendChild(tr);
+      }
+    });
+  }
+
+  function showCoordinates(lat, lon) {
+  const url = `https://www.google.com/maps?q=${lat},${lon}&hl=es;z=14&output=embed`;
+  document.getElementById('mapFrame').src = url;
+  document.getElementById('mapModal').style.display = 'block';
+}
+
+function closeMapModal() {
+  document.getElementById('mapModal').style.display = 'none';
+  document.getElementById('mapFrame').src = ''; // clear to stop map session
+}
+
+
+  function confirmSetLocation(id) {
+    const p = premises.find(x => x.id === id);
+    if (!p) {
+      alert('Premise not found.');
+      return;
+    }
+    if (confirm(`Do you want to set location for "${p.name}"?`)) {
+      setLocationAuto(id);
+    }
+  }
+
+  function setLocationAuto(id) {
+    if (!navigator.geolocation) {
+      alert('Geolocation not supported by your browser.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lon = pos.coords.longitude.toFixed(6);
+
+      try {
+        const resp = await fetch('/save_location', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({id, latitude: lat, longitude: lon})
+        });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          // Update locally
+          const premise = premises.find(p => p.id === id);
+          if (premise) {
+            premise.latitude = lat;
+            premise.longitude = lon;
+            alert('Location saved successfully.');
+            filterPremises();
+          }
+        } else {
+          alert('Error saving location: ' + (data.message || 'Unknown error'));
+        }
+      } catch (e) {
+        alert('Network error saving location.');
+      }
+    }, () => {
+      alert('Could not get your location.');
+    });
+  }
+
+  function openAddModal() {
+    document.getElementById('modalTitle').textContent = 'Add Premise';
+    document.getElementById('premiseForm').reset();
+    document.getElementById('premiseId').value = '';
+    // Reset districts in modal
+    const distSelect = document.getElementById('modalDistrict');
+    distSelect.innerHTML = '<option value="" disabled selected>Select District</option>';
+    showTab('premisesTab');
+    document.getElementById('premiseModal').style.display = 'block';
+  }
+
+  function openEditModal(id) {
+    const p = premises.find(x => x.id === id);
+    if (!p) {
+      alert('Premise not found');
+      return;
+    }
+    document.getElementById('modalTitle').textContent = 'Edit Premise';
+    document.getElementById('modalName').value = p.name;
+    document.getElementById('modalCategory').value = p.category;
+    document.getElementById('modalRegion').value = p.region;
+    modalUpdateDistricts();
+    document.getElementById('modalDistrict').value = p.district;
+    document.getElementById('modalLocation').value = p.location;
+    document.getElementById('premiseId').value = p.id;
+    document.getElementById('premiseModal').style.display = 'block';
+  }
+
+  function closeModal() {
+    document.getElementById('premiseModal').style.display = 'none';
+  }
+
+ async function savePremise(event) {
+  event.preventDefault(); // Prevent default form submission
+
+  // Grab form values
+  const idField = document.getElementById('premiseId').value;
+  const name = toTitleCase(document.getElementById('modalName').value);
+  const category = document.getElementById('modalCategory').value;
+  const region = document.getElementById('modalRegion').value;
+  const district = document.getElementById('modalDistrict').value;
+  const location = toTitleCase(document.getElementById('modalLocation').value.trim()); // optional
+
+  // Validate required fields
+  if (!name || !category || !region || !district) {
+    alert('Please fill all required fields.');
+    return;
+  }
+
+  // Convert empty ID to null
+  const id = idField && !isNaN(idField) ? Number(idField) : null;
+
+  // Prepare JSON payload
+  const data = { id, name, category, region, district, location };
+
+  try {
+    const resp = await fetch('/save_premise', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const result = await resp.json();
+
+    if (resp.ok && result.success) {
+      // Refresh the premises table from server
+      await loadPremises();
+      alert(id ? 'Premise updated successfully.' : 'Premise added successfully.');
+      closeModal();
+    } else {
+      alert('Error: ' + (result.error || 'Failed to save premise.'));
+    }
+
+  } catch (e) {
+    console.error('Network error saving premise:', e);
+    alert('Network error saving premise.');
+  }
+}
+
+  async function confirmDelete(id) {
+    if (!confirm('Are you sure you want to delete this premise?')) return;
+    try {
+      const resp = await fetch(`/delete_premise/${id}`, {method: 'DELETE'});
+      const result = await resp.json();
+      if (resp.ok && result.success) {
+        // Remove locally and refresh
+        premises = premises.filter(p => p.id !== id);
+        filterPremises();
+        alert('Premise deleted.');
+      } else {
+        alert('Delete failed: ' + (result.message || 'Unknown error'));
+      }
+    } catch (e) {
+      alert('Network error deleting premise.');
+    }
+  }
+
+  async function loadPremises() {
+    try {
+        const response = await fetch('/get_premises');
+        if (!response.ok) throw new Error('Failed to load premises');
+        premises = await response.json();
+
+        filterPremises();      // render table
+        updateIntensityCards(); // update badges
+    } catch (e) {
+        alert('Error loading premises from server.');
+    }
+}
+
+  // Excel export
+  function exportToExcel() {
+    if (premises.length === 0) {
+      alert('No premises to export.');
+      return;
+    }
+    let csv = 'S/No,Name,Category,Region,District,Physical Location\n';
+    let count = 0;
+    premises.forEach(p => {
+      const regionFilter = document.getElementById('regionFilter').value.toLowerCase();
+      const districtFilter = document.getElementById('districtFilter').value.toLowerCase();
+      const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
+      const searchText = document.getElementById('searchBox').value.toLowerCase();
+
+      const regionMatch = (regionFilter === 'all' || p.region.toLowerCase() === regionFilter);
+      const districtMatch = (districtFilter === 'all' || p.district.toLowerCase() === districtFilter);
+      const categoryMatch = (categoryFilter === 'all' || p.category.toLowerCase() === categoryFilter);
+      const searchMatch = p.name.toLowerCase().includes(searchText) || p.location.toLowerCase().includes(searchText);
+
+      if (regionMatch && districtMatch && categoryMatch && searchMatch) {
+        count++;
+        csv += `${count},"${p.name}","${p.category}","${p.region}","${p.district}","${p.location}"\n`;
+      }
+    });
+
+    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `premises_export_${new Date().toISOString().slice(0,10)}.csv`;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Initialize
+  document.getElementById('premiseForm').addEventListener('submit', savePremise);
+
+  loadPremises();
+  updateDistricts();
+
+
+  async function loadTargets() {
+  try {
+    const response = await fetch('/api/targets');
+    if (!response.ok) throw new Error('Failed to load targets');
+    const targets = await response.json();
+
+    const tbody = document.getElementById('targetsTable');
+    tbody.innerHTML = '';
+    targets.forEach((t, index) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${t.category}</td>
+        <td>
+          <input 
+            type="number" 
+            value="${t.annual_target}" 
+            min="0"
+            onchange="updateTarget('${t.category}', this.value)"
+            style="width:80px; text-align:right;"
+          >
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    alert('Error loading targets.');
+  }
+}
+
+async function updateTarget(category, newTarget) {
+  try {
+    const response = await fetch('/api/update_target', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({category, annual_target: newTarget})
+    });
+
+    const result = await response.json();
+    if (response.ok && result.success) {
+      alert(`Target for ${category} updated to ${newTarget}`);
+    } else {
+      alert('Failed to update target: ' + (result.message || 'Unknown error'));
+    }
+  } catch (e) {
+    alert('Network error updating target.');
+  }
+}
+
+// Initialize targets on page load
+
+let currentObsPremiseId = null;
+
+// Load QA targets from server
+async function loadQATargets() {
+  try {
+    const resp = await fetch('/api/qa_targets');
+    const qaTargets = await resp.json();
+
+    qaTargets.forEach(t => {
+      const medInput = document.querySelector(`#qaTargetsTable input[onchange*="${t.center}"][onchange*="medicine"]`);
+      const devInput = document.querySelector(`#qaTargetsTable input[onchange*="${t.center}"][onchange*="device"]`);
+      if (medInput) medInput.value = t.medicine_target || 0;
+      if (devInput) devInput.value = t.device_target || 0;
+    });
+  } catch(e) {
+    alert('Error loading QA targets');
+    console.error(e);
+  }
+}
+
+// Update QA target on server
+async function updateQATarget(center, type, newTarget) {
+  try {
+    const payload = type === 'medicine'
+      ? {center, medicine_target: Number(newTarget)}
+      : {center, device_target: Number(newTarget)};
+
+    const resp = await fetch('/api/update_qa_target', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    const result = await resp.json();
+    if (resp.ok && result.success) {
+      alert(`QA ${type === 'medicine' ? 'Medicine' : 'Medical Device'} target for ${center} updated`);
+    } else {
+      alert('Failed to update QA target: ' + (result.message || 'Unknown'));
+    }
+  } catch(e) {
+    alert('Network error updating QA target');
+  }
+}
+
+// Call once on page load
+
+
+// Only load Annual Targets if the tab exists (admin/champion)
+if (document.getElementById('targetsTab')) {
+    if (typeof loadTargets === 'function') loadTargets();
+    if (typeof loadQATargets === 'function') loadQATargets();
+}
+
+
+
+
+
+function openObservationModal(id) {
+  const p = premises.find(x => x.id === id);
+  if (!p) return alert('Premise not found');
+  currentObsPremiseId = id;
+
+  document.getElementById('obsPremiseName').textContent = p.name;
+  document.getElementById('obsDate').value = new Date().toISOString().slice(0,10);
+
+  ['obsGot','obsUnreg','obsPersonnel','obsRequirements','obsUnregPremise',
+   'obsMedicalPractices','obsDldmNotAllowed'].forEach(i => {
+    document.getElementById(i).checked = false;
+  });
+
+  document.getElementById('observationModal').style.display = 'block';
+}
+
+function closeObservationModal() {
+  document.getElementById('observationModal').style.display = 'none';
+}
+
+async function saveObservation() {
+  if (!currentObsPremiseId) return;
+  const date = document.getElementById('obsDate').value;
+  if (!date) return alert('Select a date');
+
+  const obsData = {
+    premiseId: currentObsPremiseId,
+    date,
+    observations: {
+      got: document.getElementById('obsGot').checked,
+      unreg: document.getElementById('obsUnreg').checked,
+      personnel: document.getElementById('obsPersonnel').checked,
+      requirements: document.getElementById('obsRequirements').checked,
+      unregPremise: document.getElementById('obsUnregPremise').checked,
+      medicalPractices: document.getElementById('obsMedicalPractices')?.checked || false,
+      dldmNotAllowed: document.getElementById('obsDldmNotAllowed')?.checked || false,
+      pharmMedicalPractices: document.getElementById('obsPharmMedicalPractices')?.checked || false
+    }
+  };
+
+  // Send to server
+  try {
+    const resp = await fetch('/save_observation', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(obsData)
+    });
+    const result = await resp.json();
+    if (resp.ok && result.success) {
+      alert('Observation saved');
+      closeObservationModal();
+    } else {
+      alert('Error saving observation: '+(result.message || 'Unknown'));
+    }
+  } catch(e) {
+    alert('Network error saving observation');
+  }
+}
+
+function closeViewObsModal() {
+  document.getElementById('viewObsModal').style.display = 'none';
+  document.getElementById('viewObsTable').querySelector('tbody').innerHTML = '';
+}
+
+
+async function viewObservations(id) {
+  try {
+    const resp = await fetch(`/get_observations/${id}`);
+    const obsList = await resp.json();
+
+    if (!obsList || obsList.length === 0) {
+      alert('No observations yet.');
+      return;
+    }
+
+    const premise = premises.find(p => p.id === id);
+    document.getElementById('viewObsPremiseName').textContent = premise ? premise.name : 'Premise';
+
+    const container = document.getElementById('observationsList');
+    container.innerHTML = ''; // clear previous
+
+    obsList.forEach(o => {
+      const card = document.createElement('div');
+      card.style.border = '1px solid #ccc';
+      card.style.borderRadius = '6px';
+      card.style.padding = '10px 15px';
+      card.style.background = '#fdfdfd';
+      card.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+
+      const heading = document.createElement('p');
+      heading.style.fontWeight = 'bold';
+      heading.style.marginBottom = '6px';
+      heading.textContent = `On ${o.date}, the premise was found with the following observations:`;
+      card.appendChild(heading);
+
+      const ul = document.createElement('ul');
+      ul.style.margin = '0';
+      ul.style.paddingLeft = '20px';
+      if (o.observations && o.observations.length > 0) {
+        o.observations.forEach(obs => {
+          const li = document.createElement('li');
+          li.textContent = obs;
+          ul.appendChild(li);
+        });
+      } else {
+        const li = document.createElement('li');
+        li.textContent = 'No observations recorded';
+        ul.appendChild(li);
+      }
+
+      card.appendChild(ul);
+      container.appendChild(card);
+    });
+
+    document.getElementById('viewObservationsModal').style.display = 'block';
+  } catch (e) {
+    alert('Error fetching observations');
+    console.error(e);
+  }
+}
+
+function closeViewObservationsModal() {
+  document.getElementById('viewObservationsModal').style.display = 'none';
+}
+
+
+function closeViewObservationsModal() {
+  document.getElementById('viewObservationsModal').style.display = 'none';
+}
+
+function updateIntensityCards() {
+    premises.forEach(p => {
+        const container = document.getElementById(`intensity-card-${p.id}`);
+        if (!container) return;
+
+        container.innerHTML = ''; // clear previous badges
+
+        const avg = p.average_intensity || 0;
+
+        // Function to create a badge
+        const createBadge = (color) => {
+            const badge = document.createElement('span');
+            badge.className = 'intensity-card';
+            badge.style.backgroundColor = color;
+            return badge;
+        }
+
+        if (avg === 0) {
+            container.appendChild(createBadge('green'));
+        } else if (avg > 0 && avg < 15) {
+            container.appendChild(createBadge('blue'));
+        } else if (avg >= 15 && avg < 30) {
+            container.appendChild(createBadge('yellow'));
+        } else if (avg >= 30 && avg < 60) {
+            container.appendChild(createBadge('red'));
+        } else if (avg >= 60) {
+            container.appendChild(createBadge('red'));
+            container.appendChild(createBadge('red')); // second red badge
+        }
+    });
+}
+
+</script>
+<!-- View Observations Modal (Card style) -->
+<div id="viewObservationsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:4000;">
+  <div style="background:#fff; max-width:500px; margin:50px auto; padding:20px; border-radius:8px; position:relative; overflow-y:auto; max-height:80%;">
+    <h3>Observations  <span id="viewObsCardPremiseName"></span></h3>
+
+    <div id="observationsList" style="margin-top:15px; display:flex; flex-direction:column; gap:12px;"></div>
+    <div style="margin-top:15px; text-align:right;">
+      <button onclick="closeViewObservationsModal()" style="padding:6px 12px; cursor:pointer; background:#ccc; border:none; border-radius:3px;">Close</button>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>
