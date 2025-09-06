@@ -9,6 +9,7 @@ from models import db, User, PremiseCategory, Premise, InspectionSummary, Inspec
 from utils import update_time_based_summary
 import sqlite3
 import uuid
+from flask import current_app
 
 # --- Initialize Flask app ---
 app = Flask(__name__)
@@ -20,16 +21,36 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev_secret_key')
 # --- Database config ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Bind your multiple SQLite DBs
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'users.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'instance', 'users.db')
 app.config['SQLALCHEMY_BINDS'] = {
-    'inspection': 'sqlite:///' + os.path.join(basedir, 'is.db'),
-    'disposal': 'sqlite:///' + os.path.join(basedir, 'disposal.db')  # optional if you use it
+    'inspection': 'sqlite:///' + os.path.join(basedir, 'instance', 'is.db'),
+    'disposal': 'sqlite:///' + os.path.join(basedir, 'instance', 'disposal.db')
 }
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # --- Initialize SQLAlchemy ---
 db.init_app(app)
+
+
+# --- Initialize DB tables and create default admin if missing ---
+def init_db():
+    with app.app_context():
+        # Create all tables (users.db + binds)
+        db.create_all()
+        
+        # Check if admin exists
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            print("🔹 Creating default admin user...")
+            default_admin = User(
+                username='admin',
+                password=generate_password_hash('admin123'),  # default password
+                role='admin'
+            )
+            db.session.add(default_admin)
+            db.session.commit()
+            print("✅ Default admin created: username='admin', password='admin123'")
 
 
 
@@ -1891,9 +1912,10 @@ def update_qa_target():
 
 
 
-
 if __name__ == "__main__":
-    update_inspections_json()  # optional for first run
+    from flask import current_app
+    with app.app_context():
+        update_inspections_json()  # optional first run to generate JSON
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
 
 
