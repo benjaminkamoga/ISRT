@@ -120,18 +120,74 @@
     }
 
     /* Main content */
-    .main-content {
-      flex-grow: 1;
-      height: 100vh;
-      margin: 0;
-      padding: 20px 30px;
-      box-sizing: border-box;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      background-color: #f0f0f0;
-      color: #333;
-    }
+.main-content {
+  flex-grow: 1;
+  margin: 0;
+  padding: 20px 20px; /* reduce side padding for mobile */
+  box-sizing: border-box;
+  overflow-y: auto; /* scroll if content overflows */
+  display: flex;
+  flex-direction: column;
+  background-color: #f0f0f0;
+  color: #333;
+  min-height: 0; /* important for flex container inside body */
+}
+
+/* Map container fills remaining space but limited height */
+.map-container {
+  flex-grow: 1;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  height: 60vh; /* limit map height on desktop */
+}
+
+.map-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* cover instead of contain for better fill */
+  display: block;
+  border-radius: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- Responsive tweaks --- */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column; /* stack sidebar on top */
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    padding: 10px;
+  }
+
+  .main-content {
+    padding: 10px;
+  }
+
+  .map-container {
+    height: 40vh; /* smaller map height on mobile */
+  }
+
+  .welcome-message {
+    font-size: 1em;
+    margin-bottom: 10px;
+  }
+
+  .menu a, .menu button {
+    font-size: 0.9em;
+    padding: 8px 10px;
+  }
+
+  .submenu a, .submenu button {
+    font-size: 0.85em;
+  }
+}
+
 
     /* Welcome message */
     .welcome-message {
