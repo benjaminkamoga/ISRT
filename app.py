@@ -5,23 +5,31 @@ from datetime import datetime, date
 from collections import defaultdict
 import os, json
 from flask_sqlalchemy import SQLAlchemy
-from models import Inspection  # keep your existing model import
+from models import db, User, PremiseCategory, Premise, InspectionSummary, Inspection, TimeBasedSummary
+from utils import update_time_based_summary
 import sqlite3
 import uuid
 
-from models import db, User, PremiseCategory, Premise, InspectionSummary, Inspection, TimeBasedSummary
-from utils import update_time_based_summary
-
-
+# --- Initialize Flask app ---
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
 
-# Database config
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['SQLALCHEMY_BINDS'] = {'inspection': 'sqlite:///is.db'}
+# --- Secret Key ---
+# Use environment variable for production (Render)
+app.secret_key = os.environ.get('SECRET_KEY', 'dev_secret_key')
+
+# --- Database config ---
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+# Bind your multiple SQLite DBs
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'users.db')
+app.config['SQLALCHEMY_BINDS'] = {
+    'inspection': 'sqlite:///' + os.path.join(basedir, 'is.db'),
+    'disposal': 'sqlite:///' + os.path.join(basedir, 'disposal.db')  # optional if you use it
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db.init_app(app) 
+# --- Initialize SQLAlchemy ---
+db.init_app(app)
 
 
 
@@ -1885,11 +1893,7 @@ def update_qa_target():
 
 
 if __name__ == "__main__":
-    # Only update JSON on startup (optional)
-    update_inspections_json()
-
-    # Production-friendly run
-    # debug=False for deployment
+    update_inspections_json()  # optional for first run
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
 
 
