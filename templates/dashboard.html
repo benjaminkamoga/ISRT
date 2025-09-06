@@ -3,24 +3,30 @@
 <head>
   <title>Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
       font-family: Arial, sans-serif;
+      height: 100%;
     }
 
     body {
       display: flex;
-      height: 100vh;
+      flex-direction: row;
+      min-height: 100vh;
       overflow: hidden;
     }
 
     /* Sidebar */
     .sidebar {
       width: 240px;
-      background-color: #4CAF50; /* green apple */
+      background-color: #4CAF50;
       color: white;
       padding: 20px;
       box-sizing: border-box;
@@ -54,19 +60,9 @@
       display: inline-block;
     }
 
-    /* Menu styles */
-    .menu {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .menu > li {
-      margin-bottom: 15px;
-    }
-
-    .menu a,
-    .menu button {
+    .menu { list-style: none; padding: 0; margin: 0; }
+    .menu > li { margin-bottom: 15px; }
+    .menu a, .menu button {
       display: block;
       padding: 10px 12px;
       border-radius: 5px;
@@ -78,29 +74,12 @@
       cursor: pointer;
       text-align: left;
       width: 100%;
-      user-select: none;
     }
+    .menu a:hover, .menu button:hover { background: rgba(255,255,255,0.25); }
 
-    .menu a:hover,
-    .menu button:hover {
-      background: rgba(255, 255, 255, 0.25);
-      text-decoration: none;
-    }
-
-    /* Submenu */
-    .submenu {
-      list-style: none;
-      padding-left: 15px;
-      margin-top: 5px;
-      display: none;
-    }
-
-    .submenu li {
-      margin-bottom: 8px;
-    }
-
-    .submenu a,
-    .submenu button {
+    .submenu { list-style: none; padding-left: 15px; margin-top: 5px; display: none; }
+    .submenu li { margin-bottom: 8px; }
+    .submenu a, .submenu button {
       font-size: 0.95em;
       padding-left: 10px;
       background: rgba(255,255,255,0.2);
@@ -111,111 +90,71 @@
       text-decoration: none;
       width: 100%;
       text-align: left;
-      user-select: none;
     }
-
-    .submenu a:hover,
-    .submenu button:hover {
-      background: rgba(255,255,255,0.35);
-    }
+    .submenu a:hover, .submenu button:hover { background: rgba(255,255,255,0.35); }
 
     /* Main content */
-.main-content {
-  flex-grow: 1;
-  margin: 0;
-  padding: 20px 20px; /* reduce side padding for mobile */
-  box-sizing: border-box;
-  overflow-y: auto; /* scroll if content overflows */
-  display: flex;
-  flex-direction: column;
-  background-color: #f0f0f0;
-  color: #333;
-  min-height: 0; /* important for flex container inside body */
-}
+    .main-content {
+      flex-grow: 1;
+      margin: 0;
+      padding: 20px 30px;
+      box-sizing: border-box;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      background-color: #f0f0f0;
+      color: #333;
+    }
 
-/* Map container fills remaining space but limited height */
-.map-container {
-  flex-grow: 1;
-  overflow: hidden;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: white;
-  height: 60vh; /* limit map height on desktop */
-}
-
-.map-container img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* cover instead of contain for better fill */
-  display: block;
-  border-radius: 8px;
-  margin: 0;
-  padding: 0;
-}
-
-/* --- Responsive tweaks --- */
-@media (max-width: 768px) {
-  body {
-    flex-direction: column; /* stack sidebar on top */
-  }
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    padding: 10px;
-  }
-
-  .main-content {
-    padding: 10px;
-  }
-
-  .map-container {
-    height: 40vh; /* smaller map height on mobile */
-  }
-
-  .welcome-message {
-    font-size: 1em;
-    margin-bottom: 10px;
-  }
-
-  .menu a, .menu button {
-    font-size: 0.9em;
-    padding: 8px 10px;
-  }
-
-  .submenu a, .submenu button {
-    font-size: 0.85em;
-  }
-}
-
-
-    /* Welcome message */
     .welcome-message {
       font-size: 1.25em;
       font-weight: 600;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       user-select: none;
     }
 
-    /* Map container fills remaining space */
+    /* Map */
     .map-container {
-      flex-grow: 1;
       overflow: hidden;
       border: 1px solid #ddd;
       border-radius: 8px;
       background: white;
+      width: 100%;
     }
 
     .map-container img {
       width: 100%;
-      height: 100%;
-      object-fit: contain;
+      height: auto; /* keep aspect ratio */
       display: block;
-      border: none;
-      margin: 0;
-      padding: 0;
       border-radius: 8px;
     }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: none;
+      }
+
+      .main-content {
+        padding: 15px;
+      }
+
+      .welcome-message {
+        margin-bottom: 0;
+      }
+
+      .map-container {
+        margin-top: 0; /* no extra space */
+      }
+    }
+
   </style>
 </head>
 <body>
