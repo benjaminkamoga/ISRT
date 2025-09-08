@@ -115,6 +115,13 @@ h1,h2,h3,h4 { color:#2c3e50; margin:5px 0;}
     overflow-x: auto; /* Enables horizontal scrolling */
 }
 
+#summary-table {
+    overflow-x: auto; /* Enables horizontal scroll */
+}
+
+#summary-table table {
+    white-space: nowrap; /* Prevents breaking into multiple lines */
+}
 
 
 </style>
@@ -1788,7 +1795,9 @@ function renderChargesTableFromGrouped(groupedArray) {
     const container = document.getElementById('summary-table');
 
     const renderTable = () => {
-        let tableHTML = `<table>
+        let tableHTML = `<div style="overflow-x:auto; width:100%;">
+<table style="min-width:900px;">
+
             <thead>
                 <tr>
                     <th>S/No</th>
@@ -1887,7 +1896,8 @@ function renderChargesTableFromGrouped(groupedArray) {
                     <td style="color:#2c3e50;">${formatTsh(totalProductsSum)}</td>
                 </tr>
             </tfoot>
-        </table>`;
+        </table></div>`;
+
 
         container.innerHTML = tableHTML;
         updateDynamicCells();
