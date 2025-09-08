@@ -124,14 +124,6 @@ h1,h2,h3,h4 { color:#2c3e50; margin:5px 0;}
 }
 
 
-#overall-summary-content {
-    overflow-x: auto;
-}
-
-#overall-summary-content table {
-    border-collapse: collapse;
-    white-space: nowrap;
-}
 
 </style>
 </head>
@@ -497,8 +489,8 @@ table.style.minWidth = '800px';  // Force table to be scrollable on small screen
     });
 
     // Append the table
-    tableWrapper.appendChild(table);
-contentDiv.appendChild(tableWrapper);
+    contentDiv.appendChild(table);
+
 
 
     // === Add Show More / Show Less buttons ===
@@ -559,12 +551,8 @@ contentDiv.appendChild(tableWrapper);
         ...Object.keys(targetCounts)
     ]));
 
-    const breakdownWrapper = document.createElement('div');
-breakdownWrapper.style.overflowX = 'auto';
-breakdownWrapper.style.width = '100%';
+    const breakdownTable = document.createElement('table');
 
-const breakdownTable = document.createElement('table');
-breakdownTable.style.minWidth = '900px';  // Adjust width for this table
 
     breakdownTable.innerHTML = `<tr>
         <th>Premise Type</th>
@@ -660,8 +648,8 @@ breakdownTable.style.minWidth = '900px';  // Adjust width for this table
         <td class="${isInspectionTypeFiltered ? 'blur-column' : ''}" style="color:#3498db;">${totalCoveragePercent}%</td>
     `;
 
-    breakdownTable.appendChild(totalRow);
-    breakdownWrapper.appendChild(breakdownTable);
+    contentDiv.appendChild(breakdownTable);
+
 contentDiv.appendChild(breakdownWrapper);
 
 }
