@@ -107,6 +107,14 @@ h1,h2,h3,h4 { color:#2c3e50; margin:5px 0;}
     filter: none;
 }
 
+#qaContent table {
+    white-space: nowrap; /* Prevents table cells from breaking into multiple lines */
+}
+
+#qaContent {
+    overflow-x: auto; /* Enables horizontal scrolling */
+}
+
 
 
 </style>
@@ -3091,7 +3099,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 centerColors[center] = `hsl(${hue}, 70%, 50%)`;
             });
 
-            let html = `<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse; width:100%; table-layout:auto;">
+            let html = `<div style="overflow-x:auto; width:100%;">
+<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse; min-width:800px; table-layout:auto;">
+
                 <thead>
                     <tr>
                         <th>S/No</th>
@@ -3154,7 +3164,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 else chartData.push(Number(passRate));
             });
 
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
+
             qaContent.innerHTML = html;
 
             const maxY = metric === 'samples' ? undefined : 100; // auto-scale samples
