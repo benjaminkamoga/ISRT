@@ -421,7 +421,12 @@ def premise_data():
         "Laboratory (GOT)", "Laboratory (Private)", "Polyclinic",
         "Warehouse", "Medical Device Shop"
     ]
-    return render_template("premise_data.html", regions=regions, categories=categories)
+    return render_template(
+    "premise_data.html",
+    regions=regions,
+    categories=categories,
+    role=session.get("role", "user") 
+)
 
 
 # Helper: ensure premises file exists
@@ -566,6 +571,8 @@ def save_location():
 
 
 
+
+
 @app.route('/save_observation', methods=['POST'])
 def save_observation():
     if 'role' not in session:
@@ -574,29 +581,75 @@ def save_observation():
     data = request.get_json()
     premise_id = data.get('premiseId')
     obs_date = data.get('date')
-    obs_data = data.get('observations')
+    obs_data = data.get('defects') or []
+    defect_values = data.get('defectValues') or {}
+    none_selected = data.get('none', False)
+    filter_district = data.get('district')  # optional for Relative PVI
 
-    if not premise_id or not obs_date or not obs_data:
-        return jsonify({'success': False, 'message': 'Missing data'}), 400
+    if not premise_id or not obs_date:
+        return jsonify({'success': False, 'message': 'Missing required fields'}), 400
 
-    # Map keys to labels and intensity values
-    obs_weights = {
-        "got": {"label": "GOT Medicines", "intensity": 30},
-        "unreg": {"label": "Unregistered Medicines", "intensity": 30},
-        "personnel": {"label": "No Qualified Personnel", "intensity": 5},
-        "requirements": {"label": "Premise doesn't meet GSP Requirement", "intensity": 5},
-        "unregPremise": {"label": "Unregistered Premise", "intensity": 5},
-        "medicalPractices": {"label": "Medical Practices", "intensity": 5},
-        "dldmNotAllowed": {"label": "DLDM NOT ALLOWED Medicines", "intensity": 10}
+    # === Load observation parameters ===
+    params_path = os.path.join("static", "data", "observation_parameters.json")
+    try:
+        with open(params_path, "r", encoding="utf-8") as f:
+            obs_config = json.load(f)
+    except Exception as e:
+        return jsonify({'success': False, 'message': f"Error loading observation parameters: {e}"}), 500
+
+    # === Mapping frontend defect keys to JSON parameter keys ===
+    frontend_to_param = {
+        "obsGot": "got",
+        "obsUnreg": "unreg",
+        "obsPersonnel": "personnel",
+        "obsRequirements": "requirements",
+        "obsUnregPremise": "unregPremise",
+        "obsMedicalPractices": "medicalPractices",
+        "obsDldmNotAllowed": "dldmNotAllowed"
     }
 
     obs_readable = []
+    obs_values_saved = {}
     intensity = 0
-    for key, info in obs_weights.items():
-        if obs_data.get(key):
-            obs_readable.append(info["label"])
-            intensity += info["intensity"]
 
+    # === Calculate intensity dynamically ===
+    if not none_selected:
+        for obs_key in obs_data:
+            param_key = frontend_to_param.get(obs_key)
+            if not param_key:
+                continue
+
+            param_info = obs_config["parameters"].get(param_key)
+            if not param_info:
+                continue
+
+            obs_readable.append(param_info["label"])
+            intensity += param_info.get("intensity", 0)
+
+            raw_value = defect_values.get(obs_key)
+            if raw_value:
+                try:
+                    cleaned = ''.join(filter(str.isdigit, str(raw_value)))
+                    obs_values_saved[param_key] = int(cleaned) if cleaned else 0
+                except:
+                    obs_values_saved[param_key] = 0
+
+    # === Calculate Policy PVI Raw ===
+    pvi_raw = 0.0
+    weights_config = obs_config.get("weights", {})
+
+    for product, conf in weights_config.items():
+        weight = conf.get("weight", 0)
+        value = obs_values_saved.get(product, 0) or 0
+        if weight > 0 and value > 0:
+            pvi_raw += (weight / 100.0) * value
+
+    # === Calculate Absolute PVI (%) (fixed units) ===
+    total_policy_max = sum((conf.get("max_policy", 0) or 0) * ((conf.get("weight", 0) or 0)/100)
+                           for conf in weights_config.values())
+    absolute_pvi = round((pvi_raw / total_policy_max * 100), 2) if total_policy_max > 0 else 0
+
+    # === Load premises file ===
     premises, premises_file = load_premises_file()
     premise = next((p for p in premises if p.get('id') == premise_id), None)
     if not premise:
@@ -605,35 +658,206 @@ def save_observation():
     if 'observations' not in premise:
         premise['observations'] = []
 
-    # Add the observation with calculated intensity
+    # === Append new observation ===
     premise['observations'].append({
         'date': obs_date,
-        'observations': obs_readable,
-        'intensity': intensity
+        'observations': obs_readable if not none_selected else ["None"],
+        'defect_values': obs_values_saved,
+        'intensity': intensity,
+        'pvi_raw': round(pvi_raw, 2),
+        'absolute_pvi': absolute_pvi
     })
 
-    # --- Calculate total intensity ---
+    # === Update total & average intensity ===
     total_intensity = sum(o.get('intensity', 0) for o in premise['observations'])
     premise['total_intensity'] = total_intensity
-
-    # --- Calculate average intensity ---
     num_obs = len(premise['observations'])
-    avg_intensity = round(total_intensity / num_obs, 2) if num_obs > 0 else 0
-    premise['average_intensity'] = avg_intensity
+    premise['average_intensity'] = round(total_intensity / num_obs, 2) if num_obs > 0 else 0
 
-    # Save back to file
+    # === Update total & average PVI Raw ===
+    total_pvi_raw = sum(o.get('pvi_raw', 0) for o in premise['observations'])
+    premise['total_pvi_raw'] = round(total_pvi_raw, 2)
+    premise['average_pvi_raw'] = round(total_pvi_raw / num_obs, 2) if num_obs > 0 else 0
+
+    # === Update total & average Absolute PVI ===
+    total_abs_pvi = sum(o.get('absolute_pvi', 0) for o in premise['observations'])
+    premise['total_absolute_pvi'] = round(total_abs_pvi, 2)
+    premise['average_absolute_pvi'] = round(total_abs_pvi / num_obs, 2) if num_obs > 0 else 0
+
+    # === Relative PVI ===
+    if filter_district:
+        relative_set = [p for p in premises if p.get('district') == filter_district]
+    else:
+        relative_set = premises
+
+    max_total_pvi_raw = max(
+        sum(o.get('pvi_raw', 0) for o in p.get('observations', [])) for p in relative_set
+    ) or 1
+
+    for p in relative_set:
+        total_pvi = sum(o.get('pvi_raw', 0) for o in p.get('observations', []))
+        p['relative_pvi'] = round((total_pvi / max_total_pvi_raw) * 100, 2)
+
+    # === Violation Rate (Absolute) ===
+    violation_config = obs_config.get("violation", {})
+    intensity_weight = violation_config.get("non_conformance", 70)
+    absolute_pvi_weight = violation_config.get("Pvi", 30)
+
+    avg_intensity = premise['average_intensity']
+    avg_absolute_pvi = premise['average_absolute_pvi']
+
+    premise['violation_rate'] = round(
+        (avg_intensity * intensity_weight / 100) +
+        (avg_absolute_pvi * absolute_pvi_weight / 100),
+        2
+    )
+
+    # === Violation Rate (Relative) ===
+    relative_pvi = premise.get('relative_pvi', 0)
+    premise['relative_violation_rate'] = round(
+        (avg_intensity * intensity_weight / 100) +
+        (relative_pvi * absolute_pvi_weight / 100),
+        2
+    )
+
+    # === Save updated JSON ===
     with open(premises_file, "w", encoding="utf-8") as f:
         json.dump(premises, f, indent=4)
 
+    # === Response ===
     return jsonify({
         'success': True,
         'intensity': intensity,
+        'pvi_raw': round(pvi_raw, 2),
+        'absolute_pvi': absolute_pvi,
         'total_intensity': total_intensity,
-        'average_intensity': avg_intensity
+        'average_intensity': premise['average_intensity'],
+        'total_pvi_raw': premise['total_pvi_raw'],
+        'average_pvi_raw': premise['average_pvi_raw'],
+        'total_absolute_pvi': premise['total_absolute_pvi'],
+        'average_absolute_pvi': premise['average_absolute_pvi'],
+        'relative_pvi': premise.get('relative_pvi', 0),
+        'violation_rate': premise['violation_rate'],
+        'relative_violation_rate': premise['relative_violation_rate']
     })
 
 
 
+@app.route('/recalculate_all', methods=['POST'])
+def recalculate_all():
+    # Only admin users can run this
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Access denied!'}), 403
+
+    # --- Load observation parameters ---
+    params_path = os.path.join("static", "data", "observation_parameters.json")
+    try:
+        with open(params_path, "r", encoding="utf-8") as f:
+            obs_config = json.load(f)
+    except Exception as e:
+        return jsonify({'success': False, 'message': f"Error loading observation parameters: {e}"}), 500
+
+    # --- Load premises ---
+    premises, premises_file = load_premises_file()
+
+    weights_config = obs_config.get("weights", {})
+    violation_config = obs_config.get("violation", {})
+    intensity_weight = violation_config.get("non_conformance", 70)
+    absolute_pvi_weight = violation_config.get("Pvi", 30)
+
+    max_total_pvi_raw_global = 0
+
+    # First pass: recalc pvi_raw, absolute_pvi, intensity, track max_total_pvi_raw for relative PVI
+    for premise in premises:
+        total_pvi_raw = 0
+        total_absolute_pvi = 0
+        total_intensity = 0
+
+        for obs in premise.get('observations', []):
+            defect_values = obs.get('defect_values', {})
+            obs_intensity = 0
+            # Calculate intensity dynamically
+            for param_key, param_info in obs_config.get('parameters', {}).items():
+                if param_key in defect_values or param_key in obs.get('observations', []):
+                    obs_intensity += param_info.get('intensity', 0)
+            obs['intensity'] = obs_intensity
+            total_intensity += obs_intensity
+
+            # Calculate pvi_raw
+            pvi_raw = 0
+            for product, conf in weights_config.items():
+                weight = conf.get("weight", 0)
+                value = defect_values.get(product, 0) or 0
+                if weight > 0 and value > 0:
+                    pvi_raw += (weight / 100.0) * value
+            obs['pvi_raw'] = round(pvi_raw, 2)
+            total_pvi_raw += pvi_raw
+
+            # Absolute PVI
+            total_policy_max = sum((conf.get("max_policy", 0) or 0) * ((conf.get("weight", 0) or 0)/100)
+                                   for conf in weights_config.values())
+            obs['absolute_pvi'] = round((pvi_raw / total_policy_max * 100), 2) if total_policy_max > 0 else 0
+            total_absolute_pvi += obs['absolute_pvi']
+
+        num_obs = len(premise.get('observations', []))
+        premise['total_intensity'] = total_intensity
+        premise['average_intensity'] = round(total_intensity / num_obs, 2) if num_obs > 0 else 0
+        premise['total_pvi_raw'] = round(total_pvi_raw, 2)
+        premise['average_pvi_raw'] = round(total_pvi_raw / num_obs, 2) if num_obs > 0 else 0
+        premise['total_absolute_pvi'] = round(total_absolute_pvi, 2)
+        premise['average_absolute_pvi'] = round(total_absolute_pvi / num_obs, 2) if num_obs > 0 else 0
+
+        max_total_pvi_raw_global = max(max_total_pvi_raw_global, total_pvi_raw)
+
+    # Second pass: calculate relative PVI and relative_violation_rate
+    for premise in premises:
+        total_pvi_raw = sum(o.get('pvi_raw', 0) for o in premise.get('observations', []))
+        premise['relative_pvi'] = round((total_pvi_raw / max_total_pvi_raw_global) * 100, 2) if max_total_pvi_raw_global > 0 else 0
+
+        avg_intensity = premise['average_intensity']
+        avg_absolute_pvi = premise['average_absolute_pvi']
+        relative_pvi = premise['relative_pvi']
+
+        # Absolute Violation Rate
+        premise['violation_rate'] = round(
+            (avg_intensity * intensity_weight / 100) +
+            (avg_absolute_pvi * absolute_pvi_weight / 100),
+            2
+        )
+
+        # Relative Violation Rate
+        premise['relative_violation_rate'] = round(
+            (avg_intensity * intensity_weight / 100) +
+            (relative_pvi * absolute_pvi_weight / 100),
+            2
+        )
+
+    # --- Save updated JSON ---
+    with open(premises_file, "w", encoding="utf-8") as f:
+        json.dump(premises, f, indent=4)
+
+    return jsonify({'success': True, 'message': 'All premises recalculated using latest weights'})
+
+from flask import request, jsonify
+
+@app.route("/recalculate_all_data", methods=["POST"])
+def recalculate_all_data():
+    try:
+        params = request.get_json()
+        if not params:
+            return jsonify({"success": False, "error": "No parameters received"}), 400
+
+        # TODO: call your recalculation logic here
+        # Example:
+        # result = recalc_all_inspections(params)
+        # For now, just simulate:
+        print("Recalculating all data with parameters:", params)
+
+        # Return success
+        return jsonify({"success": True})
+    except Exception as e:
+        print("Error during recalculation:", e)
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 
@@ -647,7 +871,128 @@ def get_observations(premise_id):
     if not premise:
         return jsonify([])
 
-    return jsonify(premise.get('observations', []))
+    observations = premise.get('observations', [])
+
+    # Process observations to attach formatted Tsh values
+    processed_obs = []
+    for obs in observations:
+        obs_copy = obs.copy()
+        formatted_obs = []
+
+        # If Tsh values exist, append them to defect labels
+        defect_values = obs.get("defect_values", {})
+        for defect in obs.get("observations", []):
+            value = None
+            if "GOT Medicines" in defect:
+                value = defect_values.get("got")
+            elif "Unregistered Medicines" in defect:
+                value = defect_values.get("unreg")
+            elif "DLDM NOT ALLOWED Medicines" in defect:
+                value = defect_values.get("dldmNotAllowed")
+
+            # Format defect string with Tsh if available
+            if value is not None:
+                formatted_obs.append(f"{defect} (Tsh {value:,}/=)")
+            else:
+                formatted_obs.append(defect)
+
+        obs_copy["observations"] = formatted_obs
+        processed_obs.append(obs_copy)
+
+    return jsonify(processed_obs)
+
+
+PARAMS_FILE = "static/data/observation_parameters.json"
+
+
+# Load parameters
+@app.route("/get_parameters")
+def get_parameters():
+    if 'role' not in session or session['role'] != 'admin':
+        return jsonify({"error": "Access denied"}), 403
+    
+    with open(PARAMS_FILE, "r", encoding="utf-8") as f:
+        params = json.load(f)
+    return jsonify(params)
+
+
+# Save updated parameters
+@app.route("/save_parameters", methods=["POST"])
+def save_parameters():
+    if 'role' not in session or session['role'] != 'admin':
+        return jsonify({"error": "Access denied"}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data received"}), 400
+
+    # ===== Validate 'parameters' intensities =====
+    parameters = data.get("parameters", {})
+    for key, val in parameters.items():
+        intensity = val.get("intensity")
+        try:
+            intensity_int = int(float(intensity))
+            if intensity_int < 0:
+                return jsonify({"error": f"Intensity for {key} must be >= 0"}), 400
+            val["intensity"] = intensity_int
+        except (ValueError, TypeError):
+            return jsonify({"error": f"Invalid intensity for {key}: {intensity}"}), 400
+
+    # ===== Validate 'weights' =====
+    weights = data.get("weights", {})
+    for key, val in weights.items():
+        # Weight %
+        weight = val.get("weight")
+        try:
+            weight_int = int(float(weight))
+            if weight_int < 0:
+                return jsonify({"error": f"Weight for {key} must be >= 0"}), 400
+            val["weight"] = weight_int
+        except (ValueError, TypeError):
+            return jsonify({"error": f"Invalid weight for {key}: {weight}"}), 400
+
+        # Max policy value
+        max_policy = val.get("max_policy")
+        try:
+            max_policy_int = int(float(max_policy))
+            if max_policy_int < 0:
+                return jsonify({"error": f"Max policy for {key} must be >= 0"}), 400
+            val["max_policy"] = max_policy_int
+        except (ValueError, TypeError):
+            return jsonify({"error": f"Invalid max policy for {key}: {max_policy}"}), 400
+
+    # ===== Validate 'violation' =====
+    violation = data.get("violation", {})
+    for key in ["non_conformance", "Pvi"]:
+        val = violation.get(key)
+        try:
+            val_int = int(float(val))
+            if val_int < 0 or val_int > 100:
+                return jsonify({"error": f"{key} must be between 0 and 100"}), 400
+            violation[key] = val_int
+        except (ValueError, TypeError):
+            return jsonify({"error": f"Invalid value for {key}: {val}"}), 400
+
+    # Save the full structure
+    with open(PARAMS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+
+    return jsonify({"success": True})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1891,6 +2236,11 @@ def update_qa_target():
 
 
 
+@app.route("/parameters")
+def parameters():
+    if "role" not in session or session["role"] != "admin":
+        return redirect(url_for("dashboard"))  # Block non-admins
+    return render_template("parameters.html")
 
 
 

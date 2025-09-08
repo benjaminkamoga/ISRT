@@ -3,209 +3,217 @@
 <head>
   <title>Premise Data</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f8f9fa;
-      margin: 0;
-      padding: 20px;
-    }
-    .tabs {
-      display: flex;
-      margin-bottom: 10px;
-      gap: 10px;
-    }
-    .tab {
-      padding: 6px 10px;
-      background-color: #ddd;
-      cursor: pointer;
-      border-radius: 5px 5px 0 0;
-      user-select: none;
-      font-size: 0.9rem;
-    }
-    .tab.active {
-      background-color: #fff;
-      border-bottom: 2px solid white;
-      font-weight: bold;
-    }
-    .tab-content {
-      background-color: #fff;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-top: none;
-      border-radius: 0 5px 5px 5px;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 10px;
-      table-layout: fixed;
-      font-size: 0.85rem;
-      line-height: 1.1;
-    }
-    th, td {
-      padding: 2px 4px;
-      border: 1px solid #ccc;
-      text-align: left;
-      overflow-wrap: break-word;
-      vertical-align: middle;
-    }
-    th {
-      background-color: #eee;
-      font-size: 0.85rem;
-      line-height: 1.1;
-    }
-    td {
-      font-size: 0.8rem;
-      line-height: 1.1;
-    }
-    .filters {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-    .filters select, .filters input {
-      padding: 3px 5px;
-      font-size: 0.85rem;
-    }
-    .actions {
-      margin-top: 10px;
-      display: flex;
-      gap: 10px;
-    }
-    button {
-      padding: 4px 8px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 3px;
-      font-size: 0.85rem;
-    }
-    button:hover {
-      background-color: #218838;
-    }
-    .action-icons {
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      font-size: 1rem;
-      line-height: 1;
-    }
-    .action-icons button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #4caf50;
-      padding: 0;
-      font-size: 1rem;
-      line-height: 1;
-      vertical-align: middle;
-    }
-    .action-icons button:hover {
-      color: #2e7d32;
-    }
-    /* Column widths */
-    /* Column widths */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+  margin: 0;
+  padding: 20px;
+}
+.tabs {
+  display: flex;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+.tab {
+  padding: 6px 10px;
+  background-color: #ddd;
+  cursor: pointer;
+  border-radius: 5px 5px 0 0;
+  user-select: none;
+  font-size: 0.9rem;
+}
+.tab.active {
+  background-color: #fff;
+  border-bottom: 2px solid white;
+  font-weight: bold;
+}
+.tab-content {
+  background-color: #fff;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-radius: 0 5px 5px 5px;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 10px;
+  table-layout: fixed;
+  font-size: 0.85rem;
+  line-height: 1.1;
+}
+th, td {
+  padding: 2px 4px;
+  border: 1px solid #ccc;
+  text-align: left;
+  overflow-wrap: break-word;
+  vertical-align: middle;
+}
+th {
+  background-color: #eee;
+  font-size: 0.85rem;
+  line-height: 1.1;
+}
+td {
+  font-size: 0.8rem;
+  line-height: 1.1;
+}
+.filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.filters select, .filters input {
+  padding: 3px 5px;
+  font-size: 0.85rem;
+}
+.actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+button {
+  padding: 4px 8px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 0.85rem;
+}
+button:hover {
+  background-color: #218838;
+}
+.action-icons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+}
+.action-icons button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #4caf50;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.action-icons button:hover {
+  color: #2e7d32;
+}
+
+/* Column widths */
 .col-sno { width: 4%; }
 .col-name { width: 22%; }
 .col-category { width: 18%; }
 .col-region { width: 13%; }
 .col-district { width: 13%; }
-.col-location { width: 18%; }   /* reduced from 25% to 18% */
-.col-observation { width: 12%; } /* increased from 8% to 12% */
+.col-location { width: 18%; }
+.col-observation { width: 12%; text-align: center; white-space: nowrap; }
 .col-map { width: 5%; text-align: center; padding: 0; }
 .col-actions { width: 5%; text-align: center; padding: 2px 0; }
 
-    .col-map {
-      width: 5%;
-      text-align: center;
-      padding: 0;
-    }
-    .col-map button {
-      font-weight: bold;
-      font-size: 1.1rem;
-      cursor: pointer;
-      background: none;
-      border: none;
-      color: #4caf50;
-      line-height: 1;
-      vertical-align: middle;
-      padding: 0;
-      margin: 0 auto;
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      text-align: center;
-      user-select: none;
-    }
-    .col-map button:hover {
-      color: #2e7d32;
-    }
-    .col-actions {
-      width: 5%;
-      text-align: center;
-      padding: 2px 0;
-    }
-    /* Modal styling */
-    #premiseModal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.5);
-      z-index: 1000;
-    }
-    #premiseModal > div {
-      background: #fff;
-      max-width: 450px;
-      margin: 100px auto;
-      padding: 20px;
-      border-radius: 5px;
-      position: relative;
-    }
-    #premiseModal label {
-      font-weight: bold;
-      font-size: 0.9rem;
-    }
-    #premiseModal input[type="text"], #premiseModal select {
-      width: 100%;
-      padding: 6px;
-      font-size: 0.9rem;
-      margin-top: 3px;
-      margin-bottom: 10px;
-      box-sizing: border-box;
-    }
-    #premiseModal button[type="submit"], #premiseModal button[type="button"] {
-      padding: 6px 12px;
-      font-size: 0.9rem;
-      border-radius: 3px;
-      cursor: pointer;
-    }
-    #premiseModal button[type="submit"] {
-      background-color: #28a745;
-      color: white;
-      border: none;
-    }
-    #premiseModal button[type="button"] {
-      background-color: #ccc;
-      border: none;
-      margin-left: 10px;
-    }
-    #premiseModal button[type="submit"]:hover {
-      background-color: #218838;
-    }
-    #premiseModal button[type="button"]:hover {
-      background-color: #999;
-    }
-    #mapModal {
+/* Observation column buttons */
+.col-observation .action-icons {
+  justify-content: center;
+  gap: 4px;
+}
+.col-observation .action-icons button {
+  font-size: 1rem;
+  padding: 2px 4px;
+}
+
+/* Map button sticky */
+.col-map button {
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: #4caf50;
+  line-height: 1;
+  vertical-align: middle;
+  padding: 0;
+  margin: 0 auto;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  user-select: none;
+  position: sticky;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.col-map button:hover {
+  color: #2e7d32;
+}
+
+/* Make table header sticky */
+table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: #f1f1f1; /* Matches table background */
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Modal styling */
+#premiseModal, #mapModal {
   display: none;
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
   background-color: rgba(0,0,0,0.5);
-  z-index: 2000;
+  z-index: 1000;
 }
-
+#premiseModal > div {
+  background: #fff;
+  max-width: 450px;
+  margin: 100px auto;
+  padding: 20px;
+  border-radius: 5px;
+  position: relative;
+}
+#premiseModal label {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+#premiseModal input[type="text"], #premiseModal select {
+  width: 100%;
+  padding: 6px;
+  font-size: 0.9rem;
+  margin-top: 3px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+#premiseModal button[type="submit"], #premiseModal button[type="button"] {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+#premiseModal button[type="submit"] {
+  background-color: #28a745;
+  color: white;
+  border: none;
+}
+#premiseModal button[type="button"] {
+  background-color: #ccc;
+  border: none;
+  margin-left: 10px;
+}
+#premiseModal button[type="submit"]:hover {
+  background-color: #218838;
+}
+#premiseModal button[type="button"]:hover {
+  background-color: #999;
+}
 #mapModal > div {
   background: #fff;
   max-width: 600px;
@@ -214,7 +222,6 @@
   border-radius: 6px;
   position: relative;
 }
-
 #mapModal .close-btn {
   position: absolute;
   top: 5px;
@@ -223,54 +230,107 @@
   cursor: pointer;
 }
 
-/* Observation column */
-.col-observation {
-  width: 8%;      /* Adjust as needed */
-  text-align: center;
-  white-space: nowrap;  /* Keep + and view icon on same line */
-}
-
-.col-observation .action-icons {
-  justify-content: center; /* center buttons horizontally */
-  gap: 4px;
-}
-
-.col-observation .action-icons button {
-  font-size: 1rem;   /* small icon buttons */
-  padding: 2px 4px;
-}
-
+/* Intensity badges */
 .intensity-cards-container {
-    display: inline-flex;      /* align badges horizontally */
-    gap: 2px;                  /* space between badges */
-    vertical-align: middle;
+  display: inline-flex;
+  gap: 2px;
+  vertical-align: middle;
 }
-
 .intensity-card {
     width: 12px;
     height: 16px;
     border-radius: 3px;
-    border: 1px solid #333;
+    border: 1px solid #333; /* visible border */
     display: inline-block;
 }
 
 
+/* VR column */
+.col-vr {
+  width: 5%;
+  text-align: center;
+  font-weight: bold;
+}
 
-    
-  </style>
+/* VR column sorting arrows */
+.col-vr {
+  width: 5%;
+  text-align: center;
+  font-weight: bold;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.col-vr .sort-arrows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
+.col-vr .sort-arrows .arrow-up {
+  color: red;
+}
+
+.col-vr .sort-arrows .arrow-down {
+  color: green;
+}
+
+.col-vr .sort-arrows span.active {
+  font-weight: bold;
+}
+
+
+/* Parameters table */
+#parameters-table th:first-child,
+#parameters-table td:first-child {
+  width: 40px;
+  text-align: center;
+}
+
+/* Responsive tweaks for small screens */
+@media (max-width: 600px) {
+  .col-map button, .col-observation .action-icons button {
+    width: 18px;
+    height: 18px;
+    font-size: 0.95rem;
+  }
+}
+
+.premise-label-small {
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    border: 1px solid #aaa;
+    pointer-events: none;
+}
+
+
+
+</style>
+
 </head>
 <body>
 
 <h2>Premise Data</h2>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('targetsTab')">Annual Targets</div>
   <div class="tab" onclick="showTab('premisesTab')">Premises in a Zone</div>
+  <div class="tab active" onclick="showTab('targetsTab')">Annual Targets</div>
+  <div class="tab admin-only" onclick="showTab('parametersTab')" style="display: none;">Parameters</div>
+
 </div>
 
+
 <!-- Annual Targets Tab -->
-
-
 <div id="targetsTab" class="tab-content">
   <h4>Annual Targets</h4>
   <table>
@@ -323,6 +383,50 @@
 
 
 
+<!-- Parameters Tab -->
+<div id="parametersTab" class="tab-content" style="display:none;">
+    <h3>Observation Parameters</h3>
+    <table id="parameters-table">
+        <thead>
+            <tr>
+                <th>S/No</th>
+                <th>Label</th>
+                <th>Intensity</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <h3>Contribution Weight</h3>
+    <table id="contribution-table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Weight (%)</th>
+                <th>Policy Max Value (Tsh)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <h3>Violation (VR) Contribution</h3>
+    <table id="violation-table">
+        <thead>
+            <tr>
+                <th>Parameter</th>
+                <th>Value (%)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div style="margin-top:10px;">
+    <button id="save-params">Save Changes</button>
+    <button id="recalculate-data" style="margin-left:10px; background-color:#007bff; color:#fff;">Recalculate All Data</button>
+</div>
+
+</div>
+
 
 
 
@@ -331,16 +435,20 @@
 
 <!-- Premises in a Zone Tab -->
 <div id="premisesTab" class="tab-content" style="display:none;">
-  <div class="filters">
-    <select id="regionFilter" onchange="updateDistricts()">
+
+  <!-- Filters -->
+  <div class="filters" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-start;">
+    <select id="regionFilter" onchange="updateDistricts(); updatePhysicalLocations();">
       <option value="All">All Regions</option>
       <option value="Mtwara">Mtwara</option>
       <option value="Lindi">Lindi</option>
       <option value="Ruvuma">Ruvuma</option>
     </select>
-    <select id="districtFilter" onchange="filterPremises()">
+
+    <select id="districtFilter" onchange="filterPremises(); updatePhysicalLocations();">
       <option value="All">All Districts</option>
     </select>
+
     <select id="categoryFilter" onchange="filterPremises()">
       <option value="All">All Categories</option>
       <option>DLDM (Human)</option>
@@ -354,17 +462,65 @@
       <option>Medical Lab (Private)</option>
       <option>Polyclinic</option>
       <option>Ware House</option>
-      <option>Medical Device Shops</option>
+      <option>Medical Devices Shops</option>
     </select>
+
+    <select id="vrTypeFilter" onchange="filterPremises()">
+      <option value="relative">Relative VR</option>
+      <option value="absolute">Absolute VR</option>
+    </select>
+
+    <select id="physicalLocationFilter" onchange="filterPremises()">
+      <option value="All">All Locations</option>
+    </select>
+
+    <button id="showMapBtn">Show Map</button>
     <input type="text" id="searchBox" placeholder="Search..." onkeyup="filterPremises()">
+
+    <!-- Cart SVG -->
+    <div id="cartWrapper" style="position:relative; margin-left:auto; cursor:pointer; width:32px; height:32px;">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:100%; height:100%; color:#333;">
+        <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm0 2zm10-2c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2zm0 2zM7.16 14l.84-2h7.74c.75 0 1.41-.41 1.75-1.03l3.58-6.49-.96-.54-3.57 6.48H9.21L8.27 4H1v2h5.16l1.1 2.61L4.03 14h3.13z"/>
+      </svg>
+      <span id="cartCount" style="
+        position:absolute;
+        top:-5px;
+        right:-5px;
+        background:red;
+        color:white;
+        font-size:12px;
+        font-weight:bold;
+        width:20px;
+        height:20px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        border-radius:50%;
+      ">0</span>
+
+      <div id="cartPopup" style="
+          display:none;
+          position:absolute;
+          top:36px;
+          right:0;
+          background:white;
+          border:1px solid #ccc;
+          padding:10px;
+          box-shadow:0 2px 6px rgba(0,0,0,0.2);
+          min-width:180px;
+          z-index:100;
+      "></div>
+    </div>
   </div>
 
-  <div class="actions">
+  <!-- Action buttons -->
+  <div class="actions" style="margin-top:10px;">
     <button onclick="openAddModal()">Add Premise</button>
     <button onclick="exportToExcel()">Export to Excel</button>
   </div>
 
-  <table>
+  <!-- Premises Table -->
+  <table style="margin-top:10px;">
     <thead>
       <tr>
         <th class="col-sno">S/No</th>
@@ -374,17 +530,27 @@
         <th class="col-district">District</th>
         <th class="col-location">Physical Location</th>
         <th class="col-observation">Observation</th>
-<th class="col-map">Map</th>
-<th class="col-actions">Actions</th>
-
-
+        <th class="col-vr">
+          VR
+          <div class="sort-arrows">
+            <span class="arrow-up">&#9650;</span>
+            <span class="arrow-down">&#9660;</span>
+          </div>
+        </th>
+        <th class="col-map">Map</th>
+        <th class="col-actions">Actions</th>
       </tr>
     </thead>
     <tbody id="premiseTable">
       <!-- Filled dynamically -->
     </tbody>
   </table>
+
 </div>
+
+
+
+
 
 <!-- Add/Edit Premise Modal -->
 <div id="premiseModal">
@@ -431,34 +597,66 @@
   </div>
 </div>
 
-<!-- Map Modal -->
-<div id="mapModal">
-  <div>
-    <span class="close-btn" onclick="closeMapModal()">&times;</span>
-    <iframe id="mapFrame" width="100%" height="400" style="border:0;" allowfullscreen loading="lazy"></iframe>
-  </div>
-</div>
+
+<!-- Map Modal --> <div id="mapModal"> <div> <span class="close-btn" onclick="closeMapModal()">&times;</span> <iframe id="mapFrame" width="100%" height="400" style="border:0;" allowfullscreen loading="lazy"></iframe> </div> </div>
+
+
 
 <!-- Add Observation Modal -->
 <div id="observationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:5000;">
-  <div style="background:#fff; max-width:450px; margin:80px auto; padding:20px; border-radius:8px; position:relative;">
+  <div style="background:#fff; max-width:480px; margin:80px auto; padding:20px; border-radius:8px; position:relative;">
     <span style="position:absolute; top:5px; right:10px; cursor:pointer; font-size:1.5rem;" onclick="closeObservationModal()">&times;</span>
     <h3>Add Observation for <span id="obsPremiseName"></span></h3>
+
+    <!-- Date Input -->
     <label>Date:</label><br>
     <input type="date" id="obsDate" required style="width:100%; margin-bottom:10px;"><br>
-    <label><input type="checkbox" id="obsGot"> GOT Medicines</label><br>
-    <label><input type="checkbox" id="obsUnreg"> Unregistered Medicines</label><br>
-    <label><input type="checkbox" id="obsPersonnel"> No Qualified Personnel</label><br>
-    <label><input type="checkbox" id="obsRequirements"> Premise doesn't meet GSP Requirement</label><br>
-    <label><input type="checkbox" id="obsUnregPremise"> Unregistered Premise</label><br>
-    <label><input type="checkbox" id="obsMedicalPractices"> Medical Practices</label><br>
-    <label><input type="checkbox" id="obsDldmNotAllowed"> DLDM NOT ALLOWED Medicines</label><br>
-    <div style="margin-top:10px; text-align:right;">
+
+    <!-- "None" Option -->
+    <label>
+      <input type="checkbox" id="obsNone"> <strong>None</strong>
+    </label>
+    <hr>
+
+    <!-- GOT Medicines -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
+      <label style="flex:1;"><input type="checkbox" class="obs-defect" id="obsGot"> GOT Medicines</label>
+      <input type="text" id="obsGotValue" placeholder="Tsh" style="display:none; width:140px; padding:3px;">
+    </div>
+
+    <!-- Unregistered Medicines -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
+      <label style="flex:1;"><input type="checkbox" class="obs-defect" id="obsUnreg"> Unregistered Medicines</label>
+      <input type="text" id="obsUnregValue" placeholder="Tsh" style="display:none; width:140px; padding:3px;">
+    </div>
+
+    <!-- No Qualified Personnel -->
+    <label><input type="checkbox" class="obs-defect" id="obsPersonnel"> No Qualified Personnel</label><br>
+
+    <!-- Premise GSP Requirement -->
+    <label><input type="checkbox" class="obs-defect" id="obsRequirements"> Premise doesn't meet GSP Requirement</label><br>
+
+    <!-- Unregistered Premise -->
+    <label><input type="checkbox" class="obs-defect" id="obsUnregPremise"> Unregistered Premise</label><br>
+
+    <!-- Medical Practices -->
+    <label><input type="checkbox" class="obs-defect" id="obsMedicalPractices"> Medical Practices</label><br>
+
+    <!-- DLDM NOT ALLOWED Medicines -->
+    <div style="display:flex; align-items:center; gap:10px; margin-top:5px;">
+      <label style="flex:1;"><input type="checkbox" class="obs-defect" id="obsDldmNotAllowed"> DLDM NOT ALLOWED Medicines</label>
+      <input type="text" id="obsDldmValue" placeholder="Tsh" style="display:none; width:140px; padding:3px;">
+    </div>
+
+    <!-- Buttons -->
+    <div style="margin-top:15px; text-align:right;">
       <button onclick="saveObservation()" style="padding:6px 12px; background:#28a745; color:#fff; border:none; border-radius:3px; cursor:pointer;">Save</button>
       <button onclick="closeObservationModal()" style="padding:6px 12px; background:#ccc; border:none; border-radius:3px; cursor:pointer;">Cancel</button>
     </div>
   </div>
 </div>
+
+
 
 <!-- View Observations Modal -->
 <div id="viewObsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:4000;">
@@ -494,15 +692,26 @@
   }
 
 function showTab(tabId) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  // Hide all tab contents
   document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
 
+  // Remove active class from all tabs
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+  // Find the clicked tab button based on tabId
   const activeTabButton = Array.from(document.querySelectorAll('.tab'))
     .find(t => t.getAttribute('onclick')?.includes(tabId));
-  if (activeTabButton) activeTabButton.classList.add('active');
+  
+  // If the tab button exists, make it active
+  if (activeTabButton) {
+    activeTabButton.classList.add('active');
+  }
 
+  // Show the correct tab content
   const activeTabContent = document.getElementById(tabId);
-  if (activeTabContent) activeTabContent.style.display = 'block';
+  if (activeTabContent) {
+    activeTabContent.style.display = 'block';
+  }
 }
 
 // Initialize first tab automatically
@@ -540,66 +749,193 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function filterPremises() {
+
+function filterPremises() {
+    calculateRelativeVR();  // recalc VR if using relative PVI/VR
+
     const regionFilter = document.getElementById('regionFilter').value.toLowerCase();
     const districtFilter = document.getElementById('districtFilter').value.toLowerCase();
     const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
     const searchText = document.getElementById('searchBox').value.toLowerCase();
+    const vrTypeFilter = document.getElementById('vrTypeFilter').value.toLowerCase();
 
     const tbody = document.getElementById('premiseTable');
     tbody.innerHTML = '';
     let count = 0;
 
     premises.forEach(p => {
-      const regionMatch = (regionFilter === 'all' || p.region.toLowerCase() === regionFilter);
-      const districtMatch = (districtFilter === 'all' || p.district.toLowerCase() === districtFilter);
-      const categoryMatch = (categoryFilter === 'all' || p.category.toLowerCase() === categoryFilter);
-      const searchMatch = p.name.toLowerCase().includes(searchText) || p.location.toLowerCase().includes(searchText);
+        const regionMatch = (regionFilter === 'all' || p.region.toLowerCase() === regionFilter);
+        const districtMatch = (districtFilter === 'all' || p.district.toLowerCase() === districtFilter);
+        const categoryMatch = (categoryFilter === 'all' || p.category.toLowerCase() === categoryFilter);
+        const searchMatch = p.name.toLowerCase().includes(searchText) || p.location.toLowerCase().includes(searchText);
 
-      if (regionMatch && districtMatch && categoryMatch && searchMatch) {
-        count++;
-        let mapCell = '';
-        if (!p.latitude || !p.longitude) {
-          mapCell = `<button title="Set Location" onclick="confirmSetLocation(${p.id})">+</button>`;
-        } else {
-          mapCell = `<button title="Show Coordinates" onclick="showCoordinates(${p.latitude},${p.longitude})">📍</button>`;
+        let vrValue = (vrTypeFilter === 'relative') 
+            ? (p.relative_violation_rate?.toFixed(2) || '-') 
+            : (p.violation_rate?.toFixed(2) || '-');
+
+        if (regionMatch && districtMatch && categoryMatch && searchMatch) {
+            count++;
+
+            // Decide map/plus button
+            let mapCell = '';
+            if (!p.latitude || !p.longitude) {
+                mapCell = `<button title="Set Location" onclick="confirmSetLocation(${p.id})">+</button>`;
+            } else {
+                mapCell = `<button title="View Location" onclick="showCoordinates(${p.latitude},${p.longitude})">📍</button>`;
+            }
+
+            const tr = document.createElement('tr');
+            tr.dataset.id = p.id;
+            tr.innerHTML = `
+                <td>${count}</td>
+                <td>${p.name}</td>
+                <td>${p.category}</td>
+                <td>${p.region}</td>
+                <td>${p.district}</td>
+                <td>${p.location || '<i>Not set</i>'}</td>
+
+                <td class="col-observation">
+                    <div class="action-icons">
+                        <button class="obs-add" title="Add Observation" onclick="openObservationModal(${p.id})">+</button>
+                        <button class="obs-view" title="View Observations" onclick="viewObservations(${p.id})">👁️</button>
+                        <div id="intensity-card-${p.id}" class="intensity-cards-container"></div>
+                    </div>
+                </td>
+
+                <td class="col-vr">${vrValue}</td>
+
+                <td class="col-map">${mapCell}</td>
+
+                <td class="col-actions">
+                    <div class="action-icons">
+                        <button class="edit-btn" title="Edit" onclick="openEditModal(${p.id})">✏️</button>
+                        <button class="delete-btn" title="Delete" onclick="confirmDelete(${p.id})">🗑️</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
         }
-        const tr = document.createElement('tr');
-tr.innerHTML = `
-  <td class="col-sno">${count}</td>
-  <td class="col-name">${p.name}</td>
-  <td class="col-category">${p.category}</td>
-  <td class="col-region">${p.region}</td>
-  <td class="col-district">${p.district}</td>
-  <td class="col-location">${p.location || '<i>Not set</i>'}</td>
-  <td class="col-observation">
-  <div class="action-icons">
-    <button title="Add Observation" onclick="openObservationModal(${p.id})">+</button>
-    <button title="View Observations" onclick="viewObservations(${p.id})">&#128065;</button>
-    <div id="intensity-card-${p.id}" class="intensity-cards-container"></div>
-
-  </div>
-</td>
-
-</td>
-
-  </div>
-</td>
-
-<td class="col-map">${mapCell}</td>
-<td class="col-actions">
-  <div class="action-icons">
-    <button title="Edit" onclick="openEditModal(${p.id})">&#9998;</button>
-    <button title="Delete" onclick="confirmDelete(${p.id})">&#128465;</button>
-  </div>
-</td>
-
-`;
-
-        tbody.appendChild(tr);
-      }
     });
-  }
+
+    // 🔹 Update intensity cards after filtering
+    updateIntensityCards();
+}
+
+document.querySelectorAll('.col-vr .sort-arrows span').forEach(arrow => {
+  arrow.addEventListener('click', () => {
+    const table = arrow.closest('table');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    // Get VR column index
+    const columnIndex = Array.from(arrow.closest('tr').children).indexOf(arrow.closest('th'));
+
+    // Determine sorting: up = descending, down = ascending
+    const descending = arrow.classList.contains('arrow-up');
+    const ascending = arrow.classList.contains('arrow-down');
+
+    rows.sort((a, b) => {
+      const aVal = parseFloat(a.children[columnIndex].innerText.trim()) || 0;
+      const bVal = parseFloat(b.children[columnIndex].innerText.trim()) || 0;
+      return descending ? bVal - aVal : aVal - bVal;
+    });
+
+    // Append sorted rows
+    rows.forEach(row => tbody.appendChild(row));
+
+    // Reset arrow styles
+    arrow.parentNode.querySelectorAll('span').forEach(s => {
+      s.classList.remove('active');
+      s.style.color = ''; // reset color
+    });
+
+    // Apply active color
+    if (descending) arrow.style.color = 'red';
+    else if (ascending) arrow.style.color = 'green';
+
+    arrow.classList.add('active');
+
+    // Re-render intensity cards after sorting
+    if (typeof updateIntensityCards === "function") {
+      updateIntensityCards();
+    }
+  });
+});
+
+
+
+// ===== Event delegation for action buttons =====
+document.getElementById('premiseTable').addEventListener('click', function(e) {
+    const tr = e.target.closest('tr');
+    if (!tr) return;
+    const id = Number(tr.dataset.id);
+
+    if (e.target.classList.contains('edit-btn')) {
+        openEditModal(id);
+    } else if (e.target.classList.contains('delete-btn')) {
+    } else if (e.target.classList.contains('obs-add')) {
+        openObservationModal(id);
+    } else if (e.target.classList.contains('obs-view')) {
+        viewObservations(id);
+    } else if (e.target.classList.contains('map-btn')) {
+        const lat = e.target.dataset.lat;
+        const lng = e.target.dataset.lng;
+        showCoordinates(lat, lng);
+    }
+});
+
+function calculateRelativeVR() {
+    const regionFilter = document.getElementById('regionFilter').value.toLowerCase();
+    const districtFilter = document.getElementById('districtFilter').value.toLowerCase();
+
+    // Filter premises based on selected region & district
+    let filtered = premises.filter(p => {
+        const regionMatch = (regionFilter === 'all' || p.region.toLowerCase() === regionFilter);
+        const districtMatch = (districtFilter === 'all' || p.district.toLowerCase() === districtFilter);
+        return regionMatch && districtMatch;
+    });
+
+    // If nothing selected, fall back to all premises
+    if (filtered.length === 0) filtered = premises;
+
+    // Find max VR among filtered premises only
+    const maxVR = Math.max(...filtered.map(p => p.violation_rate || 0)) || 1;
+
+    // Now recalculate relative VR for **all premises**
+    premises.forEach(p => {
+        if (filtered.includes(p)) {
+            p.relative_violation_rate = ((p.violation_rate || 0) / maxVR) * 100;
+        } else {
+            p.relative_violation_rate = 0; // Not in selection, set 0
+        }
+    });
+
+}
+
+async function loadPremises() {
+    try {
+        const response = await fetch('/get_premises');
+        if (!response.ok) throw new Error('Failed to load premises');
+        premises = await response.json();
+
+        calculateRelativeVR();  // existing line
+        filterPremises();        // render table
+        updateIntensityCards();
+
+        // ===== Update cart badge for observation entries =====
+        updateCartObservationCount();
+
+    } catch (e) {
+        alert('Error loading premises from server.');
+        console.error(e);
+    }
+}
+
+
+// Update cart badge and store category breakdown
+
+
+
 
   function showCoordinates(lat, lon) {
   const url = `https://www.google.com/maps?q=${lat},${lon}&hl=es;z=14&output=embed`;
@@ -757,19 +1093,7 @@ function closeMapModal() {
     }
   }
 
-  async function loadPremises() {
-    try {
-        const response = await fetch('/get_premises');
-        if (!response.ok) throw new Error('Failed to load premises');
-        premises = await response.json();
-
-        filterPremises();      // render table
-        updateIntensityCards(); // update badges
-    } catch (e) {
-        alert('Error loading premises from server.');
-    }
-}
-
+ 
   // Excel export
   function exportToExcel() {
     if (premises.length === 0) {
@@ -907,7 +1231,7 @@ async function updateQATarget(center, type, newTarget) {
   }
 }
 
-// Call once on page load
+
 
 
 // Only load Annual Targets if the tab exists (admin/champion)
@@ -915,6 +1239,142 @@ if (document.getElementById('targetsTab')) {
     if (typeof loadTargets === 'function') loadTargets();
     if (typeof loadQATargets === 'function') loadQATargets();
 }
+
+
+
+let parametersData = {}; // store full JSON in memory
+
+async function loadParameters() {
+    const res = await fetch("/get_parameters");
+    const data = await res.json();
+
+    parametersData = data; // store in memory
+
+    // ===== Load Observation Parameters =====
+    const tbodyParams = document.querySelector("#parameters-table tbody");
+    tbodyParams.innerHTML = "";
+    let sno = 1;
+    for (const [key, info] of Object.entries(data.parameters)) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${sno++}</td>
+            <td>${info.label}</td>
+            <td><input type="number" class="intensity-input" data-key="${key}" value="${info.intensity}"></td>
+        `;
+        tbodyParams.appendChild(row);
+    }
+
+    // ===== Load Contribution Weights =====
+    const tbodyWeights = document.querySelector("#contribution-table tbody");
+    tbodyWeights.innerHTML = "";
+    for (const [key, info] of Object.entries(data.weights)) {
+        const maxPolicy = info.max_policy !== undefined ? info.max_policy : 0;
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${info.label}</td>
+            <td><input type="number" class="weight-input" data-key="${key}" value="${info.weight}" style="width:60px;text-align:right;">%</td>
+            <td><input type="number" class="maxpolicy-input" data-key="${key}" value="${maxPolicy}" style="width:80px;text-align:right;">Tsh</td>
+        `;
+        tbodyWeights.appendChild(row);
+    }
+
+    // ===== Load Violation Contribution =====
+    const tbodyViolation = document.querySelector("#violation-table tbody");
+    tbodyViolation.innerHTML = "";
+    const violation = data.violation || {};
+    const keys = [
+        { key: "non_conformance", label: "Non Conformance Intensity (%)" },
+        { key: "Pvi", label: "Product Violation Index (%)" }
+    ];
+    keys.forEach(k => {
+        const val = violation[k.key] !== undefined ? violation[k.key] : 0;
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${k.label}</td>
+            <td><input type="number" class="violation-input" data-key="${k.key}" value="${val}" style="width:60px;text-align:right;">%</td>
+        `;
+        tbodyViolation.appendChild(row);
+    });
+}
+
+// ===== Save button =====
+document.getElementById("save-params").addEventListener("click", async () => {
+    // Update parameters intensities
+    document.querySelectorAll(".intensity-input").forEach(inp => {
+        const key = inp.dataset.key;
+        if (parametersData.parameters[key]) {
+            parametersData.parameters[key].intensity = parseInt(inp.value);
+        }
+    });
+
+    // Update weights and max policy
+    document.querySelectorAll(".weight-input").forEach(inp => {
+        const key = inp.dataset.key;
+        if (parametersData.weights[key]) {
+            parametersData.weights[key].weight = parseInt(inp.value);
+        }
+    });
+    document.querySelectorAll(".maxpolicy-input").forEach(inp => {
+        const key = inp.dataset.key;
+        if (parametersData.weights[key]) {
+            parametersData.weights[key].max_policy = parseInt(inp.value);
+        }
+    });
+
+    // Update violation table
+    parametersData.violation = {};
+    document.querySelectorAll(".violation-input").forEach(inp => {
+        const key = inp.dataset.key;
+        parametersData.violation[key] = parseInt(inp.value);
+    });
+
+    // Send to server
+    const res = await fetch("/save_parameters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parametersData)
+    });
+
+    const result = await res.json();
+    if (result.success) {
+        alert("Data saved successfully!");
+    } else {
+        alert("Error: " + result.error);
+    }
+});
+
+// Load parameters on page load
+loadParameters();
+
+
+document.getElementById("recalculate-data").addEventListener("click", async () => {
+    if (!parametersData || Object.keys(parametersData).length === 0) {
+        alert("Parameters data not loaded yet!");
+        return;
+    }
+
+    try {
+        // Call server endpoint to recalculate all data
+        const res = await fetch("/recalculate_all_data", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(parametersData) // send current parameters
+        });
+
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+            alert("All data recalculated successfully!");
+            // Optionally reload parameters after recalculation
+            loadParameters();
+        } else {
+            alert("Failed to recalculate: " + (result.error || "Unknown error"));
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Network error during recalculation!");
+    }
+});
 
 
 
@@ -936,48 +1396,151 @@ function openObservationModal(id) {
   document.getElementById('observationModal').style.display = 'block';
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+    const noneCheckbox = document.getElementById("obsNone");
+    const defectCheckboxes = document.querySelectorAll("#observationModal .obs-defect");
+
+    // ===== Handle "None" Option =====
+    noneCheckbox.addEventListener("change", function () {
+        if (this.checked) {
+            defectCheckboxes.forEach(cb => {
+                cb.checked = false;
+                cb.disabled = true;
+            });
+            hideAllValueInputs();
+        } else {
+            defectCheckboxes.forEach(cb => cb.disabled = false);
+        }
+    });
+
+    // If any defect is selected, uncheck "None"
+    defectCheckboxes.forEach(cb => {
+        cb.addEventListener("change", function () {
+            if (this.checked) noneCheckbox.checked = false;
+        });
+    });
+
+    // ===== Tsh Input Triggers =====
+    const valueTriggers = [
+        { checkbox: "obsGot", input: "obsGotValue" },
+        { checkbox: "obsUnreg", input: "obsUnregValue" },
+        { checkbox: "obsDldmNotAllowed", input: "obsDldmValue" }
+    ];
+
+    valueTriggers.forEach(item => {
+        const cb = document.getElementById(item.checkbox);
+        const input = document.getElementById(item.input);
+
+        cb.addEventListener("change", () => {
+            if (cb.checked) {
+                input.style.display = "block";
+                input.required = true;
+            } else {
+                input.style.display = "none";
+                input.value = "";
+                input.required = false;
+            }
+        });
+
+        // Auto-format Tsh values while typing
+        input.addEventListener("input", function () {
+            let value = this.value.replace(/[^\d]/g, ""); // remove non-digits
+            if (value) {
+                this.value = formatCurrency(value);
+            }
+        });
+    });
+
+    function hideAllValueInputs() {
+        valueTriggers.forEach(item => {
+            const input = document.getElementById(item.input);
+            input.style.display = "none";
+            input.value = "";
+            input.required = false;
+        });
+    }
+
+    // Format number with commas and "/="
+    function formatCurrency(num) {
+        return "Tsh " + Number(num).toLocaleString("en-US") + " /=";
+    }
+});
+
+
+
+
 function closeObservationModal() {
   document.getElementById('observationModal').style.display = 'none';
 }
 
+
 async function saveObservation() {
-  if (!currentObsPremiseId) return;
-  const date = document.getElementById('obsDate').value;
-  if (!date) return alert('Select a date');
+    const date = document.getElementById("obsDate").value;
+    const noneSelected = document.getElementById("obsNone").checked;
 
-  const obsData = {
-    premiseId: currentObsPremiseId,
-    date,
-    observations: {
-      got: document.getElementById('obsGot').checked,
-      unreg: document.getElementById('obsUnreg').checked,
-      personnel: document.getElementById('obsPersonnel').checked,
-      requirements: document.getElementById('obsRequirements').checked,
-      unregPremise: document.getElementById('obsUnregPremise').checked,
-      medicalPractices: document.getElementById('obsMedicalPractices')?.checked || false,
-      dldmNotAllowed: document.getElementById('obsDldmNotAllowed')?.checked || false,
-      pharmMedicalPractices: document.getElementById('obsPharmMedicalPractices')?.checked || false
-    }
-  };
+    let defects = [];
+    const checkboxes = document.querySelectorAll("#observationModal .obs-defect");
+    checkboxes.forEach(cb => { if (cb.checked) defects.push(cb.id); });
 
-  // Send to server
-  try {
-    const resp = await fetch('/save_observation', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(obsData)
-    });
-    const result = await resp.json();
-    if (resp.ok && result.success) {
-      alert('Observation saved');
-      closeObservationModal();
-    } else {
-      alert('Error saving observation: '+(result.message || 'Unknown'));
+    const defectValues = {
+        obsGot: document.getElementById("obsGotValue").value || null,
+        obsUnreg: document.getElementById("obsUnregValue").value || null,
+        obsDldmNotAllowed: document.getElementById("obsDldmValue").value || null
+    };
+
+    const premiseIndex = premises.findIndex(p => p.id === currentObsPremiseId);
+    if (premiseIndex !== -1) {
+        const p = premises[premiseIndex];
+
+        const obsEntry = {
+            date: date,
+            observations: noneSelected ? [] : defects,
+            defectValues: defectValues,
+            intensity: 0,
+            none: noneSelected
+        };
+
+        if (!p.observations) p.observations = [];
+        p.observations.push(obsEntry);
+
+        // Update cart badge immediately
+        updateCartObservationCount();
+
+        // Recalculate average intensity locally
+        const total = p.observations.reduce((sum, o) => sum + (o.intensity || 0), 0);
+        p.average_intensity = total / p.observations.length;
+
+        const container = document.getElementById(`intensity-card-${p.id}`);
+        if (container) updateIntensityCards();
     }
-  } catch(e) {
-    alert('Network error saving observation');
-  }
+
+    closeObservationModal();
+
+    // Send save request in background
+    const data = {
+        premiseId: currentObsPremiseId,
+        date: date,
+        defects: noneSelected ? [] : defects,
+        defectValues: defectValues,
+        none: noneSelected
+    };
+
+    try {
+        const response = await fetch("/save_observation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) alert("Failed to save observation on server!");
+    } catch (err) {
+        console.error("Error saving observation:", err);
+        alert("Error saving observation!");
+    }
 }
+
+
+
 
 function closeViewObsModal() {
   document.getElementById('viewObsModal').style.display = 'none';
@@ -1002,37 +1565,47 @@ async function viewObservations(id) {
     container.innerHTML = ''; // clear previous
 
     obsList.forEach(o => {
-      const card = document.createElement('div');
-      card.style.border = '1px solid #ccc';
-      card.style.borderRadius = '6px';
-      card.style.padding = '10px 15px';
-      card.style.background = '#fdfdfd';
-      card.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+  const card = document.createElement('div');
+  card.style.border = '1px solid #ccc';
+  card.style.borderRadius = '6px';
+  card.style.padding = '10px 15px';
+  card.style.background = '#fdfdfd';
+  card.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
 
-      const heading = document.createElement('p');
-      heading.style.fontWeight = 'bold';
-      heading.style.marginBottom = '6px';
-      heading.textContent = `On ${o.date}, the premise was found with the following observations:`;
-      card.appendChild(heading);
+  const heading = document.createElement('p');
+  heading.style.fontWeight = 'bold';
+  heading.style.marginBottom = '6px';
+  heading.textContent = `On ${o.date}, the premise was found with the following observations:`;
+  card.appendChild(heading);
 
-      const ul = document.createElement('ul');
-      ul.style.margin = '0';
-      ul.style.paddingLeft = '20px';
-      if (o.observations && o.observations.length > 0) {
-        o.observations.forEach(obs => {
-          const li = document.createElement('li');
-          li.textContent = obs;
-          ul.appendChild(li);
-        });
-      } else {
-        const li = document.createElement('li');
-        li.textContent = 'No observations recorded';
-        ul.appendChild(li);
+  const ul = document.createElement('ul');
+  ul.style.margin = '0';
+  ul.style.paddingLeft = '20px';
+
+  if (o.observations && o.observations.length > 0) {
+    o.observations.forEach((obs, idx) => {
+      const li = document.createElement('li');
+      let valueText = '';
+
+      // Attach Tsh value if present
+      if (o.defect_values) {
+        if (obs === "GOT Medicines" && o.defect_values.got) valueText = ` (Tsh ${o.defect_values.got})`;
+        if (obs === "Unregistered Medicines" && o.defect_values.unreg) valueText = ` (Tsh ${o.defect_values.unreg})`;
+        if (obs === "DLDM NOT ALLOWED Medicines" && o.defect_values.dldmNotAllowed) valueText = ` (Tsh ${o.defect_values.dldmNotAllowed})`;
       }
 
-      card.appendChild(ul);
-      container.appendChild(card);
+      li.textContent = obs + valueText;
+      ul.appendChild(li);
     });
+  } else {
+    const li = document.createElement('li');
+    li.textContent = 'No observations recorded';
+    ul.appendChild(li);
+  }
+
+  card.appendChild(ul);
+  container.appendChild(card);
+});
 
     document.getElementById('viewObservationsModal').style.display = 'block';
   } catch (e) {
@@ -1057,7 +1630,8 @@ function updateIntensityCards() {
 
         container.innerHTML = ''; // clear previous badges
 
-        const avg = p.average_intensity || 0;
+        const avg = p.average_intensity;
+        const observations = p.observations || [];
 
         // Function to create a badge
         const createBadge = (color) => {
@@ -1065,30 +1639,375 @@ function updateIntensityCards() {
             badge.className = 'intensity-card';
             badge.style.backgroundColor = color;
             return badge;
+        };
+
+        // Determine color
+        let color = '#ffffff'; // default white
+
+        if (observations.length) {
+            const latestObs = observations[observations.length - 1].observations || [];
+
+            // 🔴 Latest obs contains GOT or Unregistered → red
+            if (latestObs.includes("GOT Medicines") || latestObs.includes("Unregistered Medicines")) {
+                color = '#e74c3c';
+            } 
+            // Otherwise, use average intensity
+            else if (avg === 0) {
+                color = '#2ecc71'; // green
+            } else if (avg > 0 && avg < 10) {
+                color = '#3498db'; // blue
+            } else if (avg >= 10 && avg < 30) {
+                color = '#f1c40f'; // yellow
+            } else if (avg >= 30) {
+                color = '#e74c3c'; // red
+            }
         }
 
-        if (avg === 0) {
-            container.appendChild(createBadge('green'));
-        } else if (avg > 0 && avg < 15) {
-            container.appendChild(createBadge('blue'));
-        } else if (avg >= 15 && avg < 30) {
-            container.appendChild(createBadge('yellow'));
-        } else if (avg >= 30 && avg < 60) {
-            container.appendChild(createBadge('red'));
-        } else if (avg >= 60) {
-            container.appendChild(createBadge('red'));
-            container.appendChild(createBadge('red')); // second red badge
-        }
+        container.appendChild(createBadge(color));
     });
 }
 
+
+document.addEventListener("DOMContentLoaded", function() {
+    const userRole = "{{ role }}";  // Correct variable name from Flask
+
+    // Show Parameters tab only if user is admin
+    if (userRole === "admin") {
+        document.querySelectorAll(".admin-only").forEach(tab => {
+            tab.style.display = "inline-block";
+        });
+    }
+});
+
+function updatePhysicalLocations() {
+    const region = document.getElementById("regionFilter").value.toLowerCase();
+    const district = document.getElementById("districtFilter").value.toLowerCase();
+    const locationSelect = document.getElementById("physicalLocationFilter");
+
+    // Filter premises by selected region & district
+    const filtered = premises.filter(p => 
+        (region === 'all' || p.region.toLowerCase() === region) &&
+        (district === 'all' || p.district.toLowerCase() === district)
+    );
+
+    // Get unique physical locations
+    const uniqueLocations = [...new Set(filtered.map(p => p.location))].sort();
+
+    // Populate dropdown
+    locationSelect.innerHTML = '<option value="All">All Locations</option>';
+    uniqueLocations.forEach(loc => {
+        const opt = document.createElement('option');
+        opt.value = loc;
+        opt.textContent = loc;
+        locationSelect.appendChild(opt);
+    });
+}
+
+
+function closeMapModal() {
+    document.getElementById('mapModal').style.display = 'none';
+}
+
+
+
+
+
+let inspectionsData = []; // Holds JSON data
+
+// Fetch inspections JSON and store globally
+async function loadInspectionsData() {
+    try {
+        const response = await fetch('static/data/inspections_from_db.json');
+        if (!response.ok) throw new Error('Failed to load inspections JSON');
+        const data = await response.json();
+        inspectionsData = data.Inspections || [];
+        updateCartObservationCount(); // initial
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+
+function updateCartObservationCount() {
+    const categoryDiff = {};
+
+    // Step 1: sum inspected premises per category from JSON
+    const totalInspectedByCategory = {};
+    inspectionsData.forEach(inspection => {
+        inspection["Premises Data"].forEach(p => {
+            const category = p["Premise Type"];
+            totalInspectedByCategory[category] =
+                (totalInspectedByCategory[category] || 0) + p.Count;
+        });
+    });
+
+    // Step 2: count distinct observation dates per category from premises
+    const totalObservedByCategory = {};
+    premises.forEach(pr => {
+        if (Array.isArray(pr.observations)) {
+            const category = pr.category;
+            const observedDates = new Set();
+            pr.observations.forEach(obs => {
+                if (obs.date) observedDates.add(obs.date);
+            });
+            totalObservedByCategory[category] =
+                (totalObservedByCategory[category] || 0) + observedDates.size;
+        }
+    });
+
+    // Step 3: combine all categories from both inspections + observations
+    const allCategories = new Set([
+        ...Object.keys(totalInspectedByCategory),
+        ...Object.keys(totalObservedByCategory)
+    ]);
+
+    // Step 4: calculate differences and sum absolute values for badge
+    let badgeTotal = 0;
+    allCategories.forEach(category => {
+        const inspected = totalInspectedByCategory[category] || 0;
+        const observed = totalObservedByCategory[category] || 0;
+        const diff = inspected - observed;
+
+        categoryDiff[category] = diff;
+
+        // Sum absolute value only if diff is non-zero
+        if (diff !== 0) badgeTotal += Math.abs(diff);
+    });
+
+    // Step 5: update popup to show ONLY non-zero categories with signed difference
+    const popup = document.getElementById('cartPopup');
+    popup.innerHTML = '';
+    Object.entries(categoryDiff).forEach(([cat, val]) => {
+        if (val !== 0) {
+            const line = document.createElement('div');
+            line.textContent = `${cat}: ${val}`; // show negative if negative
+            line.style.color = val < 0 ? 'red' : 'green';
+            popup.appendChild(line);
+        }
+    });
+
+    // Step 6: update cart badge value (sum of absolute differences)
+    const cartBadge = document.getElementById('cartCount');
+    cartBadge.textContent = badgeTotal;
+
+    // Step 7: badge color red if any category has difference, green otherwise
+    cartBadge.style.backgroundColor = badgeTotal > 0 ? "#dc3545" : "#28a745";
+}
+
+
+
+// Toggle popup visibility when cart clicked
+document.getElementById('cartWrapper').addEventListener('click', (e) => {
+    e.stopPropagation(); // prevent outer click hiding
+    const popup = document.getElementById('cartPopup');
+    popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+});
+
+// Hide popup when clicking outside
+document.addEventListener('click', () => {
+    document.getElementById('cartPopup').style.display = 'none';
+});
+
+// Initialize
+window.addEventListener('DOMContentLoaded', () => {
+    loadInspectionsData();
+});
+
+
+
+
+
+
+
+
+
+
 </script>
+
+
+<!-- Multi-premise Leaflet Map Modal -->
+<div id="multiMapModal" style="display:none; position:fixed; top:5%; left:0; width:100%; height:90%; 
+     background: rgba(0,0,0,0.5); z-index:1000;">
+  <div style="background:#fff; max-width:800px; margin:0 auto; padding:10px; border-radius:8px; 
+              position:relative; height:90%; display:flex; flex-direction:column; box-shadow:0 0 10px rgba(0,0,0,0.5);">
+    
+    <!-- Close button -->
+    <span class="close-btn" onclick="closeMultiMapModal()" 
+          style="position:absolute; top:10px; right:15px; font-size:2rem; font-weight:bold; 
+                 cursor:pointer; color:#333; z-index:2000;">&times;</span>
+    
+    <!-- Map container -->
+    <div id="premisesMap" style="flex:1; height:100%; border-radius:6px;"></div>
+    
+  </div>
+</div>
+
+
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+
+
+<style>
+.premise-label-small {
+    pointer-events: none;
+}
+</style>
+
+
+<script>
+let multiMap;
+let multiMarkersLayer;
+
+const premisesData = [
+    { "id": 1, "name": "Ben Dldm", "category": "Medical Device Shop", "region": "Lindi", "district": "Lindi MC", "location": "4", "latitude": "-8.894700", "longitude": "33.446500", "average_intensity": 5, "observations":[{"observations":["GOT Medicines"]}] },
+    { "id": 2, "name": "Benjamin Kamoga", "category": "Medical Device Shop", "region": "Mtwara", "district": "Nanyamba", "location": "4", "latitude": "-8.894800", "longitude": "33.446600", "average_intensity": 15, "observations":[{"observations":["Minor Issue"]}] },
+    { "id": 3, "name": "Ddd", "category": "Medical Lab (GOT)", "region": "Mtwara", "district": "Nanyamba", "location": "4", "latitude": "-8.894900", "longitude": "33.446700", "average_intensity": 0, "observations":[] }
+];
+
+// Function to get color based on intensity & latest observation
+function getPremiseLabelColor(p) {
+    const avg = p.average_intensity;
+    const observations = p.observations || [];
+    let color = '#ffffff'; // default white
+
+    if (observations.length) {
+        const latestObs = observations[observations.length - 1].observations || [];
+        if (latestObs.includes("GOT Medicines") || latestObs.includes("Unregistered Medicines")) {
+            color = '#e74c3c'; // red
+        } else if (avg === 0) {
+            color = '#2ecc71'; // green
+        } else if (avg > 0 && avg < 10) {
+            color = '#3498db'; // blue
+        } else if (avg >= 10 && avg < 30) {
+            color = '#f1c40f'; // yellow
+        } else if (avg >= 30) {
+            color = '#e74c3c'; // red
+        }
+    } else {
+        // If no observations, rely only on avg
+        if (avg === 0) color = '#2ecc71';
+        else if (avg > 0 && avg < 10) color = '#3498db';
+        else if (avg >= 10 && avg < 30) color = '#f1c40f';
+        else if (avg >= 30) color = '#e74c3c';
+    }
+
+    return color;
+}
+
+// Show multi-premise map
+function showPhysicalLocationMap() {
+    const region = document.getElementById('regionFilter').value.toLowerCase();
+    const district = document.getElementById('districtFilter').value.toLowerCase();
+    const location = document.getElementById('physicalLocationFilter').value.toLowerCase();
+
+    if (!location || location === "all") {
+        alert("Please select a specific physical location first.");
+        return;
+    }
+
+    document.getElementById('multiMapModal').style.display = 'block';
+
+    // Remove previous map if exists
+    if (multiMap) {
+        multiMap.remove();
+        multiMap = null;
+        multiMarkersLayer = null;
+        document.getElementById('premisesMap').innerHTML = "";
+    }
+
+    multiMap = L.map('premisesMap').setView([-9, 34], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(multiMap);
+
+    multiMarkersLayer = L.layerGroup();
+
+    const filtered = premisesData.filter(p => 
+        (region === 'all' || p.region.toLowerCase() === region) &&
+        (district === 'all' || p.district.toLowerCase() === district) &&
+        p.location.toLowerCase() === location
+    );
+
+    if (filtered.length === 0) {
+        alert("No premises found for this location.");
+        return;
+    }
+
+    filtered.forEach(p => {
+        if (p.latitude && p.longitude) {
+            const lat = parseFloat(p.latitude);
+            const lng = parseFloat(p.longitude);
+
+            const marker = L.marker([lat, lng]).addTo(multiMarkersLayer);
+
+            // Tooltip for premise name with intensity color
+            const tooltip = L.tooltip({
+                permanent: true,
+                direction: "top",
+                offset: [0, -15],
+                className: 'premise-label-small'
+            }).setContent(p.name);
+
+            marker.bindTooltip(tooltip).openTooltip();
+
+            // Apply dynamic color when tooltip is added to DOM
+            marker.on('tooltipopen', function() {
+                const tooltipEl = marker.getTooltip().getElement();
+                if (tooltipEl) {
+                    tooltipEl.style.backgroundColor = 'rgba(255,255,255,0.85)';
+                    tooltipEl.style.color = getPremiseLabelColor(p);
+                    tooltipEl.style.fontSize = '0.7rem';
+                    tooltipEl.style.fontWeight = 'bold';
+                    tooltipEl.style.borderRadius = '3px';
+                    tooltipEl.style.padding = '1px 4px';
+                    tooltipEl.style.border = '1px solid #aaa';
+                }
+            });
+
+            marker.bindPopup(`<strong>${p.name}</strong><br>${p.category}<br>${p.region} - ${p.district}`);
+        }
+    });
+
+    multiMarkersLayer.addTo(multiMap);
+
+    const bounds = L.latLngBounds(filtered.map(p => [parseFloat(p.latitude), parseFloat(p.longitude)]));
+    multiMap.fitBounds(bounds.pad(0.2));
+
+    setTimeout(() => multiMap.invalidateSize(), 100);
+}
+
+// Close multi-premise map
+function closeMultiMapModal() {
+    document.getElementById('multiMapModal').style.display = 'none';
+    if (multiMap) {
+        multiMap.remove();
+        multiMap = null;
+        multiMarkersLayer = null;
+        document.getElementById('premisesMap').innerHTML = "";
+    }
+}
+
+// Trigger button
+document.getElementById('showMapBtn').addEventListener('click', showPhysicalLocationMap);
+</script>
+
+
+
+
+
+
+
+
 <!-- View Observations Modal (Card style) -->
 <div id="viewObservationsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:4000;">
   <div style="background:#fff; max-width:500px; margin:50px auto; padding:20px; border-radius:8px; position:relative; overflow-y:auto; max-height:80%;">
+    <span style="position:absolute; top:5px; right:10px; cursor:pointer; font-size:1.5rem;" onclick="closeViewObservationsModal()">&times;</span>
     <h3>Observations  <span id="viewObsCardPremiseName"></span></h3>
 
     <div id="observationsList" style="margin-top:15px; display:flex; flex-direction:column; gap:12px;"></div>
+
     <div style="margin-top:15px; text-align:right;">
       <button onclick="closeViewObservationsModal()" style="padding:6px 12px; cursor:pointer; background:#ccc; border:none; border-radius:3px;">Close</button>
     </div>

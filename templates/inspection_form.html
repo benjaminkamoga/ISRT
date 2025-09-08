@@ -117,14 +117,15 @@
         }
         .modal-content {
     background: white;
-    margin: 2% auto;          /* slightly pushed up */
+    margin: 95px auto 60px auto;  /* top 80px, bottom 60px, horizontally centered */
     padding: 20px;
     width: 450px;
     border-radius: 5px;
-    max-height: 95vh;          /* increased from 80vh */
-    overflow-y: auto;          /* allow internal scrolling if needed */
+    max-height: calc(95vh - 140px); /* subtract top+bottom margin from viewport height */
+    overflow-y: auto;              /* scroll if content exceeds modal height */
     box-sizing: border-box;
 }
+
 
         .hidden { display: none; }
     </style>
@@ -184,7 +185,7 @@
 
     <div id="confirmModal" class="modal defect-related">
         <div class="modal-content">
-            <h3>Defects Found in <span id="currentCategory"></span>?</h3>
+            <h3>Observation Identified for Inspected <span id="currentCategory"></span>?</h3>
             <button onclick="showDefectForm()">Yes</button>
             <button onclick="closeModals()">No</button>
         </div>
@@ -192,11 +193,11 @@
 
     <div id="defectModal" class="modal defect-related">
         <div class="modal-content">
-            <h3>Defects in <span id="defectCategory"></span></h3>
+            <h3>Observations identified for <span id="defectCategory"></span></h3>
             <div class="defect-group"><label>GOT Medicines (Count):</label><input type="number" min="0" id="defectGot" required></div>
             <div class="defect-group"><label>Unregistered Medicines (Count):</label><input type="number" min="0" id="defectUnreg" required></div>
             <div class="defect-group"><label>No Qualified Personnel (Count):</label><input type="number" min="0" id="defectPersonnel" required></div>
-            <div class="defect-group"><label>Premise Meets Minimal Requirements (Count):</label><input type="number" min="0" id="defectRequirements" required></div>
+            <div class="defect-group"><label>Premise Does not Meets Minimal Requirements[GSP] (Count):</label><input type="number" min="0" id="defectRequirements" required></div>
             <div class="defect-group"><label>Unregistered Premise (Count):</label><input type="number" min="0" id="defectUnregPremise" required></div>
 
             <div id="dldmExtraDefects" class="hidden">
@@ -209,8 +210,9 @@
             </div>
 
             <div style="margin-top: 20px;">
-                <button onclick="saveDefectData()">Save Defects</button>
-                <button onclick="closeModals()" class="cancel-btn">Cancel</button>
+                <button onclick="saveDefectData()">Save Observations</button>
+                <button onclick="cancelDefectModal()" class="cancel-btn">Cancel</button>
+
             </div>
         </div>
     </div>
@@ -309,31 +311,105 @@
         document.getElementById("totalPremises").textContent = total;
     }
 
-    function showDefectForm() {
-        document.getElementById("confirmModal").style.display = "none";
-        document.getElementById("defectCategory").textContent = currentCategory;
-        document.getElementById("dldmExtraDefects").classList.add("hidden");
-        document.getElementById("pharmacyExtraDefect").classList.add("hidden");
-        if (currentCategory === "DLDM (Human)") document.getElementById("dldmExtraDefects").classList.remove("hidden");
-        else if (currentCategory === "Pharmacy (Human)") document.getElementById("pharmacyExtraDefect").classList.remove("hidden");
-        document.querySelectorAll('#defectModal input').forEach(input => input.value = "");
-        document.getElementById("defectModal").style.display = "block";
+function showDefectForm() {
+    document.getElementById("confirmModal").style.display = "none";
+    document.getElementById("defectCategory").textContent = currentCategory;
+    document.getElementById("dldmExtraDefects").classList.add("hidden");
+    document.getElementById("pharmacyExtraDefect").classList.add("hidden");
+
+    if (currentCategory === "DLDM (Human)") document.getElementById("dldmExtraDefects").classList.remove("hidden");
+    else if (currentCategory === "Pharmacy (Human)") document.getElementById("pharmacyExtraDefect").classList.remove("hidden");
+
+    // Reset all defect inputs
+    document.querySelectorAll('#defectModal input[type="number"]').forEach(input => input.value = "");
+
+    // Add live validation
+    const categoryIndex = categories.indexOf(currentCategory);
+    const totalPremises = parseInt(document.getElementById(`prem-${categoryIndex}`).value) || 0;
+
+    document.querySelectorAll('#defectModal input[type="number"]').forEach(input => {
+        input.oninput = () => {
+            const val = parseInt(input.value) || 0;
+            if (val > totalPremises) {
+                input.setCustomValidity(`Cannot exceed ${totalPremises} premises inspected`);
+                input.reportValidity();
+            } else {
+                input.setCustomValidity('');
+            }
+        };
+    });
+
+    document.getElementById("defectModal").style.display = "block";
+}
+
+
+function saveDefectData() {
+    const categoryIndex = categories.indexOf(currentCategory);
+    const totalPremises = parseInt(document.getElementById(`prem-${categoryIndex}`).value) || 0;
+
+    const isDLDM = currentCategory === "DLDM (Human)";
+    const isPharmacy = currentCategory === "Pharmacy (Human)";
+
+    // Gather values
+    const got = document.getElementById("defectGot").value;
+    const unreg = document.getElementById("defectUnreg").value;
+    const personnel = document.getElementById("defectPersonnel").value;
+    const requirements = document.getElementById("defectRequirements").value;
+    const unregPremise = document.getElementById("defectUnregPremise").value;
+
+    let dldmNotAllowed = 0, medicalPractices = 0;
+    if (isDLDM) {
+        dldmNotAllowed = document.getElementById("defectDldmNotAllowed").value;
+        medicalPractices = document.getElementById("defectMedicalPractices").value;
+    } else if (isPharmacy) {
+        medicalPractices = document.getElementById("defectPharmMedicalPractices").value;
     }
 
-    function saveDefectData() {
-        defectsData[currentCategory] = {
-            gotMedicines: parseInt(document.getElementById("defectGot").value) || 0,
-            unregisteredMedicines: parseInt(document.getElementById("defectUnreg").value) || 0,
-            noQualifiedPersonnel: parseInt(document.getElementById("defectPersonnel").value) || 0,
-            minimalRequirements: parseInt(document.getElementById("defectRequirements").value) || 0,
-            unregisteredPremise: parseInt(document.getElementById("defectUnregPremise").value) || 0
-        };
-        closeModals();
+    // ✅ Check all fields are filled
+    const allValues = [got, unreg, personnel, requirements, unregPremise, dldmNotAllowed, medicalPractices];
+    if (allValues.some(v => v === "")) {
+        return alert("Please fill all Observations fields before saving.");
     }
+
+    // ✅ Check none exceed premises inspected
+    const numericValues = allValues.map(v => parseInt(v) || 0);
+    if (numericValues.some(v => v > totalPremises)) {
+        return alert(`Observation count cannot exceed the number of premises inspected (${totalPremises}).`);
+    }
+
+    // Save data
+    defectsData[currentCategory] = {
+        gotMedicines: parseInt(got),
+        unregisteredMedicines: parseInt(unreg),
+        noQualifiedPersonnel: parseInt(personnel),
+        minimalRequirements: parseInt(requirements),
+        unregisteredPremise: parseInt(unregPremise),
+        dldmNotAllowed: parseInt(dldmNotAllowed),
+        medicalPractices: parseInt(medicalPractices)
+    };
+
+    closeModals();
+}
+
 
     function closeModals() {
         document.querySelectorAll(".modal").forEach(m => m.style.display = "none");
     }
+
+function cancelDefectModal() {
+    // Clear the current category's premises input
+    if (currentCategory) {
+        const categoryIndex = categories.indexOf(currentCategory);
+        if (categoryIndex >= 0) {
+            document.getElementById(`prem-${categoryIndex}`).value = '';
+            updateTotal();
+            toggleSaveButtons();
+        }
+    }
+    // Close all modals
+    closeModals();
+}
+
 
     function gatherFormData() {
         const inspectionDate = document.getElementById("inspectionDate").value;

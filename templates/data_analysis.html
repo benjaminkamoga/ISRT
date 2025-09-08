@@ -798,14 +798,16 @@ async function renderDefectsTable(inspections) {
 
     const premisesArray = Array.from(allPremises).sort();
 
-    const defectLabels = {
+const defectLabels = {
     gotMedicines: "GOT Medicines",
     unregisteredMedicines: "Unregistered Medicines",
     noQualifiedPersonnel: "No Qualified Personnel",
-    minimalRequirements: "Premise Doesn’t Meet Minimal GSP",
+    minimalRequirements: "Premise Doesn’t Meet Minimal GSP", // <-- updated
     unregisteredPremise: "Unregistered Premises",
-    nopermitproduct: "No Product Permit",
-    intensity: "Non-conformance Intensity" // <-- new option
+    nopermitproduct: "No Permit for product",
+    dldmNotAllowed: "DLDM Not Allowed Medicines",
+    medicalPractices: "Medical Practices",
+    intensity: "Non-conformance Intensity"
 };
 
 
@@ -900,105 +902,114 @@ async function renderDefectsTable(inspections) {
     // ===== Table Body =====
     const tbody = document.createElement('tbody');
 
-    function buildRows(reference) {
-        tbody.innerHTML = '';
+function buildRows(reference) {
+    tbody.innerHTML = '';
 
-        const summedDefects = {};
-        filteredInspections.forEach(ins => {
-            if (!ins['Defects Data']) return;
-            for (const premise in ins['Defects Data']) {
-                for (const defectKey in ins['Defects Data'][premise]) {
-                    const defectName = defectLabels[defectKey] || defectKey;
-                    if (!summedDefects[defectName]) summedDefects[defectName] = {};
-                    if (!summedDefects[defectName][premise]) summedDefects[defectName][premise] = 0;
-                    summedDefects[defectName][premise] += ins['Defects Data'][premise][defectKey];
-                }
+    const summedDefects = {};
+    filteredInspections.forEach(ins => {
+        if (!ins['Defects Data']) return;
+        for (const premise in ins['Defects Data']) {
+            for (const defectKey in ins['Defects Data'][premise]) {
+                // Map defect keys to display labels
+                let defectName = defectLabels[defectKey] || defectKey;
+
+                // Merge legacy keys
+                if (defectKey === 'dldmNotAllowed') defectName = 'DLDM Not Allowed Medicines';
+                if (defectKey === 'medicalPractices') defectName = 'Medical Practices';
+                if (defectKey === 'minimalRequirements') defectName = 'Premise Doesn’t Meet Minimal GSP';
+                if (defectName === 'Premise Meets Minimal Requirements') {
+    defectName = 'Premise Doesn’t Meet Minimal GSP';
+}
+                if (!summedDefects[defectName]) summedDefects[defectName] = {};
+                if (!summedDefects[defectName][premise]) summedDefects[defectName][premise] = 0;
+                summedDefects[defectName][premise] += ins['Defects Data'][premise][defectKey];
             }
+        }
+    });
+
+    const uniqueDefectNames = Object.keys(summedDefects).sort();
+
+    uniqueDefectNames.forEach((defectName) => {
+        const row = document.createElement('tr');
+
+        const tdLabel = document.createElement('td');
+        tdLabel.innerText = defectName;
+        tdLabel.style = cellStyle + "font-weight:bold;text-align:left;white-space:normal;max-width:200px;position:sticky;left:0;background:#fff;z-index:3;";
+        row.appendChild(tdLabel);
+
+        let totalCount = 0;
+
+        premisesArray.forEach((p, i) => {
+            const count = summedDefects[defectName][p] || 0;
+            totalCount += count;
+            const bgColor = i % 2 === 0 ? "#eaf1f8" : "#f8eaea";
+
+            const tdCount = document.createElement('td');
+            tdCount.innerText = count;
+            tdCount.style = cellStyle + ";background:" + bgColor + ";";
+            row.appendChild(tdCount);
+
+            let referenceValue = 0;
+            if (reference === 'inspected') {
+                filteredInspections.forEach(ins => {
+                    if (ins['Premises Data']) {
+                        ins['Premises Data'].filter(pd => pd['Premise Type'] === p)
+                            .forEach(pd => { referenceValue += pd['Count']; });
+                    }
+                });
+            } else if (reference === 'registered') {
+                referenceValue = registeredPremises[p] || 0;
+            } else if (reference === 'noncompliance') {
+                filteredInspections.forEach(ins => {
+                    const defects = ins['Defects Data']?.[p];
+                    if (defects) referenceValue += Math.max(...Object.values(defects));
+                });
+            }
+
+            const percent = referenceValue ? ((count / referenceValue) * 100).toFixed(1) : 0;
+            const tdPercent = document.createElement('td');
+            tdPercent.innerText = percent + '%';
+            tdPercent.style = cellStyle + ";background:" + bgColor + ";";
+            row.appendChild(tdPercent);
         });
 
-        const uniqueDefectNames = Object.keys(summedDefects).sort();
-
-        uniqueDefectNames.forEach((defectName) => {
-            const row = document.createElement('tr');
-
-            const tdLabel = document.createElement('td');
-            tdLabel.innerText = defectName;
-            tdLabel.style = cellStyle + "font-weight:bold;text-align:left;white-space:normal;max-width:200px;position:sticky;left:0;background:#fff;z-index:3;";
-            row.appendChild(tdLabel);
-
-            let totalCount = 0;
-
-            premisesArray.forEach((p, i) => {
-                const count = summedDefects[defectName][p] || 0;
-                totalCount += count;
-                const bgColor = i % 2 === 0 ? "#eaf1f8" : "#f8eaea";
-
-                const tdCount = document.createElement('td');
-                tdCount.innerText = count;
-                tdCount.style = cellStyle + ";background:" + bgColor + ";";
-                row.appendChild(tdCount);
-
-                let referenceValue = 0;
+        // Total column dynamic
+        const totalRefValue = (() => {
+            let sum = 0;
+            premisesArray.forEach(p => {
                 if (reference === 'inspected') {
                     filteredInspections.forEach(ins => {
                         if (ins['Premises Data']) {
                             ins['Premises Data'].filter(pd => pd['Premise Type'] === p)
-                                .forEach(pd => { referenceValue += pd['Count']; });
+                                .forEach(pd => { sum += pd['Count']; });
                         }
                     });
                 } else if (reference === 'registered') {
-                    referenceValue = registeredPremises[p] || 0;
+                    sum += registeredPremises[p] || 0;
                 } else if (reference === 'noncompliance') {
                     filteredInspections.forEach(ins => {
                         const defects = ins['Defects Data']?.[p];
-                        if (defects) referenceValue += Math.max(...Object.values(defects));
+                        if (defects) sum += Math.max(...Object.values(defects));
                     });
                 }
-
-                const percent = referenceValue ? ((count / referenceValue) * 100).toFixed(1) : 0;
-                const tdPercent = document.createElement('td');
-                tdPercent.innerText = percent + '%';
-                tdPercent.style = cellStyle + ";background:" + bgColor + ";";
-                row.appendChild(tdPercent);
             });
+            return sum;
+        })();
 
-            // Total column dynamic
-            const totalRefValue = (() => {
-                let sum = 0;
-                premisesArray.forEach(p => {
-                    if (reference === 'inspected') {
-                        filteredInspections.forEach(ins => {
-                            if (ins['Premises Data']) {
-                                ins['Premises Data'].filter(pd => pd['Premise Type'] === p)
-                                    .forEach(pd => { sum += pd['Count']; });
-                            }
-                        });
-                    } else if (reference === 'registered') {
-                        sum += registeredPremises[p] || 0;
-                    } else if (reference === 'noncompliance') {
-                        filteredInspections.forEach(ins => {
-                            const defects = ins['Defects Data']?.[p];
-                            if (defects) sum += Math.max(...Object.values(defects));
-                        });
-                    }
-                });
-                return sum;
-            })();
+        const bgColorTotal = "#dff0d8";
+        const tdTotalCount = document.createElement('td');
+        tdTotalCount.innerText = totalCount;
+        tdTotalCount.style = cellStyle + ";font-weight:bold;background:" + bgColorTotal + ";";
+        row.appendChild(tdTotalCount);
 
-            const bgColorTotal = "#dff0d8";
-            const tdTotalCount = document.createElement('td');
-            tdTotalCount.innerText = totalCount;
-            tdTotalCount.style = cellStyle + ";font-weight:bold;background:" + bgColorTotal + ";";
-            row.appendChild(tdTotalCount);
+        const tdTotalPercent = document.createElement('td');
+        tdTotalPercent.innerText = totalRefValue ? ((totalCount / totalRefValue) * 100).toFixed(1) + '%' : '0%';
+        tdTotalPercent.style = cellStyle + ";font-weight:bold;background:" + bgColorTotal + ";";
+        row.appendChild(tdTotalPercent);
 
-            const tdTotalPercent = document.createElement('td');
-            tdTotalPercent.innerText = totalRefValue ? ((totalCount / totalRefValue) * 100).toFixed(1) + '%' : '0%';
-            tdTotalPercent.style = cellStyle + ";font-weight:bold;background:" + bgColorTotal + ";";
-            row.appendChild(tdTotalPercent);
-
-            tbody.appendChild(row);
-        });
-    }
+        tbody.appendChild(row);
+    });
+}
 
     function updateTotalRow(reference) {
         let grandTotal = 0;
@@ -1038,7 +1049,7 @@ async function renderDefectsTable(inspections) {
         });
 
         tdGrandTotal.colSpan = 2;
-        tdGrandTotal.innerText = grandTotal + ' / ' + (grandRef ? ((grandTotal / grandRef) * 100).toFixed(1) + '%' : '0%');
+        tdGrandTotal.innerText = grandTotal; 
     }
 
     select.addEventListener('change', () => {
@@ -1064,6 +1075,11 @@ async function renderDefectsTable(inspections) {
 })();
  
 
+
+
+
+
+
 // ===== Prepare Defect Labels =====
 const defectLabels = {
     gotMedicines: "GOT Medicines",
@@ -1071,7 +1087,9 @@ const defectLabels = {
     noQualifiedPersonnel: "No Qualified Personnel",
     minimalRequirements: "Premise Doesn’t Meet Minimal GSP",
     unregisteredPremise: "Unregistered Premises",
-    nopermitproduct: "No Product Permit"
+    nopermitproduct: "No Permit for product",
+    dldmNotAllowed: "DLDM Not Allowed Medicines",
+    medicalPractices: "Medical Practices"
 };
 
 // ===== Add Dropdown Above Chart (Defect + GroupBy + Region + District) =====
@@ -1242,9 +1260,7 @@ defectSelect.addEventListener('change', () => {
 defectSelect.addEventListener('change', () => {
     renderDefectsChart(defectSelect.value);
 });
-defectGroupBy.addEventListener('change', () => {
-    renderDefectsChart(defectSelect.value);
-});
+
 
 function renderDefectsChart(selectedDefect = 'all') {
     const ctx = document.getElementById("defectsChart");
@@ -1262,10 +1278,7 @@ function renderDefectsChart(selectedDefect = 'all') {
     // CASE 1: NON-CONFORMANCE INTENSITY MODE
     // ===============================
     if (selectedDefect === 'intensity') {
-        if (!premisesData || !premisesData.length) {
-            console.warn("Premises data not loaded yet.");
-            return;
-        }
+        if (!premisesData || !premisesData.length) return;
 
         let filteredPremises = premisesData.filter(p => {
             if (regionFilter !== 'all' && p.region !== regionFilter) return false;
@@ -1285,9 +1298,7 @@ function renderDefectsChart(selectedDefect = 'all') {
                 ? (p.observations.reduce((sum, o) => sum + (o.intensity || 0), 0) / p.observations.length)
                 : 0);
 
-            if (!intensityGroups[label]) {
-                intensityGroups[label] = { total: 0, count: 0 };
-            }
+            if (!intensityGroups[label]) intensityGroups[label] = { total: 0, count: 0 };
             intensityGroups[label].total += avgIntensity;
             intensityGroups[label].count += 1;
         });
@@ -1297,13 +1308,14 @@ function renderDefectsChart(selectedDefect = 'all') {
 
     } else {
         // ===============================
-        // CASE 2: NORMAL DEFECT MODE
+        // CASE 2: NORMAL DEFECT MODE (All or Single)
         // ===============================
         let filteredInspections = data.Inspections || [];
         if (regionFilter !== 'all') filteredInspections = filteredInspections.filter(i => i.Region === regionFilter);
         if (districtFilter !== 'all') filteredInspections = filteredInspections.filter(i => i.District === districtFilter);
 
         const defectsAggregated = {};
+
         filteredInspections.forEach(ins => {
             if (!ins["Defects Data"]) return;
 
@@ -1314,14 +1326,53 @@ function renderDefectsChart(selectedDefect = 'all') {
                 else if (groupBy === 'district') label = ins.District || 'Unknown';
                 else label = premise;
 
-                defectsAggregated[label] = defectsAggregated[label] || 0;
+                if (!defectsAggregated[label]) defectsAggregated[label] = 0;
 
-                if (selectedDefect === 'all') {
-                    for (let key in ins["Defects Data"][premise])
-                        defectsAggregated[label] += ins["Defects Data"][premise][key];
-                } else {
-                    defectsAggregated[label] += ins["Defects Data"][premise][selectedDefect] || 0;
-                }
+                const defectEntry = ins["Defects Data"][premise];
+
+                // -------------------------------
+                // Aggregate defects
+                // -------------------------------
+                Object.keys(defectEntry).forEach(key => {
+                    // Normalize key
+                    let normalizedKey;
+                    switch(key) {
+                        case 'dldmNotAllowed':
+                        case 'DLDM Not Allowed Medicines':
+                            normalizedKey = 'dldmNotAllowed'; break;
+                        case 'medicalPractices':
+                        case 'Medical Practices':
+                            normalizedKey = 'medicalPractices'; break;
+                        case 'minimalRequirements':
+                        case 'Premise Meets Minimal Requirements':
+                            normalizedKey = 'minimalRequirements'; break;
+                        case 'gotMedicines':
+                        case 'GOT Medicines':
+                            normalizedKey = 'gotMedicines'; break;
+                        case 'unregisteredMedicines':
+                        case 'Unregistered Medicines':
+                            normalizedKey = 'unregisteredMedicines'; break;
+                        case 'noQualifiedPersonnel':
+                        case 'No Qualified Personnel':
+                            normalizedKey = 'noQualifiedPersonnel'; break;
+                        case 'unregisteredPremise':
+                        case 'Unregistered Premises':
+                            normalizedKey = 'unregisteredPremise'; break;
+                        case 'nopermitproduct':
+                        case 'No Product Permit':
+                            normalizedKey = 'nopermitproduct'; break;
+                        default:
+                            normalizedKey = key;
+                    }
+
+                    if (selectedDefect === 'all') {
+                        defectsAggregated[label] += defectEntry[key] || 0;
+                    } else {
+                        // Map dropdown selection to normalized key
+                        let selectedNormalizedKey = Object.keys(defectLabels).find(k => k === selectedDefect || defectLabels[k] === selectedDefect);
+                        if (normalizedKey === selectedNormalizedKey) defectsAggregated[label] += defectEntry[key] || 0;
+                    }
+                });
             });
         });
 
@@ -1329,13 +1380,17 @@ function renderDefectsChart(selectedDefect = 'all') {
         counts = Object.values(defectsAggregated);
     }
 
+    // ===============================
     // Handle empty data
+    // ===============================
     if (!labels.length) {
         labels = ['No Data'];
         counts = [0];
     }
 
-    // Generate distinct colors for both bars & legend
+    // ===============================
+    // Generate colors
+    // ===============================
     function generateDistinctColors(n) {
         const baseColors = [
             '#e6194b','#3cb44b','#ffe119','#4363d8','#f58231',
@@ -1347,82 +1402,83 @@ function renderDefectsChart(selectedDefect = 'all') {
     }
     const colors = generateDistinctColors(labels.length);
 
-    // Destroy previous chart if exists
+    // ===============================
+    // Destroy previous chart
+    // ===============================
     if (window.defectsChartInstance) {
         window.defectsChartInstance.destroy();
         window.defectsChartInstance = null;
     }
 
-    // Create chart
-window.defectsChartInstance = new Chart(ctx2D, {
-    type: 'bar',
-    data: {
-        labels: labels.map((_, index) => index + 1), // X-axis numbers
-        datasets: [{
-            label: selectedDefect === 'intensity'
-                ? 'Average Non-conformance Intensity'
-                : selectedDefect === 'all'
-                    ? 'Total Defects'
-                    : defectLabels[selectedDefect] || selectedDefect,
-            data: counts,
-            backgroundColor: colors,
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                display: true,
-                position: 'bottom',
-                align: 'start',
-                labels: {
-                    font: { size: 10 },
-                    boxWidth: 12,
-                    padding: 10,
-                    generateLabels: (chart) => {
-                        return labels.map((category, i) => ({
-                            text: category,
-                            fillStyle: colors[i],
-                            strokeStyle: colors[i],
-                            hidden: false
-                        }));
+    // ===============================
+    // Create Chart.js bar chart
+    // ===============================
+    window.defectsChartInstance = new Chart(ctx2D, {
+        type: 'bar',
+        data: {
+            labels: labels.map((_, index) => index + 1),
+            datasets: [{
+                label: selectedDefect === 'intensity'
+                    ? 'Average Non-conformance Intensity'
+                    : selectedDefect === 'all'
+                        ? 'Total Defects'
+                        : defectLabels[selectedDefect] || selectedDefect,
+                data: counts,
+                backgroundColor: colors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    align: 'start',
+                    labels: {
+                        font: { size: 10 },
+                        boxWidth: 12,
+                        padding: 10,
+                        generateLabels: (chart) => {
+                            return labels.map((category, i) => ({
+                                text: category,
+                                fillStyle: colors[i],
+                                strokeStyle: colors[i],
+                                hidden: false
+                            }));
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: () => '',
+                        label: (context) => {
+                            const category = window.defectsChartInstance.originalCategories[context.dataIndex];
+                            let value = context.raw;
+                            if (selectedDefect === 'intensity') value += '%';
+                            return `${category}: ${value}`;
+                        }
                     }
                 }
             },
-            tooltip: {
-    callbacks: {
-        title: () => '', // <-- hides X-axis number in tooltip
-        label: (context) => {
-            const category = window.defectsChartInstance.originalCategories[context.dataIndex];
-            let value = context.raw;
-            if (selectedDefect === 'intensity') value += '%';
-            return `${category}: ${value}`;
+            scales: {
+                x: { ticks: { display: true } },
+                y: { beginAtZero: true }
+            }
         }
-    }
+    });
+
+    // Attach original categories for tooltip
+    window.defectsChartInstance.originalCategories = labels;
 }
 
-        },
-        scales: {
-            x: { ticks: { display: true } },  // numbers on X-axis
-            y: { beginAtZero: true }
-        }
-    }
-});
 
-// Attach original categories to the chart instance
-window.defectsChartInstance.originalCategories = labels;
-
-}
 
 
 // ===== Initial Render =====
 renderDefectsChart();
 
-// ===== Update Chart When Dropdown Changes =====
-defectSelect.addEventListener('change', () => {
-    renderDefectsChart(defectSelect.value);
-});
+
 
 
 
@@ -1468,23 +1524,27 @@ function populateRegionFilter() {
 
 // ---- Populate District Dropdown ----
 function populateDistricts(regionName) {
-    const intensityDistrictSelect = document.getElementById('intensityDistrictSelect');
-    intensityDistrictSelect.innerHTML = `<option value="all">-- All Districts --</option>`;
+    districtSelect.innerHTML = `<option value="all">-- All Districts --</option>`;
+    if (!regionName || regionName === 'all') {
+        // Populate ALL districts
+        Object.values(chartRegions).flat().forEach(d => {
+            const o = document.createElement('option');
+            o.value = d;
+            o.textContent = d;
+            districtSelect.appendChild(o);
+        });
+    } else {
+        // Populate ONLY selected region's districts
+        chartRegions[regionName].forEach(d => {
+            const o = document.createElement('option');
+            o.value = d;
+            o.textContent = d;
+            districtSelect.appendChild(o);
+        });
+    }
 
-    let districts = premisesData
-        .filter(p => regionName === 'all' || p.region === regionName)
-        .map(p => p.district)
-        .filter(Boolean);
-
-    districts = [...new Set(districts)];
-    districts.forEach(d => {
-        const o = document.createElement('option');
-        o.value = d;
-        o.textContent = d;
-        intensityDistrictSelect.appendChild(o);
-    });
-
-    intensityDistrictSelect.style.display = (districts.length && regionName !== 'all') ? 'inline-block' : 'none';
+    // Re-render chart instantly whenever districts update
+    if (typeof renderDefectsChart === 'function') renderDefectsChart(defectSelect.value);
 }
 
 // ---- Render INTENSITY Table ----
@@ -1935,10 +1995,6 @@ function renderChargesPieChart(groupedData) {
 
 
 
-
-
-
-
 // ===== Create Violation Rate Section =====
 const violationSection = document.createElement('div');
 violationSection.className = 'report-block';
@@ -1953,20 +2009,30 @@ violationSection.innerHTML = `
 document.getElementById('summary-table').parentElement.insertAdjacentElement('afterend', violationSection);
 
 // ===== Helper: Build Filters Dynamically =====
-function buildViolationFilters(data, selectedRegion = 'all', selectedDistrict = 'all') {
-    const regions = [...new Set(data.map(r => r.Region))].sort();
+function buildViolationFilters(data, selectedRegion = 'all', selectedDistrict = 'all', vrType = 'absolute') {
+    const regions = [...new Set(data.map(r => r.region))].sort();
     let regionOptions = `<option value="all">All Regions</option>`;
     regions.forEach(r => {
         regionOptions += `<option value="${r}" ${r === selectedRegion ? 'selected' : ''}>${r}</option>`;
     });
 
-    let districtOptions = `<option value="all">All Districts</option>`;
     const filteredDistricts = selectedRegion === 'all'
-        ? [...new Set(data.map(r => r.District))].sort()
-        : [...new Set(data.filter(r => r.Region === selectedRegion).map(r => r.District))].sort();
+        ? [...new Set(data.map(r => r.district))].sort()
+        : [...new Set(data.filter(r => r.region === selectedRegion).map(r => r.district))].sort();
+
+    let districtOptions = `<option value="all">All Districts</option>`;
     filteredDistricts.forEach(d => {
         districtOptions += `<option value="${d}" ${d === selectedDistrict ? 'selected' : ''}>${d}</option>`;
     });
+
+    const vrOptions = `
+        <label style="margin-left:20px;">VR Type:
+            <select id="violationTypeFilter">
+                <option value="absolute" ${vrType==='absolute'?'selected':''}>Absolute VR</option>
+                <option value="relative" ${vrType==='relative'?'selected':''}>Relative VR</option>
+            </select>
+        </label>
+    `;
 
     return `
         <div class="violation-filters" style="margin-bottom:10px;">
@@ -1976,12 +2042,13 @@ function buildViolationFilters(data, selectedRegion = 'all', selectedDistrict = 
             <label style="margin-left:20px;">District:
                 <select id="violationDistrictFilter">${districtOptions}</select>
             </label>
+            ${vrOptions}
         </div>
     `;
 }
 
 // ===== Helper: Build Table HTML =====
-function buildViolationTableHTML(tableData, showAverages = false) {
+function buildViolationTableHTML(tableData, vrType='absolute', showAverages=false) {
     let tableHTML = `<table>
         <thead>
             <tr>
@@ -1989,7 +2056,6 @@ function buildViolationTableHTML(tableData, showAverages = false) {
                 <th>Region</th>
                 <th>District</th>
                 <th style="width:120px;">Non-conformance Intensity</th>
-                <th>PVI (%)</th>
                 <th style="width:120px;">Violation Rate (%)</th>
             </tr>
             <tr class="sort-row">
@@ -1999,10 +2065,6 @@ function buildViolationTableHTML(tableData, showAverages = false) {
                     <span class="sort-arrow sort-arrow-down" data-field="intensity" data-order="asc">&#9660;</span>
                 </td>
                 <td>
-                    <span class="sort-arrow sort-arrow-up" data-field="pvi" data-order="desc">&#9650;</span>
-                    <span class="sort-arrow sort-arrow-down" data-field="pvi" data-order="asc">&#9660;</span>
-                </td>
-                <td>
                     <span class="sort-arrow sort-arrow-up" data-field="violationRate" data-order="desc">&#9650;</span>
                     <span class="sort-arrow sort-arrow-down" data-field="violationRate" data-order="asc">&#9660;</span>
                 </td>
@@ -2010,27 +2072,25 @@ function buildViolationTableHTML(tableData, showAverages = false) {
         </thead>
         <tbody>`;
 
-    tableData.forEach((row) => {
+    tableData.forEach((row, index) => {
+        const vrValue = vrType === 'absolute' ? (row.violation_rate || 0) : (row.relative_violation_rate || 0);
         tableHTML += `<tr class="violation-row">
-            <td>${row.SNo}</td>
-            <td>${row.Region}</td>
-            <td>${row.District}</td>
-            <td>${row.intensity.toFixed(1)}%</td>
-            <td>${row.pvi.toFixed(1)}%</td>
-            <td>${row.violationRate.toFixed(1)}%</td>
+            <td>${index+1}</td>
+            <td>${row.region}</td>
+            <td>${row.district}</td>
+            <td>${row.total_intensity?.toFixed(1) || 0}%</td>
+            <td>${vrValue.toFixed(1)}%</td>
         </tr>`;
     });
 
-    if (showAverages && tableData.length > 0) {
-        const avgIntensity = tableData.reduce((sum, r) => sum + r.intensity, 0) / tableData.length;
-        const avgPvi = tableData.reduce((sum, r) => sum + r.pvi, 0) / tableData.length;
-        const avgViolation = tableData.reduce((sum, r) => sum + r.violationRate, 0) / tableData.length;
+    if (showAverages && tableData.length) {
+        const avgIntensity = tableData.reduce((sum,r)=>sum+(r.total_intensity||0),0)/tableData.length;
+        const avgVr = tableData.reduce((sum,r)=>sum+(vrType==='absolute'? (r.violation_rate||0):(r.relative_violation_rate||0)),0)/tableData.length;
 
         tableHTML += `<tr style="font-weight:bold; background:#f0f0f0;">
             <td colspan="3">Average</td>
             <td>${avgIntensity.toFixed(1)}%</td>
-            <td>${avgPvi.toFixed(1)}%</td>
-            <td>${avgViolation.toFixed(1)}%</td>
+            <td>${avgVr.toFixed(1)}%</td>
         </tr>`;
     }
 
@@ -2040,118 +2100,68 @@ function buildViolationTableHTML(tableData, showAverages = false) {
 
 // ===== Global Variables =====
 let violationTableData = [];
-
+let currentVRType = 'absolute';
 
 // ===== Render Violation Rate Table =====
-function renderViolationRateTable(data, selectedRegion = 'all', selectedDistrict = 'all') {
+function renderViolationRateTable(data, selectedRegion='all', selectedDistrict='all', vrType='absolute') {
     if (!data || !data.length) {
         document.getElementById('violationRateContent').innerHTML = '<p class="empty-state">No data available</p>';
         return;
     }
 
-    // Build intensity map
-    const intensityMap = {};
-    document.querySelectorAll('#intensityTable tbody tr').forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 4) {
-            const region = cells[1].innerText.trim();
-            const district = cells[2].innerText.trim();
-            const intensity = parseFloat(cells[3].innerText) || 0;
-            const key = `${region}||${district}`;
-            if (!intensityMap[key]) intensityMap[key] = { total: 0, count: 0 };
-            intensityMap[key].total += intensity;
-            intensityMap[key].count += 1;
-        }
-    });
+    currentVRType = vrType;
 
-    // Filter & group
-    const grouped = {};
-    data.filter(item =>
-        (selectedRegion === 'all' || item.Region === selectedRegion) &&
-        (selectedDistrict === 'all' || item.District === selectedDistrict)
-    ).forEach(item => {
-        const key = `${item.Region}||${item.District}`;
-        if (!grouped[key]) grouped[key] = { Region: item.Region, District: item.District, got: 0, unregistered: 0, dldm: 0 };
-        const v = item["Charges & Confiscated Values"] || {};
-        grouped[key].got += v.got_value || 0;
-        grouped[key].unregistered += v.unregistered_value || 0;
-        grouped[key].dldm += v.dldm_value || 0;
-    });
+    // Filter by region/district
+    const filteredData = data.filter(item =>
+        (selectedRegion==='all' || item.region===selectedRegion) &&
+        (selectedDistrict==='all' || item.district===selectedDistrict)
+    );
 
-    // Build table data
-    violationTableData = Object.values(grouped).map((g, i) => {
-        const total = g.dldm + g.got + g.unregistered;
-        const key = `${g.Region}||${g.District}`;
-        const intensityEntry = intensityMap[key] || { total: 0, count: 1 };
-        const intensity = intensityEntry.total / intensityEntry.count;
+    violationTableData = filteredData; // store globally for sorting
 
-        let pvi = 0;
-        if (total > 0) {
-            const gPerc = (g.got / total) * 100;
-            const uPerc = (g.unregistered / total) * 100;
-            const dPerc = (g.dldm / total) * 100;
-            pvi = 0.40 * gPerc + 0.40 * uPerc + 0.20 * dPerc;
-        }
-
-        const violationRate = 0.70 * intensity + 0.30 * pvi;
-
-        return {
-            SNo: i + 1,
-            Region: g.Region,
-            District: g.District,
-            intensity: intensity,
-            pvi: pvi,
-            violationRate: violationRate
-        };
-    });
-
-    // Render filters + table
     document.getElementById('violationRateContent').innerHTML =
-        buildViolationFilters(data, selectedRegion, selectedDistrict) +
-        buildViolationTableHTML(violationTableData, selectedDistrict === 'all');
+        buildViolationFilters(data, selectedRegion, selectedDistrict, vrType) +
+        buildViolationTableHTML(filteredData, vrType);
 
-    attachViolationSortListeners(selectedRegion, selectedDistrict);
+    attachViolationSortListeners();
     attachViolationShowMoreListener();
 
     // Filter listeners
     document.getElementById('violationRegionFilter').addEventListener('change', e => {
-        renderViolationRateTable(data, e.target.value, 'all');
+        renderViolationRateTable(data, e.target.value, 'all', currentVRType);
     });
     document.getElementById('violationDistrictFilter').addEventListener('change', e => {
         const currentRegion = document.getElementById('violationRegionFilter').value;
-        renderViolationRateTable(data, currentRegion, e.target.value);
+        renderViolationRateTable(data, currentRegion, e.target.value, currentVRType);
+    });
+    document.getElementById('violationTypeFilter').addEventListener('change', e => {
+        renderViolationRateTable(data, selectedRegion, selectedDistrict, e.target.value);
     });
 }
 
 // ===== Sorters =====
-function attachViolationSortListeners(selectedRegion = 'all', selectedDistrict = 'all') {
-    document.querySelectorAll('#violationRateContent .sort-arrow').forEach(arrow => {
-        arrow.addEventListener('click', () => {
+function attachViolationSortListeners() {
+    document.querySelectorAll('#violationRateContent .sort-arrow').forEach(arrow=>{
+        arrow.addEventListener('click', ()=>{
             const field = arrow.dataset.field;
             const order = arrow.dataset.order;
-
-            // Preserve currently visible rows
-            const visibleRows = Array.from(document.querySelectorAll('#violationRateContent .violation-row'))
-                .map(r => r.style.display !== 'none');
-
-            const sorted = [...violationTableData].sort((a, b) => {
-                if (typeof a[field] === 'string') {
-                    return order === 'asc' ? a[field].localeCompare(b[field]) : b[field].localeCompare(a[field]);
+            const sorted = [...violationTableData].sort((a,b)=>{
+                let aValue, bValue;
+                if(field==='violationRate'){
+                    aValue = currentVRType==='absolute' ? (a.violation_rate||0) : (a.relative_violation_rate||0);
+                    bValue = currentVRType==='absolute' ? (b.violation_rate||0) : (b.relative_violation_rate||0);
+                } else if(field==='pvi') {
+                    aValue = a.total_pvi_raw || 0; bValue = b.total_pvi_raw || 0;
+                } else if(field==='intensity') {
+                    aValue = a.total_intensity || 0; bValue = b.total_intensity || 0;
                 } else {
-                    return order === 'asc' ? a[field] - b[field] : b[field] - a[field];
+                    aValue = a[field]; bValue = b[field];
                 }
+                return order==='asc' ? aValue-bValue : bValue-aValue;
             });
-
-            sorted.forEach((row, i) => row.SNo = i + 1);
-
-            document.querySelector('#violationRateContent table').outerHTML =
-                buildViolationTableHTML(sorted, selectedDistrict === 'all');
-
-            // Restore visibility
-            const allRows = document.querySelectorAll('#violationRateContent .violation-row');
-            allRows.forEach((r, i) => r.style.display = visibleRows[i] ? '' : 'none');
-
-            attachViolationSortListeners(selectedRegion, selectedDistrict);
+            sorted.forEach((row,i)=>row.SNo=i+1);
+            document.querySelector('#violationRateContent table').outerHTML = buildViolationTableHTML(sorted, currentVRType);
+            attachViolationSortListeners();
             attachViolationShowMoreListener();
         });
     });
@@ -2161,51 +2171,49 @@ function attachViolationSortListeners(selectedRegion = 'all', selectedDistrict =
 function attachViolationShowMoreListener() {
     const rows = document.querySelectorAll('#violationRateContent .violation-row');
     const step = 3;
+    if(!rows.length) return;
 
-    // Create button if it doesn't exist
     let btn = document.getElementById('violationShowMore');
-    if (!btn && rows.length > step) {
+    if(!btn && rows.length>step){
         const container = document.createElement('div');
         container.className = 'show-more-container';
-        container.innerHTML = `<button id="violationShowMore" class="show-more-btn">Show More (${rows.length - step} more)</button>`;
+        container.innerHTML = `<button id="violationShowMore" class="show-more-btn">Show More (${rows.length-step} more)</button>`;
         document.getElementById('violationRateContent').appendChild(container);
         btn = document.getElementById('violationShowMore');
     }
-    if (!btn) return;
+    if(!btn) return;
 
-    // Remove previous listener
-    if (btn._listener) btn.removeEventListener('click', btn._listener);
+    if(btn._listener) btn.removeEventListener('click', btn._listener);
 
-    // Initial display
-    rows.forEach((r, i) => r.style.display = i < step ? '' : 'none');
+    rows.forEach((r,i)=> r.style.display = i<step?'':'none');
     updateButtonText();
 
-    btn._listener = () => {
-        const hiddenRows = Array.from(rows).filter(r => r.style.display === 'none');
-        if (hiddenRows.length === 0) {
-            rows.forEach((r, i) => r.style.display = i < step ? '' : 'none');
+    btn._listener = ()=>{
+        const hiddenRows = Array.from(rows).filter(r=>r.style.display==='none');
+        if(hiddenRows.length===0){
+            rows.forEach((r,i)=> r.style.display = i<step?'':'none');
         } else {
-            hiddenRows.slice(0, step).forEach(r => r.style.display = '');
+            hiddenRows.slice(0,step).forEach(r=> r.style.display='');
         }
         updateButtonText();
     };
     btn.addEventListener('click', btn._listener);
 
-    function updateButtonText() {
-        const hiddenCount = Array.from(rows).filter(r => r.style.display === 'none').length;
-        btn.textContent = hiddenCount === 0 ? "Show Less (Violation Rate)" : `Show More (${hiddenCount} more)`;
+    function updateButtonText(){
+        const hiddenCount = Array.from(rows).filter(r=>r.style.display==='none').length;
+        btn.textContent = hiddenCount===0 ? "Show Less (Violation Rate)" : `Show More (${hiddenCount} more)`;
     }
 }
 
 // ===== Load Data =====
 document.addEventListener('DOMContentLoaded', () => {
-    fetch('/static/data/inspections_from_db.json')
+    fetch('/static/data/premises.json')
         .then(res => res.json())
         .then(data => {
-            inspectionsData = data.Inspections;
-            renderViolationRateTable(inspectionsData);
+            renderViolationRateTable(data);
+            triggerRiskSection();
         })
-        .catch(err => console.error('Error loading JSON:', err));
+        .catch(err => console.error('Error loading premises JSON:', err));
 });
 
 
@@ -2319,31 +2327,30 @@ async function calculateCoveragePerDistrict(selectedRegion = '') {
 
 // ===== Render Risk Section =====
 async function renderRiskSummary(premisesData) {
-    const rows = document.querySelectorAll('#violationRateContent tbody tr.violation-row');
-    const violationData = [];
-
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 6) {
-            const region = cells[1].innerText.trim();
-            const district = cells[2].innerText.trim();
-            const violationRate = parseFloat(cells[5].innerText) || 0;
-            violationData.push({ region, district, violationRate });
-        }
-    });
+    // ===== 1️⃣ Collect violation data from premisesData =====
+    const violationData = premisesData
+        .filter(p => p.district) // only include entries with a district
+        .map(p => ({
+            region: p.region || 'Unknown',
+            district: p.district || 'Unknown',
+            violationRate: parseFloat(p.relative_violation_rate || 0)
+        }));
 
     if (!violationData.length) {
-        document.getElementById('riskSummaryContent').innerHTML = '<p class="empty-state">No violation data available.</p>';
+        document.getElementById('riskSummaryContent').innerHTML =
+            '<p class="empty-state">No violation data available.</p>';
         return;
     }
 
-    // Top 7 districts by violation rate
-    const top7 = [...violationData].sort((a,b) => b.violationRate - a.violationRate).slice(0,7);
+    // ===== 2️⃣ Top 7 districts by violation rate =====
+    const top7 = [...violationData]
+        .sort((a, b) => b.violationRate - a.violationRate)
+        .slice(0, 7);
 
-    // Count unique Overall ID inspections per district
+    // ===== 3️⃣ Count unique Overall ID inspections per district =====
     const inspectionCounts = {};
     inspectionsData.forEach(item => {
-        const key = item.District;
+        const key = item.District || 'Unknown';
         if (!inspectionCounts[key]) inspectionCounts[key] = new Set();
         if (item["Overall ID"]) inspectionCounts[key].add(item["Overall ID"]);
     });
@@ -2353,22 +2360,27 @@ async function renderRiskSummary(premisesData) {
         inspectionCountsNumber[district] = inspectionCounts[district].size;
     }
 
-    // Fetch coverage per district using the correct function
+    // ===== 4️⃣ Fetch coverage per district =====
     const coveragePerDistrict = await calculateCoveragePerDistrict();
     const top7WithCoverage = top7.map(d => ({
         ...d,
         coverage: coveragePerDistrict[d.district] || 0
     }));
 
-    // Sort top7 by least inspections, tiebreaker: lowest coverage, pick top 3 risk districts
-    const top3Risk = [...top7WithCoverage].sort((a,b) => {
-        const diffInspections = (inspectionCountsNumber[a.district] || 0) - (inspectionCountsNumber[b.district] || 0);
-        if (diffInspections !== 0) return diffInspections;
-        return a.coverage - b.coverage;
-    }).slice(0,3);
+    // ===== 5️⃣ Sort top7 by least inspections, tiebreaker: lowest coverage → top 3 =====
+    const top3Risk = [...top7WithCoverage]
+        .sort((a, b) => {
+            const diffInspections = (inspectionCountsNumber[a.district] || 0) - (inspectionCountsNumber[b.district] || 0);
+            if (diffInspections !== 0) return diffInspections;
+            return a.coverage - b.coverage;
+        })
+        .slice(0, 3);
 
-    // Narrative with clickable districts
-    const districtsNarrative = top3Risk.map(d => `<span class="district-btn" data-district="${d.district}">${d.district} (${d.region})</span>`).join(', ');
+    // ===== 6️⃣ Narrative with clickable districts =====
+    const districtsNarrative = top3Risk
+        .map(d => `<span class="district-btn" data-district="${d.district}">${d.district} (${d.region})</span>`)
+        .join(', ');
+
     const narrative = `
         <p>The following districts exhibit high violation rates with low premise coverage and fewer inspections conducted: <b>${districtsNarrative}</b>.</p>
         <p>Recommended actions include:</p>
@@ -2379,9 +2391,10 @@ async function renderRiskSummary(premisesData) {
         </ul>
         <p><b>The chart below provides a graphical representation of these districts’ violation rates, inspection counts, and premise coverage.</b></p>
     `;
+
     document.getElementById('riskSummaryContent').innerHTML = narrative;
 
-    // Style district buttons
+    // ===== 7️⃣ Style district buttons =====
     if (!document.getElementById('districtBtnStyle')) {
         const style = document.createElement('style');
         style.id = 'districtBtnStyle';
@@ -2392,171 +2405,167 @@ async function renderRiskSummary(premisesData) {
         document.head.appendChild(style);
     }
 
-    // ===== District Button Click & Modal Logic (your original detailed modal) =====
-   document.querySelectorAll('.district-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const districtName = btn.getAttribute('data-district');
+    // ===== 8️⃣ District Button Click & Modal Logic =====
+    document.querySelectorAll('.district-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const districtName = btn.getAttribute('data-district');
+            const premises = premisesData.filter(p => p.district === districtName);
 
-        // Filter premises for this district
-        const premises = premisesData.filter(p => p.district === districtName);
+            // --- Suggested Premises (highest intensity) ---
+            const suggestedPremises = premises
+                .sort((a, b) => (b.average_intensity || 0) - (a.average_intensity || 0))
+                .slice(0, 10);
 
-        // 1️⃣ Suggested Premises
-        const suggestedPremises = premises
-            .sort((a,b) => (b.average_intensity||0) - (a.average_intensity||0))
-            .slice(0,10);
+            // --- Pending Inspections (locations with many premises but not inspected recently) ---
+            const locationsMap = {};
+            premises.forEach(p => {
+                const lastObsDate = p.observations.length
+                    ? new Date(p.observations[p.observations.length - 1].date)
+                    : null;
+                const key = p.location || 'Unknown';
+                if (!locationsMap[key]) locationsMap[key] = { count: 0, latest: null };
+                locationsMap[key].count += 1;
+                if (!locationsMap[key].latest || (lastObsDate && lastObsDate > locationsMap[key].latest)) {
+                    locationsMap[key].latest = lastObsDate;
+                }
+            });
 
-        // 2️⃣ Pending Inspections
-        const locationsMap = {};
-        premises.forEach(p => {
-            const lastObsDate = p.observations.length
-                ? new Date(p.observations[p.observations.length-1].date)
-                : null;
-            const key = p.location || 'Unknown';
-            if (!locationsMap[key]) locationsMap[key] = { count:0, latest:null };
-            locationsMap[key].count += 1;
-            if (!locationsMap[key].latest || (lastObsDate && lastObsDate > locationsMap[key].latest)) {
-                locationsMap[key].latest = lastObsDate;
-            }
+            const pendingLocations = Object.entries(locationsMap)
+                .sort((a, b) => {
+                    const diffCount = b[1].count - a[1].count;
+                    if (diffCount !== 0) return diffCount;
+                    const aDate = a[1].latest || new Date(0);
+                    const bDate = b[1].latest || new Date(0);
+                    return aDate - bDate;
+                })
+                .slice(0, 5)
+                .map(([loc, data]) => ({ location: loc, premises: data.count, lastInspection: data.latest }));
+
+            // --- Low Coverage Locations ---
+            const coverageMap = {};
+            premises.forEach(p => {
+                const loc = p.location || 'Unknown';
+                if (!coverageMap[loc]) coverageMap[loc] = { total: 0, inspected: 0 };
+                coverageMap[loc].total += 1;
+                if (p.observations && p.observations.length > 0) coverageMap[loc].inspected += 1;
+            });
+
+            const lowCoverage = Object.entries(coverageMap)
+                .map(([loc, data]) => ({
+                    location: loc,
+                    coverage: data.total > 0 ? Math.round((data.inspected / data.total) * 100) : 0,
+                    premises: data.total
+                }))
+                .sort((a, b) => a.coverage - b.coverage)
+                .slice(0, 5);
+
+            // ===== Populate modal table =====
+            const tbody = document.getElementById('modalContent');
+            tbody.innerHTML = '';
+            const tableRowStyle = "padding:8px; border-bottom:1px solid #ddd; text-align:left; font-size:14px;";
+            const headerRowStyle = "padding:10px; font-weight:bold; background:#8DB600; color:white; font-size:15px; border-radius:5px;";
+
+            // Suggested Premises
+            tbody.innerHTML += `
+                <tr><td colspan="4" style="${headerRowStyle}">Suggested Premises for Follow-up</td></tr>
+                <tr style="background:#eaeaea; font-weight:bold;">
+                    <td style="padding:5px; width:5%;">S/No</td>
+                    <td style="padding:5px; width:40%;">Premise Name</td>
+                    <td style="padding:5px; width:25%;">Category</td>
+                    <td style="padding:5px; width:30%;">Location</td>
+                </tr>
+                ${suggestedPremises.length
+                    ? suggestedPremises.map((p, i) => `
+                        <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f9f9f9'};">
+                            <td style="${tableRowStyle}">${i + 1}</td>
+                            <td style="${tableRowStyle}">${p.name || '-'}</td>
+                            <td style="${tableRowStyle}">${p.category || '-'}</td>
+                            <td style="${tableRowStyle}">${p.location || '-'}</td>
+                        </tr>
+                    `).join('')
+                    : `<tr><td colspan="4" style="${tableRowStyle}">No data available</td></tr>`
+                }
+            `;
+
+            // Pending Inspections
+            tbody.innerHTML += `
+                <tr><td colspan="4" style="${headerRowStyle}">Pending Inspections</td></tr>
+                <tr style="background:#eaeaea; font-weight:bold;">
+                    <td style="padding:5px; width:5%;">S/No</td>
+                    <td style="padding:5px; width:40%;">Location</td>
+                    <td style="padding:5px; width:25%;">Number of Premises</td>
+                    <td style="padding:5px; width:30%;">Last Inspection</td>
+                </tr>
+                ${pendingLocations.length
+                    ? pendingLocations.map((l, i) => `
+                        <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f9f9f9'};">
+                            <td style="${tableRowStyle}">${i + 1}</td>
+                            <td style="${tableRowStyle}">${l.location}</td>
+                            <td style="${tableRowStyle}">${l.premises}</td>
+                            <td style="${tableRowStyle}">${l.lastInspection ? l.lastInspection.toISOString().split('T')[0] : 'No inspection recorded'}</td>
+                        </tr>
+                    `).join('')
+                    : `<tr><td colspan="4" style="${tableRowStyle}">No data available</td></tr>`
+                }
+            `;
+
+            // Low Coverage
+            tbody.innerHTML += `
+                <tr><td colspan="4" style="${headerRowStyle}">Low Coverage Locations</td></tr>
+                <tr style="background:#eaeaea; font-weight:bold;">
+                    <td style="padding:5px; width:5%;">S/No</td>
+                    <td style="padding:5px; width:45%;">Location</td>
+                    <td style="padding:5px; width:25%;">Premises</td>
+                    <td style="padding:5px; width:25%;">Coverage (%)</td>
+                </tr>
+                ${lowCoverage.length
+                    ? lowCoverage.map((l, i) => `
+                        <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f9f9f9'};">
+                            <td style="${tableRowStyle}">${i + 1}</td>
+                            <td style="${tableRowStyle}">${l.location}</td>
+                            <td style="${tableRowStyle}">${l.premises}</td>
+                            <td style="${tableRowStyle}">${l.coverage}%</td>
+                        </tr>
+                    `).join('')
+                    : `<tr><td colspan="4" style="${tableRowStyle}">No data available</td></tr>`
+                }
+            `;
+
+            document.getElementById('modalTitle').innerText = `Quick Summary/Follow Up Overview for ${districtName}`;
+            modal.style.display = 'flex';
         });
-
-        const pendingLocations = Object.entries(locationsMap)
-            .sort((a,b) => {
-                const diffCount = b[1].count - a[1].count;
-                if (diffCount !== 0) return diffCount;
-                const aDate = a[1].latest || new Date(0);
-                const bDate = b[1].latest || new Date(0);
-                return aDate - bDate;
-            })
-            .slice(0,5)
-            .map(([loc,data]) => ({ location: loc, premises: data.count, lastInspection: data.latest }));
-
-        // 3️⃣ Low Coverage Locations
-        const coverageMap = {};
-        premises.forEach(p => {
-            const loc = p.location || 'Unknown';
-            if (!coverageMap[loc]) coverageMap[loc] = { total: 0, inspected: 0 };
-            coverageMap[loc].total += 1;
-            if (p.observations && p.observations.length > 0) coverageMap[loc].inspected += 1;
-        });
-
-        const lowCoverage = Object.entries(coverageMap)
-            .map(([loc, data]) => ({
-                location: loc,
-                coverage: data.total > 0 ? Math.round((data.inspected / data.total) * 100) : 0,
-                premises: data.total
-            }))
-            .sort((a,b) => a.coverage - b.coverage)
-            .slice(0,5);
-
-        const tbody = document.getElementById('modalContent');
-        tbody.innerHTML = '';
-
-        const tableRowStyle = "padding:8px; border-bottom:1px solid #ddd; text-align:left; font-size:14px;";
-        const headerRowStyle = "padding:10px; font-weight:bold; background:#8DB600; color:white; font-size:15px; border-radius:5px;";
-
-        // --- Suggested Premises ---
-        tbody.innerHTML += `
-            <tr><td colspan="4" style="${headerRowStyle}">Suggested List of Premises that Requires Follow-up</td></tr>
-            <tr style="background:#eaeaea; font-weight:bold;">
-                <td style="padding:5px; width:5%;">S/No</td>
-                <td style="padding:5px; width:40%;">Premise Name</td>
-                <td style="padding:5px; width:25%;">Category</td>
-                <td style="padding:5px; width:30%;">Location</td>
-            </tr>
-            ${suggestedPremises.length
-                ? suggestedPremises.map((p,i)=>`
-                    <tr style="background:${i%2===0?'#ffffff':'#f9f9f9'};">
-                        <td style="${tableRowStyle}">${i+1}</td>
-                        <td style="${tableRowStyle}">${p.name||'-'}</td>
-                        <td style="${tableRowStyle}">${p.category||'-'}</td>
-                        <td style="${tableRowStyle}">${p.location||'-'}</td>
-                    </tr>
-                `).join('')
-                : `<tr><td colspan="4" style="${tableRowStyle}">No data available</td></tr>`
-            }
-        `;
-
-        // --- Pending Inspections ---
-        tbody.innerHTML += `
-            <tr><td colspan="4" style="${headerRowStyle}">Locations with many premises but not inspected recently</td></tr>
-            <tr style="background:#eaeaea; font-weight:bold;">
-                <td style="padding:5px; width:5%;">S/No</td>
-                <td style="padding:5px; width:40%;">Location</td>
-                <td style="padding:5px; width:25%;">Number of Premises</td>
-                <td style="padding:5px; width:30%;">Last Inspection</td>
-            </tr>
-            ${pendingLocations.length
-                ? pendingLocations.map((l,i)=>`
-                    <tr style="background:${i%2===0?'#ffffff':'#f9f9f9'};">
-                        <td style="${tableRowStyle}">${i+1}</td>
-                        <td style="${tableRowStyle}">${l.location}</td>
-                        <td style="${tableRowStyle}">${l.premises}</td>
-                        <td style="${tableRowStyle}">${l.lastInspection ? l.lastInspection.toISOString().split('T')[0] : 'No inspection recorded'}</td>
-                    </tr>
-                `).join('')
-                : `<tr><td colspan="4" style="${tableRowStyle}">No data available</td></tr>`
-            }
-        `;
-
-        // --- Low Coverage ---
-        tbody.innerHTML += `
-            <tr><td colspan="4" style="${headerRowStyle}">Locations with many premises but least coverage</td></tr>
-            <tr style="background:#eaeaea; font-weight:bold;">
-                <td style="padding:5px; width:5%;">S/No</td>
-                <td style="padding:5px; width:45%;">Location</td>
-                <td style="padding:5px; width:25%;">Premises</td>
-                <td style="padding:5px; width:25%;">Coverage (%)</td>
-            </tr>
-            ${lowCoverage.length
-                ? lowCoverage.map((l,i)=>`
-                    <tr style="background:${i%2===0?'#ffffff':'#f9f9f9'};">
-                        <td style="${tableRowStyle}">${i+1}</td>
-                        <td style="${tableRowStyle}">${l.location}</td>
-                        <td style="${tableRowStyle}">${l.premises}</td>
-                        <td style="${tableRowStyle}">${l.coverage}%</td>
-                    </tr>
-                `).join('')
-                : `<tr><td colspan="4" style="${tableRowStyle}">No data available</td></tr>`
-            }
-        `;
-
-        document.getElementById('modalTitle').innerText = `Quick Summary/Follow Up Overview for ${districtName}`;
-        modal.style.display = 'flex';
     });
-});
 
-    // ===== Render Mini Chart =====
-const ctx = document.getElementById('riskSummaryChart').getContext('2d');
+    // ===== 9️⃣ Render mini chart =====
+    const ctx = document.getElementById('riskSummaryChart').getContext('2d');
+    const top3WithCoverage = top7WithCoverage.slice(0, 3);
 
-// Take only top 3 districts
-const top3WithCoverage = top7WithCoverage.slice(0, 3);
+    const labels = top3WithCoverage.map(d => d.district);
+    const violationRates = top3WithCoverage.map(d => d.violationRate);
+    const inspectionCountsArr = top3WithCoverage.map(d => inspectionCountsNumber[d.district] || 0);
+    const coverageArr = top3WithCoverage.map(d => d.coverage);
 
-const labels = top3WithCoverage.map(d => d.district);
-const violationRates = top3WithCoverage.map(d => d.violationRate);
-const inspectionCountsArr = top3WithCoverage.map(d => inspectionCountsNumber[d.district] || 0);
-const coverageArr = top3WithCoverage.map(d => d.coverage);
+    if (window.riskChart) window.riskChart.destroy();
 
-if (window.riskChart) window.riskChart.destroy();
-
-window.riskChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels,
-        datasets: [
-            { label: 'Number of Inspections', data: inspectionCountsArr, backgroundColor: '#3498db', yAxisID: 'y2' },
-            { label: 'Violation Rate (%)', data: violationRates, backgroundColor: '#e74c3c', yAxisID: 'y1' },
-            { label: 'Premise Coverage (%)', data: coverageArr, backgroundColor: '#f1c40f', yAxisID: 'y1' }
-        ]
-    },
-    options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } },
-        scales: {
-            y1: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Percentage (%)' } },
-            y2: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Number of Inspections' } }
+    window.riskChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Number of Inspections', data: inspectionCountsArr, backgroundColor: '#3498db', yAxisID: 'y2' },
+                { label: 'Violation Rate (%)', data: violationRates, backgroundColor: '#e74c3c', yAxisID: 'y1' },
+                { label: 'Premise Coverage (%)', data: coverageArr, backgroundColor: '#f1c40f', yAxisID: 'y1' }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y1: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Percentage (%)' } },
+                y2: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Number of Inspections' } }
+            }
         }
-    }
-});
+    });
 }
 
 // ===== Trigger Risk Section after Violation Rate Table is Rendered =====

@@ -77,11 +77,11 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Defects Confirmation</h5>
+                    <h5 class="modal-title">Observation Confirmation</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    Were there premises found with defects during inspection?
+                    Were there premises found with Observation during inspection?
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="defectConfirmNo" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
@@ -96,13 +96,13 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="defectModalLabel">Defects for <span id="defectCategoryName"></span></h5>
+                    <h5 class="modal-title" id="defectModalLabel">Observations for Inspected<span id="defectCategoryName"></span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="defectCategoriesContainer"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveDefectBtn" disabled>Save Defects</button>
+                    <button type="button" class="btn btn-primary" id="saveDefectBtn" disabled>Save Data</button>
                 </div>
             </div>
         </div>
@@ -170,18 +170,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Yes button opens defect modal
     document.getElementById("defectConfirmYes").addEventListener("click", function () {
-        confirmClicked = "yes";
-        defectConfirmModal.hide();
-        if (currentDefectCategory) showDefectModal(currentDefectCategory);
-    });
-
+    confirmClicked = "yes";
+    defectConfirmModal.hide();
+    if (currentDefectCategory) showDefectModal(currentDefectCategory);
+});
     // No button closes modal but keeps input
-    document.getElementById("defectConfirmNo").addEventListener("click", function () {
-        confirmClicked = "no";
-        defectConfirmModal.hide();
-    });
+ document.getElementById("defectConfirmNo").addEventListener("click", function () {
+    confirmClicked = "no";
+    defectConfirmModal.hide();
+});
 
-
+// Clear input ONLY if closed by outside click/ESC
 // Clear input ONLY if closed by outside click/ESC
 defectConfirmModalEl.addEventListener('hidden.bs.modal', function () {
     if (confirmClicked === null && currentDefectCategory) {
@@ -192,6 +191,19 @@ defectConfirmModalEl.addEventListener('hidden.bs.modal', function () {
     }
 });
 
+const defectModalEl = document.getElementById('defectModal');
+defectModalEl.addEventListener('hidden.bs.modal', function () {
+    if (confirmClicked === "yes" && currentDefectCategory) {
+        const input = document.querySelector(`[data-category="${currentDefectCategory}"]`);
+        if (!flags.defects || !flags.defects[currentDefectCategory]) {
+            // User didn't save defects → clear premise input
+            if (input) input.value = "";
+            updateTotal();
+            toggleSaveButtons();
+        }
+    }
+    confirmClicked = null; // reset state
+});
 
 // Totals
 function updateTotal() {
@@ -209,34 +221,90 @@ function showDefectModal(categoryName) {
     defectCategoryName.textContent = categoryName;
     defectContainer.innerHTML = "";
 
+    const totalPremises = parseInt(document.querySelector(`[data-category="${categoryName}"]`).value) || 0;
+
     const fields = ['GOT Medicines','Unregistered Medicines','No Qualified Personnel','Premise Meets Minimal Requirements','Unregistered Premises'];
     if(categoryName==='Pharmacy (Human)') fields.push('Medical Practices');
     if(categoryName==='DLDM (Human)') fields.push('Medical Practices','DLDM Not Allowed Medicines');
 
-    fields.forEach(f=>{
-        const div=document.createElement('div'); div.classList.add('mb-3');
-        div.innerHTML=`<label class="form-label">${f}</label><input type="number" min="0" class="form-control" data-defect="${f}" placeholder="Enter number of defects" oninput="checkDefectInput()">`;
+    fields.forEach(f => {
+        const div = document.createElement('div'); 
+        div.classList.add('mb-3');
+        div.innerHTML = `
+            <label class="form-label">${f}</label>
+            <input type="number" min="0" class="form-control" data-defect="${f}" placeholder="Enter number of premises with this observation">
+            <small class="text-danger hidden" data-error="${f}"></small>
+        `;
         defectContainer.appendChild(div);
+    });
+
+    // Add input listener to validate inline
+    document.querySelectorAll('[data-defect]').forEach(input => {
+        input.addEventListener('input', () => {
+            const val = input.value.trim();
+            const num = parseInt(val) || 0;
+            const errorEl = document.querySelector(`[data-error="${input.dataset.defect}"]`);
+            if (val === "") {
+                errorEl.textContent = "This field is required";
+                input.classList.add("is-invalid");
+                errorEl.classList.remove("hidden");
+            } else if (num > totalPremises) {
+                errorEl.textContent = `Cannot exceed premises inspected (${totalPremises})`;
+                input.classList.add("is-invalid");
+                errorEl.classList.remove("hidden");
+            } else {
+                errorEl.textContent = "";
+                input.classList.remove("is-invalid");
+                errorEl.classList.add("hidden");
+            }
+
+            // Enable save button if all inputs valid
+            const allValid = Array.from(document.querySelectorAll('[data-defect]'))
+                                  .every(i => i.value !== "" && parseInt(i.value) <= totalPremises);
+            document.getElementById("saveDefectBtn").disabled = !allValid;
+        });
     });
 
     document.getElementById("saveDefectBtn").onclick = function() { 
         saveDefects(categoryName); 
-        defectModal.hide(); 
     };
 
     defectModal.show();
 }
 
+function saveDefects(categoryName) {
+    const totalPremises = parseInt(document.querySelector(`[data-category="${categoryName}"]`).value) || 0;
+    const defectInputs = document.querySelectorAll('[data-defect]');
+    let defects = {};
+
+    for (let input of defectInputs) {
+        const val = input.value.trim();
+        const num = parseInt(val) || 0;
+        const errorEl = document.querySelector(`[data-error="${input.dataset.defect}"]`);
+
+        if (val === "" || num > totalPremises) {
+            input.classList.add("is-invalid");
+            errorEl.classList.remove("hidden");
+            return; // prevent saving
+        }
+
+        defects[input.dataset.defect] = num;
+    }
+
+    // Save defects
+    flags.defects = flags.defects || {};
+    flags.defects[categoryName] = defects;
+
+    // Close modal
+    const defectModalEl = document.getElementById('defectModal');
+    const defectModal = bootstrap.Modal.getInstance(defectModalEl);
+    defectModal.hide();
+}
+
+
 function checkDefectInput() {
     const valid = Array.from(document.querySelectorAll('[data-defect]')).some(i=>parseInt(i.value)>0);
     document.getElementById("saveDefectBtn").disabled = !valid;
-}
-
-function saveDefects(categoryName) {
-    flags.defects = flags.defects||{};
-    const defects = {};
-    document.querySelectorAll('[data-defect]').forEach(i=>defects[i.dataset.defect]=parseInt(i.value)||0);
-    flags.defects[categoryName] = defects;
 }
 
 // Save buttons
