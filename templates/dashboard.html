@@ -4,219 +4,253 @@
   <title>Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: Arial, sans-serif;
-    }
+/* ===== Global Reset ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
+}
 
-    body {
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
+body {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f0f0f0;
+}
 
-    /* Sidebar */
-    .sidebar {
-      width: 240px;
-      background-color: #4CAF50; /* green apple */
-      color: white;
-      padding: 20px;
-      box-sizing: border-box;
-      overflow-y: auto;
-    }
+/* ===== Sidebar ===== */
+.sidebar {
+  width: 240px;
+  background-color: #4CAF50;
+  color: white;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
 
-    .sidebar-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
+/* Sidebar Header */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
 
-    .sidebar-header h2 {
-      font-size: 1.5em;
-      margin: 0;
-      user-select: none;
-    }
+.sidebar-header h2 {
+  font-size: 1.5em;
+  margin: 0;
+  user-select: none;
+}
 
-    .profile-pic {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: #ddd;
-      background-image: url("{{ profile_pic_url if profile_pic_url else url_for('static', filename='images/profile.png') }}");
-      background-size: cover;
-      background-position: center;
-      flex-shrink: 0;
-      border: 2px solid white;
-      cursor: pointer;
-      display: inline-block;
-    }
+.profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ddd;
+  background-image: url("{{ profile_pic_url if profile_pic_url else url_for('static', filename='images/profile.png') }}");
+  background-size: cover;
+  background-position: center;
+  border: 2px solid white;
+  cursor: pointer;
+}
 
-    /* Menu styles */
-    .menu {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
+/* ===== Menu Styles ===== */
+.menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 
-    .menu > li {
-      margin-bottom: 15px;
-    }
+.menu > li {
+  margin-bottom: 15px;
+}
 
-    .menu a,
-    .menu button {
-      display: block;
-      padding: 10px 12px;
-      border-radius: 5px;
-      color: white;
-      text-decoration: none;
-      font-size: 1em;
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      cursor: pointer;
-      text-align: left;
-      width: 100%;
-      user-select: none;
-    }
+.menu a,
+.menu button {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 5px;
+  color: white;
+  text-decoration: none;
+  font-size: 1em;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.2s ease;
+}
 
-    .menu a:hover,
-    .menu button:hover {
-      background: rgba(255, 255, 255, 0.25);
-      text-decoration: none;
-    }
+.menu a:hover,
+.menu button:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
 
-    /* Submenu */
-    .submenu {
-      list-style: none;
-      padding-left: 15px;
-      margin-top: 5px;
-      display: none;
-    }
+/* Submenu */
+.submenu {
+  list-style: none;
+  padding-left: 15px;
+  margin-top: 5px;
+  display: none;
+}
 
-    .submenu li {
-      margin-bottom: 8px;
-    }
+.submenu li {
+  margin-bottom: 8px;
+}
 
-    .submenu a,
-    .submenu button {
-      font-size: 0.95em;
-      padding-left: 10px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
-      color: white;
-      text-decoration: none;
-      width: 100%;
-      text-align: left;
-      user-select: none;
-    }
+.submenu a,
+.submenu button {
+  font-size: 0.95em;
+  padding-left: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  text-decoration: none;
+  width: 100%;
+  text-align: left;
+}
 
-    .submenu a:hover,
-    .submenu button:hover {
-      background: rgba(255,255,255,0.35);
-    }
+.submenu a:hover,
+.submenu button:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
 
-    /* Main content */
+/* ===== Main Content ===== */
 .main-content {
   flex-grow: 1;
   margin: 0;
-  padding: 20px 20px; /* reduce side padding for mobile */
+  padding: 20px;
   box-sizing: border-box;
-  overflow-y: auto; /* scroll if content overflows */
   display: flex;
   flex-direction: column;
   background-color: #f0f0f0;
   color: #333;
-  min-height: 0; /* important for flex container inside body */
+  height: 100%;
 }
 
-/* Map container fills remaining space but limited height */
+/* Welcome Message */
+.welcome-message {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin-bottom: 10px;
+  user-select: none;
+}
+
+/* ===== Map Container ===== */
 .map-container {
   flex-grow: 1;
   overflow: hidden;
   border: 1px solid #ddd;
   border-radius: 8px;
   background: white;
-  height: 60vh; /* limit map height on desktop */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
+/* Map Image Auto-Resizing */
 .map-container img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* cover instead of contain for better fill */
-  display: block;
+  object-fit: contain; /* ✅ Show full map without cropping */
   border-radius: 8px;
-  margin: 0;
-  padding: 0;
+  max-height: 100%;
 }
 
-/* --- Responsive tweaks --- */
-@media (max-width: 768px) {
+/* ===== Responsive Fixes ===== */
+@media (max-width: 1024px) {
   body {
-    flex-direction: column; /* stack sidebar on top */
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 15px;
+    order: 1;
+  }
+
+  .main-content {
+    padding: 10px;
+    order: 2;
+    height: auto;
+    min-height: calc(100vh - 220px);
+  }
+
+  .map-container {
+    flex-grow: 1;
+    min-height: 250px;
+  }
+}
+
+/* ===== Portrait Mode (Mobile Vertical) ===== */
+@media screen and (orientation: portrait) {
+  body {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
   }
 
   .sidebar {
     width: 100%;
     height: auto;
-    padding: 10px;
   }
 
   .main-content {
-    padding: 10px;
+    flex-grow: 1;
+    height: auto;
+    min-height: calc(100vh - 220px);
+    display: flex;
+    flex-direction: column;
   }
 
   .map-container {
-    height: 40vh; /* smaller map height on mobile */
+    flex-grow: 1;
+    width: 100%;
+    min-height: 40vh;
+    max-height: 55vh;
   }
 
-  .welcome-message {
-    font-size: 1em;
-    margin-bottom: 10px;
-  }
-
-  .menu a, .menu button {
-    font-size: 0.9em;
-    padding: 8px 10px;
-  }
-
-  .submenu a, .submenu button {
-    font-size: 0.85em;
+  .map-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* ✅ Always fits perfectly */
   }
 }
 
+/* ===== Landscape Mode (Mobile Horizontal + Desktops) ===== */
+@media screen and (orientation: landscape) {
+  body {
+    flex-direction: row;
+  }
 
-    /* Welcome message */
-    .welcome-message {
-      font-size: 1.25em;
-      font-weight: 600;
-      margin-bottom: 20px;
-      user-select: none;
-    }
+  .sidebar {
+    width: 220px;
+  }
 
-    /* Map container fills remaining space */
-    .map-container {
-      flex-grow: 1;
-      overflow: hidden;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: white;
-    }
+  .main-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
 
-    .map-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
-      border: none;
-      margin: 0;
-      padding: 0;
-      border-radius: 8px;
-    }
-  </style>
+  .map-container {
+    flex-grow: 1;
+    width: 100%;
+  }
+
+  .map-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+</style>
+
 </head>
 <body>
 
