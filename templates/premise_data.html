@@ -960,41 +960,51 @@ function closeMapModal() {
     }
   }
 
-  function setLocationAuto(id) {
-    if (!navigator.geolocation) {
-      alert('Geolocation not supported by your browser.');
-      return;
+ function setLocationAuto(id) {
+    // Detect mobile devices
+    const isMobile = /iphone|android|ipad|ipod|mobile/i.test(navigator.userAgent);
+    if (!isMobile) {
+        alert('Location can only be recorded from a mobile device. Please use a mobile device.');
+        return;
     }
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const lat = pos.coords.latitude.toFixed(6);
-      const lon = pos.coords.longitude.toFixed(6);
 
-      try {
-        const resp = await fetch('/save_location', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({id, latitude: lat, longitude: lon})
-        });
-        const data = await resp.json();
-        if (resp.ok && data.success) {
-          // Update locally
-          const premise = premises.find(p => p.id === id);
-          if (premise) {
-            premise.latitude = lat;
-            premise.longitude = lon;
-            alert('Location saved successfully.');
-            filterPremises();
-          }
-        } else {
-          alert('Error saving location: ' + (data.message || 'Unknown error'));
+    if (!navigator.geolocation) {
+        alert('Geolocation not supported by your browser.');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lon = pos.coords.longitude.toFixed(6);
+
+        try {
+            const resp = await fetch('/save_location', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id, latitude: lat, longitude: lon})
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok && data.success) {
+                // Update locally
+                const premise = premises.find(p => p.id === id);
+                if (premise) {
+                    premise.latitude = lat;
+                    premise.longitude = lon;
+                    alert('Location saved successfully.');
+                    filterPremises();
+                }
+            } else {
+                alert('Error saving location: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('Network error saving location.');
         }
-      } catch (e) {
-        alert('Network error saving location.');
-      }
     }, () => {
-      alert('Could not get your location.');
+        alert('Could not get your location.');
     });
-  }
+}
 
   function openAddModal() {
     document.getElementById('modalTitle').textContent = 'Add Premise';
@@ -1859,75 +1869,88 @@ window.addEventListener('DOMContentLoaded', () => {
 <script>
 let multiMap;
 let multiMarkersLayer;
+let premisesData = []; // Will hold data fetched from JSON
 
-const premisesData = [
-    { "id": 1, "name": "Ben Dldm", "category": "Medical Device Shop", "region": "Lindi", "district": "Lindi MC", "location": "4", "latitude": "-8.894700", "longitude": "33.446500", "average_intensity": 5, "observations":[{"observations":["GOT Medicines"]}] },
-    { "id": 2, "name": "Benjamin Kamoga", "category": "Medical Device Shop", "region": "Mtwara", "district": "Nanyamba", "location": "4", "latitude": "-8.894800", "longitude": "33.446600", "average_intensity": 15, "observations":[{"observations":["Minor Issue"]}] },
-    { "id": 3, "name": "Ddd", "category": "Medical Lab (GOT)", "region": "Mtwara", "district": "Nanyamba", "location": "4", "latitude": "-8.894900", "longitude": "33.446700", "average_intensity": 0, "observations":[] }
-];
+// Fetch premises data from JSON before initializing map
+async function fetchPremisesData() {
+    try {
+        const response = await fetch("static/data/premises.json");
+        if (!response.ok) throw new Error("Failed to load premises.json");
+        premisesData = await response.json();
+    } catch (error) {
+        console.error("Error fetching premises data:", error);
+        alert("Unable to load premises data. Please check the JSON file.");
+    }
+}
 
 // Function to get color based on intensity & latest observation
 function getPremiseLabelColor(p) {
-    const avg = p.average_intensity;
+    const avg = p.average_intensity || 0;
     const observations = p.observations || [];
-    let color = '#ffffff'; // default white
+    let color = "#ffffff"; // default white
 
+    // Get latest observation if exists
+    let latestObs = [];
     if (observations.length) {
-        const latestObs = observations[observations.length - 1].observations || [];
-        if (latestObs.includes("GOT Medicines") || latestObs.includes("Unregistered Medicines")) {
-            color = '#e74c3c'; // red
-        } else if (avg === 0) {
-            color = '#2ecc71'; // green
-        } else if (avg > 0 && avg < 10) {
-            color = '#3498db'; // blue
-        } else if (avg >= 10 && avg < 30) {
-            color = '#f1c40f'; // yellow
-        } else if (avg >= 30) {
-            color = '#e74c3c'; // red
-        }
-    } else {
-        // If no observations, rely only on avg
-        if (avg === 0) color = '#2ecc71';
-        else if (avg > 0 && avg < 10) color = '#3498db';
-        else if (avg >= 10 && avg < 30) color = '#f1c40f';
-        else if (avg >= 30) color = '#e74c3c';
+        const last = observations[observations.length - 1];
+        latestObs = last.observations || [];
+    }
+
+    // Decide color based on observations & intensity
+    if (latestObs.includes("GOT Medicines") || latestObs.includes("Unregistered Medicines")) {
+        color = "#e74c3c"; // red = high risk
+    } else if (avg === 0) {
+        color = "#2ecc71"; // green = no issues
+    } else if (avg > 0 && avg < 10) {
+        color = "#3498db"; // blue = low risk
+    } else if (avg >= 10 && avg < 30) {
+        color = "#f1c40f"; // yellow = moderate risk
+    } else if (avg >= 30) {
+        color = "#e74c3c"; // red = high risk
     }
 
     return color;
 }
 
 // Show multi-premise map
-function showPhysicalLocationMap() {
-    const region = document.getElementById('regionFilter').value.toLowerCase();
-    const district = document.getElementById('districtFilter').value.toLowerCase();
-    const location = document.getElementById('physicalLocationFilter').value.toLowerCase();
+async function showPhysicalLocationMap() {
+    // Wait until data is fetched before using it
+    if (premisesData.length === 0) {
+        await fetchPremisesData();
+    }
+
+    const region = document.getElementById("regionFilter").value.toLowerCase();
+    const district = document.getElementById("districtFilter").value.toLowerCase();
+    const location = document.getElementById("physicalLocationFilter").value.toLowerCase();
 
     if (!location || location === "all") {
         alert("Please select a specific physical location first.");
         return;
     }
 
-    document.getElementById('multiMapModal').style.display = 'block';
+    document.getElementById("multiMapModal").style.display = "block";
 
     // Remove previous map if exists
     if (multiMap) {
         multiMap.remove();
         multiMap = null;
         multiMarkersLayer = null;
-        document.getElementById('premisesMap').innerHTML = "";
+        document.getElementById("premisesMap").innerHTML = "";
     }
 
-    multiMap = L.map('premisesMap').setView([-9, 34], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+    // Initialize Leaflet map
+    multiMap = L.map("premisesMap").setView([-9, 34], 6);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors"
     }).addTo(multiMap);
 
     multiMarkersLayer = L.layerGroup();
 
-    const filtered = premisesData.filter(p => 
-        (region === 'all' || p.region.toLowerCase() === region) &&
-        (district === 'all' || p.district.toLowerCase() === district) &&
-        p.location.toLowerCase() === location
+    // Filter premises based on selected filters
+    const filtered = premisesData.filter(p =>
+        (region === "all" || (p.region && p.region.toLowerCase() === region)) &&
+        (district === "all" || (p.district && p.district.toLowerCase() === district)) &&
+        p.location && p.location.toLowerCase() === location
     );
 
     if (filtered.length === 0) {
@@ -1935,6 +1958,7 @@ function showPhysicalLocationMap() {
         return;
     }
 
+    // Add markers for filtered premises
     filtered.forEach(p => {
         if (p.latitude && p.longitude) {
             const lat = parseFloat(p.latitude);
@@ -1947,32 +1971,40 @@ function showPhysicalLocationMap() {
                 permanent: true,
                 direction: "top",
                 offset: [0, -15],
-                className: 'premise-label-small'
+                className: "premise-label-small"
             }).setContent(p.name);
 
             marker.bindTooltip(tooltip).openTooltip();
 
-            // Apply dynamic color when tooltip is added to DOM
-            marker.on('tooltipopen', function() {
+            // Apply dynamic tooltip styling
+            marker.on("tooltipopen", function() {
                 const tooltipEl = marker.getTooltip().getElement();
                 if (tooltipEl) {
-                    tooltipEl.style.backgroundColor = 'rgba(255,255,255,0.85)';
+                    tooltipEl.style.backgroundColor = "rgba(255,255,255,0.85)";
                     tooltipEl.style.color = getPremiseLabelColor(p);
-                    tooltipEl.style.fontSize = '0.7rem';
-                    tooltipEl.style.fontWeight = 'bold';
-                    tooltipEl.style.borderRadius = '3px';
-                    tooltipEl.style.padding = '1px 4px';
-                    tooltipEl.style.border = '1px solid #aaa';
+                    tooltipEl.style.fontSize = "0.7rem";
+                    tooltipEl.style.fontWeight = "bold";
+                    tooltipEl.style.borderRadius = "3px";
+                    tooltipEl.style.padding = "1px 4px";
+                    tooltipEl.style.border = "1px solid #aaa";
                 }
             });
 
-            marker.bindPopup(`<strong>${p.name}</strong><br>${p.category}<br>${p.region} - ${p.district}`);
+            // Marker popup with details
+            marker.bindPopup(`
+                <strong>${p.name}</strong><br>
+                ${p.category || "Unknown"}<br>
+                ${p.region || ""} - ${p.district || ""}
+            `);
         }
     });
 
     multiMarkersLayer.addTo(multiMap);
 
-    const bounds = L.latLngBounds(filtered.map(p => [parseFloat(p.latitude), parseFloat(p.longitude)]));
+    // Adjust map bounds to fit markers
+    const bounds = L.latLngBounds(
+        filtered.map(p => [parseFloat(p.latitude), parseFloat(p.longitude)])
+    );
     multiMap.fitBounds(bounds.pad(0.2));
 
     setTimeout(() => multiMap.invalidateSize(), 100);
@@ -1980,18 +2012,19 @@ function showPhysicalLocationMap() {
 
 // Close multi-premise map
 function closeMultiMapModal() {
-    document.getElementById('multiMapModal').style.display = 'none';
+    document.getElementById("multiMapModal").style.display = "none";
     if (multiMap) {
         multiMap.remove();
         multiMap = null;
         multiMarkersLayer = null;
-        document.getElementById('premisesMap').innerHTML = "";
+        document.getElementById("premisesMap").innerHTML = "";
     }
 }
 
-// Trigger button
-document.getElementById('showMapBtn').addEventListener('click', showPhysicalLocationMap);
+// Attach click event to button
+document.getElementById("showMapBtn").addEventListener("click", showPhysicalLocationMap);
 </script>
+
 
 
 
