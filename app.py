@@ -543,11 +543,21 @@ def delete_premise(premise_id):
     return jsonify({'success': True})
 
 
+from flask import request, jsonify, session
+
 @app.route('/save_location', methods=['POST'])
 def save_location():
+    # Check if user is logged in
     if 'role' not in session:
         return jsonify({'error': 'Access denied!'}), 403
 
+    # Detect device type via User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    mobile_keywords = ['iphone', 'android', 'ipad', 'ipod', 'mobile']
+    if not any(keyword in user_agent for keyword in mobile_keywords):
+        return jsonify({'error': 'Location can only be recorded from a mobile device. Please use a mobile device.'}), 403
+
+    # Get data
     data = request.get_json()
     premise_id = data.get('id')
     latitude = data.get('latitude')
@@ -556,6 +566,7 @@ def save_location():
     if premise_id is None or latitude is None or longitude is None:
         return jsonify({'error': 'Missing data'}), 400
 
+    # Load and update premise
     premises, premises_file = load_premises_file()
     premise = next((p for p in premises if p.get("id") == premise_id), None)
     if not premise:
@@ -564,6 +575,7 @@ def save_location():
     premise["latitude"] = latitude
     premise["longitude"] = longitude
 
+    # Save updated premises
     with open(premises_file, "w", encoding="utf-8") as f:
         json.dump(premises, f, indent=4)
 
@@ -1849,6 +1861,15 @@ def help():
     """
 
 
+@app.route('/help/about', endpoint='help_about')
+def help_about():
+    return render_template('about_app.html')
+
+
+
+@app.route('/help/howto', endpoint='help_howto')
+def help_howto():
+    return render_template('how_to_use_tool.html')
 
 
 

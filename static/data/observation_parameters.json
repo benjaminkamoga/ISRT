@@ -1,0 +1,64 @@
+{
+    "contribution": {
+        "dldmNotAllowed": {
+            "max_policy": 1
+        },
+        "got": {
+            "max_policy": 1
+        },
+        "unreg": {
+            "max_policy": 0
+        }
+    },
+    "parameters": {
+        "dldmNotAllowed": {
+            "intensity": 10,
+            "label": "DLDM Not Allowed Medicines"
+        },
+        "got": {
+            "intensity": 30,
+            "label": "GOT Medicines"
+        },
+        "medicalPractices": {
+            "intensity": 5,
+            "label": "Medical Practices"
+        },
+        "personnel": {
+            "intensity": 5,
+            "label": "No Qualified Personnel"
+        },
+        "requirements": {
+            "intensity": 5,
+            "label": "Premise Doesn't Meet Minimal GSP"
+        },
+        "unreg": {
+            "intensity": 30,
+            "label": "Unregistered Medicines"
+        },
+        "unregPremise": {
+            "intensity": 5,
+            "label": "Unregistered Premises"
+        }
+    },
+    "violation": {
+        "non_conformance": 70,
+        "Pvi": 30
+    },
+    "weights": {
+        "dldmNotAllowed": {
+            "label": "DLDM Not Allowed Products",
+            "max_policy": 40,
+            "weight": 20
+        },
+        "got": {
+            "label": "GOT Products",
+            "max_policy": 30,
+            "weight": 40
+        },
+        "unreg": {
+            "label": "Unregistered Products",
+            "max_policy": 20,
+            "weight": 40
+        }
+    }
+}

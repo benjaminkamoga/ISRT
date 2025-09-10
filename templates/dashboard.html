@@ -276,8 +276,15 @@
 
       <!-- Help -->
       <li>
-        <a href="{{ url_for('help') }}">❓ Help</a>
-      </li>
+  <button type="button" onclick="toggleSubmenu('helpSubmenu')" aria-expanded="false" aria-controls="helpSubmenu">
+    ❓ Help
+  </button>
+  <ul id="helpSubmenu" class="submenu" aria-label="Help submenu">
+    <li><a href="{{ url_for('help_about') }}">ℹ️ About the App</a></li>
+    <li><a href="{{ url_for('help_howto') }}">📝 How to Use the App</a></li>
+  </ul>
+</li>
+
 
       <!-- Logout -->
       <li>

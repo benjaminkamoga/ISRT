@@ -1,42 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .danger {
-            color: red;
+        body {
+            background-color: #f8f9fa;
         }
-        .success {
-            color: green;
+        .login-card {
+            max-width: 400px;
+            margin: 80px auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background-color: #ffffff;
         }
-        .normal {
-            color: black;
+        .login-title {
+            font-weight: 600;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #28a745; /* Green apple color */
         }
     </style>
 </head>
 <body>
-    <h2>Login</h2>
 
+<div class="login-card">
+    <h3 class="login-title">Login</h3>
+
+    <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <ul>
+        <div>
           {% for category, message in messages %}
-            <li class="{% if category == 'danger' %}danger{% elif category == 'success' %}success{% else %}normal{% endif %}">
+            <div class="alert 
+                {% if category == 'danger' %}alert-danger{% elif category == 'success' %}alert-success{% else %}alert-secondary{% endif %} 
+                alert-dismissible fade show" role="alert">
               {{ message }}
-            </li>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
           {% endfor %}
-        </ul>
+        </div>
       {% endif %}
     {% endwith %}
 
     <form action="{{ url_for('login') }}" method="POST">
-        <label>Username:</label><br>
-        <input type="text" name="username" required autofocus><br><br>
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" name="username" id="username" class="form-control" required autofocus>
+        </div>
 
-        <label>Password:</label><br>
-        <input type="password" name="password" required><br><br>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" name="password" id="password" class="form-control" required>
+        </div>
 
-        <input type="submit" value="Login">
+        <div class="d-grid">
+            <button type="submit" class="btn btn-success">Login</button>
+        </div>
     </form>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
