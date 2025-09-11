@@ -2,12 +2,12 @@
     {
         "id": 1,
         "name": "Ben Dldm",
-        "category": "Pharmacy (Vet)",
-        "region": "Mtwara",
-        "district": "Nanyamba",
-        "location": "4",
-        "latitude": null,
-        "longitude": null,
+        "category": "DLDM (Human)",
+        "region": "Ruvuma",
+        "district": "Songea DC",
+        "location": "Mji Mwema",
+        "latitude": "-8.894700",
+        "longitude": "33.446500",
         "observations": [
             {
                 "date": "2025-09-01",
@@ -98,8 +98,203 @@
         "average_pvi_raw": 10.0,
         "total_absolute_pvi": 285.71,
         "average_absolute_pvi": 35.71,
-        "relative_pvi": 33.33,
+        "relative_pvi": 0.29,
         "violation_rate": 13.34,
         "relative_violation_rate": 32.62
+    },
+    {
+        "id": 2,
+        "name": "Mji Mwema Hospital",
+        "category": "Hospital",
+        "region": "Mtwara",
+        "district": "Tandahimba",
+        "location": "Mji Mwema",
+        "latitude": "-8.894700",
+        "longitude": "33.458500",
+        "relative_pvi": 0.0,
+        "observations": [
+            {
+                "date": "2025-06-05",
+                "observations": [
+                    "Unregistered Medicines",
+                    "Unregistered Premises",
+                    "Medical Practices"
+                ],
+                "defect_values": {},
+                "intensity": 40,
+                "pvi_raw": 0.0,
+                "absolute_pvi": 0.0
+            }
+        ],
+        "total_intensity": 40,
+        "average_intensity": 40.0,
+        "total_pvi_raw": 0.0,
+        "average_pvi_raw": 0.0,
+        "total_absolute_pvi": 0.0,
+        "average_absolute_pvi": 0.0,
+        "violation_rate": 28.0,
+        "relative_violation_rate": 28.0
+    },
+    {
+        "id": 3,
+        "name": "Anyandwile Pharmacy",
+        "category": "Pharmacy (Human)",
+        "region": "Mtwara",
+        "district": "Tandahimba",
+        "location": "Mji Mwema",
+        "latitude": "-8.894704",
+        "longitude": "33.448590",
+        "observations": [
+            {
+                "date": "2025-09-04",
+                "observations": [
+                    "GOT Medicines",
+                    "Medical Practices"
+                ],
+                "defect_values": {
+                    "got": 20000
+                },
+                "intensity": 35,
+                "pvi_raw": 8000.0,
+                "absolute_pvi": 28571.43
+            },
+            {
+                "date": "2025-09-09",
+                "observations": [
+                    "GOT Medicines",
+                    "Unregistered Medicines"
+                ],
+                "defect_values": {
+                    "got": 30000,
+                    "unreg": 20000
+                },
+                "intensity": 60,
+                "pvi_raw": 20000.0,
+                "absolute_pvi": 71428.57
+            }
+        ],
+        "total_intensity": 95,
+        "average_intensity": 47.5,
+        "total_pvi_raw": 28000.0,
+        "average_pvi_raw": 14000.0,
+        "total_absolute_pvi": 100000.0,
+        "average_absolute_pvi": 50000.0,
+        "relative_pvi": 100.0,
+        "violation_rate": 15033.25,
+        "relative_violation_rate": 63.25
+    },
+    {
+        "id": 4,
+        "name": "Beloya Dispensary",
+        "category": "Dispensary",
+        "region": "Lindi",
+        "district": "Lindi MC",
+        "location": "Mji Mwema",
+        "latitude": "-8.894700",
+        "longitude": "33.446900",
+        "observations": [
+            {
+                "date": "2025-09-09",
+                "observations": [
+                    "None"
+                ],
+                "defect_values": {},
+                "intensity": 0,
+                "pvi_raw": 0.0,
+                "absolute_pvi": 0.0
+            },
+            {
+                "date": "2025-09-11",
+                "observations": [
+                    "GOT Medicines",
+                    "Unregistered Medicines",
+                    "No Qualified Personnel",
+                    "Medical Practices"
+                ],
+                "defect_values": {
+                    "got": 30000,
+                    "unreg": 20000
+                },
+                "intensity": 70,
+                "pvi_raw": 20000.0,
+                "absolute_pvi": 71428.57
+            }
+        ],
+        "total_intensity": 70,
+        "average_intensity": 35.0,
+        "total_pvi_raw": 20000.0,
+        "average_pvi_raw": 10000.0,
+        "total_absolute_pvi": 71428.57,
+        "average_absolute_pvi": 35714.29,
+        "relative_pvi": 71.43,
+        "violation_rate": 10738.79,
+        "relative_violation_rate": 54.5
+    },
+    {
+        "id": 6,
+        "name": "Aghakan",
+        "category": "DLDM (Human)",
+        "region": "Lindi",
+        "district": "Lindi MC",
+        "location": "Stendi",
+        "latitude": null,
+        "longitude": null,
+        "observations": [
+            {
+                "date": "2025-09-10",
+                "observations": [
+                    "Unregistered Medicines",
+                    "Unregistered Premises",
+                    "DLDM Not Allowed Medicines"
+                ],
+                "defect_values": {
+                    "unreg": 300,
+                    "dldmNotAllowed": 800
+                },
+                "intensity": 45,
+                "pvi_raw": 280.0,
+                "absolute_pvi": 1000.0
+            }
+        ],
+        "total_intensity": 45,
+        "average_intensity": 45.0,
+        "total_pvi_raw": 280.0,
+        "average_pvi_raw": 280.0,
+        "total_absolute_pvi": 1000.0,
+        "average_absolute_pvi": 1000.0,
+        "relative_pvi": 1.0,
+        "violation_rate": 331.5,
+        "relative_violation_rate": 31.8
+    },
+    {
+        "id": 9,
+        "name": "Try",
+        "category": "Polyclinic",
+        "region": "Mtwara",
+        "district": "Tandahimba",
+        "location": "Stendi",
+        "latitude": null,
+        "longitude": null,
+        "relative_pvi": 0.0,
+        "observations": [
+            {
+                "date": "2025-02-06",
+                "observations": [
+                    "None"
+                ],
+                "defect_values": {},
+                "intensity": 0,
+                "pvi_raw": 0.0,
+                "absolute_pvi": 0.0
+            }
+        ],
+        "total_intensity": 0,
+        "average_intensity": 0.0,
+        "total_pvi_raw": 0.0,
+        "average_pvi_raw": 0.0,
+        "total_absolute_pvi": 0.0,
+        "average_absolute_pvi": 0.0,
+        "violation_rate": 0.0,
+        "relative_violation_rate": 0.0
     }
 ]

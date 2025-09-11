@@ -175,6 +175,713 @@
         "unregistered_value": 0,
         "dldm_value": 0
       }
+    },
+    {
+      "Daily ID": "2A",
+      "Overall ID": 2,
+      "Inspection Name": "Recall Inspection - Mtwara - Nanyamba - 20250904",
+      "Inspection Type": "Recall Inspection",
+      "Date": "2025-09-04",
+      "Region": "Mtwara",
+      "District": "Nanyamba",
+      "Premises Data": [
+        {
+          "Premise Type": "Dispensary",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Health Centre",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Polyclinic",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Hospital",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Medical Lab (Private)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Medical Lab (GOT)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Pharmacy (Human)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Pharmacy (Vet)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "DLDM (Human)",
+          "Count": 3
+        },
+        {
+          "Premise Type": "DLDM (Vet)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Non Medical shops",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Ware House",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Medical Devices Shops",
+          "Count": 0
+        }
+      ],
+      "Defects Data": {
+        "Dispensary": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Health Centre": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Polyclinic": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Hospital": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Medical Lab (Private)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Medical Lab (GOT)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Pharmacy (Human)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Pharmacy (Vet)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "DLDM (Human)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "DLDM (Vet)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Non Medical shops": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Ware House": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Medical Devices Shops": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        }
+      },
+      "Recall Products": [
+        {
+          "brandName": "Azuma",
+          "genericName": "AZITHROMYCIN",
+          "manufacturer": "SHELLYS",
+          "uom": "TABLETS",
+          "batchNumber": "GFDS55",
+          "manufactureDate": "2025-05-14",
+          "expiryDate": "2026-01-23",
+          "premises": 2,
+          "category": "DLDM (Human)",
+          "value": 24000,
+          "quantity": 24,
+          "reason": "FALSIFIED PRODUCT"
+        }
+      ],
+      "Charges & Confiscated Values": {
+        "total": 0,
+        "got_value": 0,
+        "unregistered_value": 0,
+        "dldm_value": 0
+      }
+    },
+    {
+      "Daily ID": "3A",
+      "Overall ID": 3,
+      "Inspection Name": "Routine Inspection - Ruvuma - Songea MC - 20250710",
+      "Inspection Type": "Routine Inspection",
+      "Date": "2025-07-10",
+      "Region": "Ruvuma",
+      "District": "Songea MC",
+      "Premises Data": [
+        {
+          "Premise Type": "Dispensary",
+          "Count": 2
+        },
+        {
+          "Premise Type": "Health Centre",
+          "Count": 3
+        },
+        {
+          "Premise Type": "Polyclinic",
+          "Count": 2
+        },
+        {
+          "Premise Type": "Hospital",
+          "Count": 4
+        },
+        {
+          "Premise Type": "Medical Lab (Private)",
+          "Count": 5
+        },
+        {
+          "Premise Type": "Medical Lab (GOT)",
+          "Count": 2
+        },
+        {
+          "Premise Type": "Pharmacy (Human)",
+          "Count": 5
+        },
+        {
+          "Premise Type": "Pharmacy (Vet)",
+          "Count": 2
+        },
+        {
+          "Premise Type": "DLDM (Human)",
+          "Count": 9
+        },
+        {
+          "Premise Type": "DLDM (Vet)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Non Medical shops",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Ware House",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Medical Devices Shops",
+          "Count": 6
+        },
+        {
+          "Premise Type": "Arbitary Sellers",
+          "Count": 0
+        }
+      ],
+      "Defects Data": {
+        "Dispensary": {
+          "gotMedicines": 2,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 2,
+          "dldmNotAllowed": 0,
+          "medicalPractices": 0
+        },
+        "Health Centre": {
+          "gotMedicines": 3,
+          "unregisteredMedicines": 2,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 2,
+          "unregisteredPremise": 3,
+          "dldmNotAllowed": 0,
+          "medicalPractices": 0
+        },
+        "Polyclinic": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 2,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0,
+          "dldmNotAllowed": 0,
+          "medicalPractices": 0
+        },
+        "Hospital": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 2,
+          "dldmNotAllowed": 0,
+          "medicalPractices": 0
+        },
+        "Medical Lab (Private)": {
+          "gotMedicines": 4,
+          "unregisteredMedicines": 3,
+          "noQualifiedPersonnel": 2,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0,
+          "dldmNotAllowed": 0,
+          "medicalPractices": 0
+        },
+        "Medical Lab (GOT)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Pharmacy (Human)": {
+          "gotMedicines": 3,
+          "unregisteredMedicines": 2,
+          "noQualifiedPersonnel": 2,
+          "minimalRequirements": 3,
+          "unregisteredPremise": 0,
+          "dldmNotAllowed": 0,
+          "medicalPractices": 2
+        },
+        "Pharmacy (Vet)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 2,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0,
+          "dldmNotAllowed": 0,
+          "medicalPractices": 0
+        },
+        "DLDM (Human)": {
+          "gotMedicines": 4,
+          "unregisteredMedicines": 5,
+          "noQualifiedPersonnel": 9,
+          "minimalRequirements": 3,
+          "unregisteredPremise": 5,
+          "dldmNotAllowed": 2,
+          "medicalPractices": 0
+        },
+        "DLDM (Vet)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Non Medical shops": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Ware House": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Medical Devices Shops": {
+          "gotMedicines": 2,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 2,
+          "unregisteredPremise": 0,
+          "dldmNotAllowed": 0,
+          "medicalPractices": 0
+        },
+        "Arbitary Sellers": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        }
+      },
+      "Recall Products": [],
+      "Charges & Confiscated Values": {
+        "total": 200000,
+        "got_value": 2000,
+        "unregistered_value": 3000,
+        "dldm_value": 50000
+      }
+    },
+    {
+      "Daily ID": "4A",
+      "Overall ID": 4,
+      "Inspection Name": "Follow Up Inspection - Mtwara - Tandahimba - 20250902",
+      "Inspection Type": "Follow Up Inspection",
+      "Date": "2025-09-02",
+      "Region": "Mtwara",
+      "District": "Tandahimba",
+      "Premises Data": [
+        {
+          "Premise Type": "Dispensary",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Health Centre",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Polyclinic",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Hospital",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Medical Lab (Private)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Medical Lab (GOT)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Pharmacy (Human)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Pharmacy (Vet)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "DLDM (Human)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "DLDM (Vet)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Non Medical shops",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Ware House",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Medical Devices Shops",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Arbitary Sellers",
+          "Count": 0
+        }
+      ],
+      "Defects Data": {
+        "Dispensary": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Health Centre": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Polyclinic": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Hospital": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Medical Lab (Private)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Medical Lab (GOT)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Pharmacy (Human)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Pharmacy (Vet)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "DLDM (Human)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "DLDM (Vet)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Non Medical shops": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Ware House": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Medical Devices Shops": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Arbitary Sellers": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        }
+      },
+      "Recall Products": [],
+      "Charges & Confiscated Values": {
+        "total": 9,
+        "got_value": 9,
+        "unregistered_value": 9,
+        "dldm_value": 9
+      }
+    },
+    {
+      "Daily ID": "4B",
+      "Overall ID": 4,
+      "Inspection Name": "Follow Up Inspection - Mtwara - Tandahimba - 20250902",
+      "Inspection Type": "Follow Up Inspection",
+      "Date": "2025-09-09",
+      "Region": "Mtwara",
+      "District": "Tandahimba",
+      "Premises Data": [
+        {
+          "Premise Type": "Dispensary",
+          "Count": 8
+        },
+        {
+          "Premise Type": "Health Centre",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Polyclinic",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Hospital",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Medical Lab (Private)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Medical Lab (GOT)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Pharmacy (Human)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Pharmacy (Vet)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "DLDM (Human)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "DLDM (Vet)",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Non Medical shops",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Ware House",
+          "Count": 0
+        },
+        {
+          "Premise Type": "Arbitary Sellers",
+          "Count": 0
+        }
+      ],
+      "Defects Data": {
+        "Dispensary": {
+          "GOT Medicines": 6,
+          "Unregistered Medicines": 6,
+          "No Qualified Personnel": 6,
+          "Premise Meets Minimal Requirements": 6,
+          "Unregistered Premises": 6
+        },
+        "Health Centre": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Polyclinic": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Hospital": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Medical Lab (Private)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Medical Lab (GOT)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Pharmacy (Human)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Pharmacy (Vet)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "DLDM (Human)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "DLDM (Vet)": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Non Medical shops": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Ware House": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        },
+        "Arbitary Sellers": {
+          "gotMedicines": 0,
+          "unregisteredMedicines": 0,
+          "noQualifiedPersonnel": 0,
+          "minimalRequirements": 0,
+          "unregisteredPremise": 0
+        }
+      },
+      "Recall Products": [],
+      "Charges & Confiscated Values": {
+        "total": 0,
+        "got_value": 0,
+        "unregistered_value": 0,
+        "dldm_value": 0
+      }
     }
   ],
   "Disposal Activities": [
@@ -220,16 +927,6 @@
       "center": "Ligula RRH",
       "number_of_samples": 4,
       "passed": 3,
-      "parent_id": null,
-      "screening_date": "2025-09-02"
-    },
-    {
-      "id": 3,
-      "sample_id": "QA-25090557089",
-      "type": "Medical Device",
-      "center": "Ligula RRH",
-      "number_of_samples": 2,
-      "passed": 2,
       "parent_id": null,
       "screening_date": "2025-09-02"
     },

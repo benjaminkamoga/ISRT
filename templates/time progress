@@ -3,658 +3,411 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Time-Based Report Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>Premise Data Page – Overview & Key Features</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-body { font-family: Arial, sans-serif; background:#f5f6fa; margin:0; padding:0; display:flex; justify-content:center; }
-.main-container { max-width:800px; width:100%; padding:15px; box-sizing:border-box; margin: 0 auto; }
-h1,h2,h3,h4 { color:#2c3e50; margin:5px 0;}
-.filter-container { margin:15px 0; display:flex; flex-wrap:wrap; justify-content:flex-start; gap:10px; }
-.filter-container label { display:flex; align-items:center; gap:5px; }
-.filter-container select { padding:5px 10px; border-radius:4px; border:1px solid #ccc; }
-.report-block { background:white; border-radius:6px; padding:15px; margin:15px auto; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width:100%; text-align:left; }
-.report-block table { border-collapse: collapse; margin-top:10px; width:100%; }
-.report-block th, .report-block td { border:1px solid #ddd; padding:5px; text-align:left; font-size:14px; }
-.report-block th { background:#ecf0f1; }
-canvas { display:block; margin:10px auto; }
-.empty-state { text-align: center; font-style: italic; color: #7f8c8d; margin-top: 50px;}
-.hidden { display:none; }
-.subtotal-row { background:#d4efdf; font-weight:bold; }
-.even-row { background-color: #ffffff; }
-.odd-row { background-color: #f9f9f9; }
+  body {
+    background-color: #f8f9fa;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+  }
+
+  /* Main container */
+  .note-card {
+    max-width: 1200px;
+    margin: 0 auto 40px;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    background-color: #fff;
+  }
+
+  /* Title & intro */
+  .note-title {
+    color: #28a745;
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    text-align: justify;
+  }
+
+  .intro-text {
+    text-align: justify;
+    color: #555;
+    font-size: 1rem;
+    margin-bottom: 20px;
+  }
+
+  /* Premises image */
+.premises-image {
+    display: block;
+    width: 100%;       /* Full width of the card */
+    height: auto;      /* Maintain aspect ratio */
+    margin-bottom: 30px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+
+  /* Features grid */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  /* Feature cards */
+  .feature-card {
+    background: #f0f0f0;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    transition: transform .2s;
+  }
+  .feature-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .feature-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+  }
+  .feature-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: #007bff;
+  }
+
+  /* Flow grid */
+  .flow-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+    gap: 20px;
+    margin-top: 30px;
+  }
+  .flow-step {
+    border-radius: 12px;
+    padding: 15px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+  .flow-step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #28a745;
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+  }
+
+  /* 3-image gallery */
+  .image-gallery {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 40px;
+  }
+  .image-left {
+  grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* top: descriptive card, bottom: map image */
+}
+
+.descriptive-card {
+  background: #f0f0f0;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  flex: 1; /* make it grow to fill the space */
+  margin-bottom: 15px;
+}
+.image-left img {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  border: 1px solid #ddd;
+}
+
+
+.image-left {
+  grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* keeps bottom aligned with right-down image */
+}
+.image-left .feature-card {
+  background: #f0f0f0;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+  .image-gallery img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    border: 1px solid #ddd;
+    transition: transform .2s ease-in-out;
+    cursor: pointer;
+  }
+  .image-gallery img:hover {
+    transform: scale(1.05);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .image-gallery {
+      grid-template-columns: 1fr;
+    }
+    .image-left {
+      grid-row: auto;
+    }
+  }
 </style>
 </head>
 <body>
 
-<div class="main-container">
-  <h1>Time-Based Report </h1>
+<div class="note-card">
+  <!-- Title & Intro -->
+  <h3 class="note-title">Premise Data Page – Overview & Key Features</h3>
+  <p class="intro-text">
+    The <strong>Premise Data Page</strong> provides a structured database of all registered premises,
+    serving as the foundation for inspections, reporting, and analysis.
+    It enables users to efficiently view, filter, update, and manage premise records while supporting
+    accurate data-driven decision-making.
+  </p>
 
-  <div class="filter-container">
-    <label>Time Period:
-      <select id="timeFilter" onchange="updateReport()">
-        <option value="" selected disabled>Select Time Period</option>
-        <option value="twoWeeks">Two Weeks</option>
-        <option value="monthly">Monthly</option>
-        <option value="quarterly">Quarterly</option>
-        <option value="semiAnnual">Semi-Annual</option>
-        <option value="annual">Annual</option>
-      </select>
-    </label>
-    <label id="twoWeeksSelectLabel" class="hidden">Two Weeks:
-      <select id="twoWeeksSelect" onchange="updateReport()">
-        <option value="" selected disabled>Select Two Weeks</option>
-        <option value="first">First Two Weeks</option>
-        <option value="second">Second Two Weeks</option>
-      </select>
-    </label>
-    <label id="quarterSelectLabel" class="hidden">Quarter:
-      <select id="quarterSelect" onchange="updateReport()">
-        <option value="" selected disabled>Select Quarter</option>
-        <option value="Q1">First Quarter</option>
-        <option value="Q2">Second Quarter</option>
-        <option value="Q3">Third Quarter</option>
-        <option value="Q4">Fourth Quarter</option>
-      </select>
-    </label>
-    <label id="semiSelectLabel" class="hidden">Half:
-      <select id="semiSelect" onchange="updateReport()">
-        <option value="" selected disabled>Select Half</option>
-        <option value="first">First Half</option>
-        <option value="second">Second Half</option>
-      </select>
-    </label>
-    <label id="monthLabel" class="hidden">Month:
-      <select id="monthSelect" onchange="updateReport()">
-        <option value="" selected disabled>Select Month</option>
-        <option value="1">January</option><option value="2">February</option><option value="3">March</option>
-        <option value="4">April</option><option value="5">May</option><option value="6">June</option>
-        <option value="7">July</option><option value="8">August</option><option value="9">September</option>
-        <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-      </select>
-    </label>
-    <label id="yearLabel" class="hidden">Year:
-      <select id="yearSelect" onchange="updateReport()">
-        <option value="" selected disabled>Select Year</option>
-        <option value="2025">2025/26</option>
-        <option value="2026">2026/27</option>
-      </select>
-    </label>
-  </div>
+  <!-- Premises Image -->
+<img src="{{ url_for('static', filename='images/notes/premises.png') }}"
+     alt="Premises Overview"
+     class="premises-image">
 
-  <h2 id="reportHeader"></h2>
-  <div id="reportContent"></div>
+
+  <!-- Features Grid -->
+  <div class="feature-grid">
+
+    <!-- Premise Records -->
+    <div class="feature-card">
+      <div class="feature-icon">🏢</div>
+      <div class="feature-title">Premise Records</div>
+      <div>View all premises with name, category, location, VR, and actions.</div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="feature-card">
+      <div class="feature-icon">🔍</div>
+      <div class="feature-title">Filters & Search</div>
+      <div>Filter by Region, District, Category, VR Type, Physical Location, or search by name.</div>
+    </div>
+
+    <!-- Add / Edit Premises -->
+    <div class="feature-card">
+      <div class="feature-icon">➕</div>
+      <div class="feature-title">Add / Edit Premises</div>
+      <div>Add new or edit existing premises quickly through modals.</div>
+    </div>
+
+    <!-- Observations -->
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Observations</div>
+      <div>Record inspections, defects, dates, and monetary values.</div>
+    </div>
+
+    <!-- Map View -->
+    <div class="feature-card">
+      <div class="feature-icon">🗺️</div>
+      <div class="feature-title">Map View</div>
+      <div>Visualize premises on a map for easy reference.</div>
+    </div>
+
+    <!-- Cart -->
+    <div class="feature-card">
+      <div class="feature-icon">🛒</div>
+      <div class="feature-title">Cart</div>
+      <div>Select multiple premises, see live count, and view summary popup.</div>
+    </div>
+
+    <!-- Export -->
+    <div class="feature-card">
+      <div class="feature-icon">📥</div>
+      <div class="feature-title">Export</div>
+      <div>Download filtered premises list as Excel file.</div>
+    </div>
+
+    <!-- Intensity Cards -->
+<div class="feature-card">
+  <div class="feature-icon">🟥⚽</div>
+  <div class="feature-title">Intensity Cards</div>
+  <div>Inspection & Defects Summary<br>View real-time summaries of inspected premises, defect counts, and financial impacts.</div>
 </div>
 
-<script>
-const inspectionData = [
-  {
-    inspection_type:"Routine Inspection", 
-    inspection_name:"Routine Inspection Mtwara MC-Mtwara-20250801", 
-    date:"2025-08-01", 
-    district:"Mtwara MC",
-    region:"Mtwara",
-    premises_data:{"Dispensary":2,"Health Centre":2,"Polyclinic":0,"Hospital":0,"Medical Lab (Private)":0,"Medical Lab (GOT)":0,"Pharmacy (Human)":0,"Pharmacy (Vet)":0,"DLDM (Human)":0,"DLDM (Vet)":0,"Non Medical shops":0,"Ware House":0,"Arbitary Sellers":3},
-    defects_data:{"Health Centre":{"GOT Medicines":3,"Unregistered Medicines":2,"No Qualified Personnel":2,"Premise Meets Minimal Requirements":2,"Unregistered Premises":2},"Arbitary Sellers":{"GOT Medicines":2,"Unregistered Medicines":2,"No Qualified Personnel":2,"Premise Meets Minimal Requirements":2,"Unregistered Premises":2}},
-    charges_confiscated_values:{"total":34,"got_value":11,"unregistered_value":22,"dldm_value":23},
-    recalls:[
-      {generic:"Paracetamol", brand:"ParaTab", manufacturer:"ABC Pharma", MFD:"2025-01-01", EXP:"2026-01-01", UOM:"Box", reason:"Contamination", premise_breakdown:[{premise:"Dispensary A", inspected:5, found:2, quantity:20},{premise:"Health Centre B", inspected:3, found:1, quantity:5}]},
-      {generic:"Amoxicillin", brand:"Amoxil", manufacturer:"XYZ Pharma", MFD:"2025-02-01", EXP:"2026-02-01", UOM:"Bottle", reason:"Label Error", premise_breakdown:[{premise:"Dispensary A", inspected:5, found:0, quantity:0},{premise:"Pharmacy C", inspected:2, found:2, quantity:15}]}
-    ]
-  },
-  {
-    inspection_type:"POE Inspection", 
-    inspection_name:"POE Inspection Mtwara DC-Mtwara-20250810", 
-    date:"2025-08-10", 
-    district:"Mtwara DC",
-    region:"Mtwara",
-    premises_data:null, defects_data:null, charges_confiscated_values:null, recalls:null
-  },
-  {
-    inspection_type:"Routine Inspection", 
-    inspection_name:"Routine Inspection Lindi MC-Lindi-20250805", 
-    date:"2025-08-05", 
-    district:"Lindi MC",
-    region:"Lindi",
-    premises_data:{"Dispensary":1,"Health Centre":1,"Polyclinic":1,"Hospital":0}, 
-    defects_data:{"Dispensary":{"Unregistered Medicines":1}},
-    charges_confiscated_values:{"total":10,"got_value":5,"unregistered_value":5,"dldm_value":0},
-    recalls:null
-  }
-];
 
-const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const targets = {"Dispensary":40,"Health Centre":40,"Polyclinic":13,"Hospital":40,"Medical Lab (Private)":50,"Medical Lab (GOT)":50,"Pharmacy (Human)":80,"Pharmacy (Vet)":5,"DLDM (Human)":800,"DLDM (Vet)":60};
-
-function toggleFilters(){
-  const timeFilter=document.getElementById('timeFilter').value;
-  document.getElementById('twoWeeksSelectLabel').classList.toggle('hidden', timeFilter!=='twoWeeks');
-  document.getElementById('quarterSelectLabel').classList.toggle('hidden', timeFilter!=='quarterly');
-  document.getElementById('semiSelectLabel').classList.toggle('hidden', timeFilter!=='semiAnnual');
-  document.getElementById('monthLabel').classList.toggle('hidden', !(timeFilter==='twoWeeks'||timeFilter==='monthly'));
-  document.getElementById('yearLabel').classList.toggle('hidden', timeFilter!=='annual'?false:true);
-}
-
-function updateReport(){
-  toggleFilters();
-  const timeFilter=document.getElementById('timeFilter').value;
-  if(!timeFilter) return;
-  const month=parseInt(document.getElementById('monthSelect')?.value||0)-1;
-  const year=parseInt(document.getElementById('yearSelect')?.value||2025);
-  const twoWeeks=document.getElementById('twoWeeksSelect')?.value;
-
-  let periodName='';
-  if(timeFilter==='twoWeeks'){ if(twoWeeks && month>=0) periodName=`${twoWeeks==='first'?'First':'Second'} Two Weeks of ${months[month]}`; else return;}
-  else if(timeFilter==='monthly'){ if(month>=0) periodName=`${months[month]}`; else return;}
-  else if(timeFilter==='quarterly'){ periodName=document.getElementById('quarterSelect')?.value||''; if(!periodName) return;}
-  else if(timeFilter==='semiAnnual'){ periodName=document.getElementById('semiSelect')?.value==='first'?'First Half':'Second Half'; if(!periodName) return;}
-  else if(timeFilter==='annual'){ periodName='Full Year'; }
-
-  const fy=`${year}/${(year+1).toString().slice(2)}`;
-  document.getElementById('reportHeader').innerText=`Summary of inspection data for ${periodName} of financial year ${fy}`;
-
-  const startDate=new Date(year, month>=0?month:0,1);
-  const endDate=new Date(year, month>=0?month+1:12,0);
-
-  const filteredData=inspectionData.filter(d=>{
-    const dt=new Date(d.date);
-    return dt>=startDate && dt<=endDate;
-  });
-
-  renderReport(filteredData, periodName, timeFilter, year, month, twoWeeks);
-}
-
-function renderReport(data, periodName, timeFilter, year, month, twoWeeks){
-  const container=document.getElementById('reportContent');
-  container.innerHTML='';
-
-  if(!data.length){
-    container.innerHTML='<div class="empty-state">No inspections were recorded during this period.</div>'; 
-    return;
-  }
-
-  // Aggregate totals for Premises Inspected
-  const allPremises = {};
-  data.forEach(d => {
-    if(d.premises_data){
-      for(let cat in d.premises_data){
-        allPremises[cat] = (allPremises[cat] || 0) + d.premises_data[cat];
-      }
-    }
-  });
-  const premisesTotal = Object.values(allPremises).reduce((a,b)=>a+b,0);
-
-  // Aggregate defects
-  const defectsByCategory = {};
-  data.forEach(d => {
-    if(d.defects_data){
-      for(let cat in d.defects_data){
-        for(let defect in d.defects_data[cat]){
-          defectsByCategory[defect] = (defectsByCategory[defect] || 0) + d.defects_data[cat][defect];
-        }
-      }
-    }
-  });
-  const defectsCount = Object.values(defectsByCategory).reduce((a,b)=>a+b,0);
-
-  // Aggregate charges
-  let got=0, unreg=0, dldm=0;
-  data.forEach(d=>{
-    if(d.charges_confiscated_values){
-      got += d.charges_confiscated_values.got_value||0;
-      unreg += d.charges_confiscated_values.unregistered_value||0;
-      dldm += d.charges_confiscated_values.dldm_value||0;
-    }
-  });
-  const totalconfiscated = got+unreg+dldm;
-
- // 1. Opening Summary
-const openingBlock = document.createElement('div'); 
-openingBlock.className = 'report-block';
-
-let htmlOpening = `<p>During this period, a total of <strong>${data.length}</strong> inspections were conducted as follows:</p>
-<table>
-  <tr><th>Inspection Type</th><th>Region</th><th>District</th></tr>`;
-
-// Group by inspection type first, then region
-const inspectionTypes = [...new Set(data.map(d => d.inspection_type))];
-
-inspectionTypes.forEach(type => {
-  const typeData = data.filter(d => d.inspection_type === type);
-  const typeRegions = [...new Set(typeData.map(d => d.region))];
-  
-  typeRegions.forEach(region => {
-    const regionData = typeData.filter(d => d.region === region);
-    let firstRow = true;
-    regionData.forEach(d => {
-      htmlOpening += `<tr>
-        <td>${firstRow ? type : ''}</td>
-        <td>${firstRow ? region : ''}</td>
-        <td>${d.district}</td>
-      </tr>`;
-      firstRow = false; // only show type & region for first row
-    });
-  });
-});
-
-htmlOpening += `</table>`;
-
-openingBlock.innerHTML = htmlOpening;
-container.appendChild(openingBlock);
-
-
-// 2. Premises Inspected Section
-const premisesBlock = document.createElement('div'); 
-premisesBlock.className = 'report-block';
-
-// Filter out categories with 0
-const nonZeroCategories = Object.keys(allPremises).filter(cat => allPremises[cat] > 0);
-const premisesTotalFiltered = nonZeroCategories.reduce((sum, cat) => sum + allPremises[cat], 0);
-
-if (premisesTotalFiltered > 0) {
-  // Predefine colors for categories
-  const premisesColors = {
-    "Dispensary": "#1abc9c",
-    "Health Centre": "#e74c3c",
-    "Polyclinic": "#3498db",
-    "Hospital": "#f39c12",
-    "Medical Lab (Private)": "#9b59b6",
-    "Medical Lab (GOT)": "#16a085",
-    "Pharmacy (Human)": "#f1c40f",
-    "Pharmacy (Vet)": "#8e44ad",
-    "DLDM (Human)": "#2ecc71",
-    "DLDM (Vet)": "#e67e22",
-    "Non Medical shops": "#34495e",
-    "Ware House": "#95a5a6",
-    "Arbitary Sellers": "#d35400"
-  };
-
-  let html = `<h3 style="text-align:left;">Premises Inspected</h3>
-  <p style="text-align:left;">During this period, a total of <strong>${premisesTotalFiltered}</strong> premises were inspected. The following is the breakdown by category:</p>
-  <table>
-    <tr><th>Category</th><th>Count</th></tr>`;
-  
-  nonZeroCategories.forEach(cat => {
-    html += `<tr><td>${cat}</td><td>${allPremises[cat]}</td></tr>`;
-  });
-
-  html += `</table>
-  <h4 style="text-align:left; margin-top:30px;">Visual Distribution</h4>
-  <canvas id="premisesChart" width="350" height="350"></canvas>`;
-
-  premisesBlock.innerHTML = html;
-  container.appendChild(premisesBlock);
-
-  // Pie chart using predefined colors
-  const chartValues = nonZeroCategories.map(cat => allPremises[cat]);
-  const chartColors = nonZeroCategories.map(cat => premisesColors[cat] || '#bdc3c7');
-
-  new Chart(document.getElementById('premisesChart').getContext('2d'), { 
-    type: 'pie', 
-    data: { 
-      labels: nonZeroCategories, 
-      datasets: [{ data: chartValues, backgroundColor: chartColors }]
-    },
-    options: { 
-      plugins: { 
-        legend: { 
-          position: 'right', 
-          labels: { 
-            boxWidth: 20, 
-            padding: 5
-          }
-        }
-      }
-    }
-  });
-
-} else {
-  premisesBlock.innerHTML = `<h3 style="text-align:left;">Premises Inspected</h3>
-  <p style="text-align:left;">No premises were inspected during this period.</p>`;
-  container.appendChild(premisesBlock);
-}
-
-// 3. Observations Identified Section
-if(defectsCount > 0){
-  const defectsBlock = document.createElement('div'); 
-  defectsBlock.className = 'report-block';
-
-  // Observation rename map
-  const observationMapping = {
-    "GOT Medicines": "Premise Found with GOT Medicines",
-    "Unregistered Medicines": "Premise Found with Unregistered Medicines",
-    "No Qualified Personnel": "Premise With No Qualified Personnel",
-    "Premise Meets Minimal Requirements": "Premise Does Not Meet Minimal General Requirements",
-    "Unregistered Premises": "Unregistered Premises",
-    "DLDM Not Allowed Medicines": "DLDM Not Allowed Medicines",
-    "Medical Practices Violation": "Medical Practices Violation"
-  };
-
-  // Colors for pie chart
-  const observationColors = {
-    "Premise Found with GOT Medicines": "#1abc9c",
-    "Premise Found with Unregistered Medicines": "#e74c3c",
-    "Premise With No Qualified Personnel": "#3498db",
-    "Premise Does Not Meet Minimal General Requirements": "#f39c12",
-    "Unregistered Premises": "#9b59b6",
-    "DLDM Not Allowed Medicines": "#16a085",
-    "Medical Practices Violation": "#d35400"
-  };
-
-  // Actions for each observation (exact sentences)
-  const observationActions = {
-    "Premise Found with GOT Medicines":
-      "The GOT Medicines / Medical Devices were confiscated. The owners have to pay Disposal Fee + 2/3*Tsh 500,000/= as fine liable for selling GOT Products in private Facility. Likewise, they were given warning.",
-    
-    "Premise Found with Unregistered Medicines":
-      "The Unregistered Medicines / Medical Devices were confiscated. The owners have to pay Disposal Fee + 2% FOB of total product value + 2/3*Tsh 500,000/= as fine liable for selling GOT Products in private.",
-    
-    "Premise With No Qualified Personnel":
-      "For the premises with no Qualified personnel, the owners were instructed to hire qualified staff before providing services.",
-    
-    "Premise Does Not Meet Minimal General Requirements":
-      "For Facilities which do not meet good GMP e.g. hygiene and premise air circulation, they were advised to upgrade to meet regulatory standards.",
-    
-    "Unregistered Premises":
-      "For Unregistered Premises, operations were halted until registration is completed.",
-    
-    "DLDM Not Allowed Medicines":
-      "The DLDM NOT ALLOWED MEDICINES were confiscated and owner has to pay Disposal fee i.e. 25% of total value of product confiscated. The owners were given the list of DLDM allowed medicines therefore to strictly rely on it.",
-    
-    "Medical Practices Violation":
-      "For Premises found conducting Medical practices against the law, strict warning issued; follow-up required."
-  };
-
-  // Transform observations
-  const transformedObservations = {};
-  for(let defect in defectsByCategory){
-    const newName = observationMapping[defect] || defect;
-    transformedObservations[newName] = defectsByCategory[defect];
-  }
-
-  // Build table HTML
-  let html = `<h3 style="text-align:left;">Observations Identified</h3>
-  <p style="text-align:left;">During this period, the following observations were identified:</p>
-  <table>
-    <tr><th>Observation</th><th>Premise Category</th><th>Count</th></tr>`;
-
-  const obsKeys = Object.keys(transformedObservations);
-
-  obsKeys.forEach((obs, obsIndex)=>{
-    // Count per premise category
-    const categoryCounts = {};
-    data.forEach(d=>{
-      if(d.defects_data){
-        for(let cat in d.defects_data){
-          const origDefect = Object.keys(observationMapping).find(k=>observationMapping[k]===obs);
-          if(origDefect && d.defects_data[cat][origDefect]>0){
-            categoryCounts[cat] = (categoryCounts[cat]||0) + d.defects_data[cat][origDefect];
-          }
-        }
-      }
-    });
-
-    const premiseCats = Object.keys(categoryCounts);
-    const totalObs = premiseCats.reduce((sum,cat)=>sum+categoryCounts[cat],0);
-
-    if(premiseCats.length>0){
-      html += `<tr class="${obsIndex%2===0?'even-row':'odd-row'}"><td rowspan="${premiseCats.length+1}">${obs}</td><td>${premiseCats[0]}</td><td>${categoryCounts[premiseCats[0]]}</td></tr>`;
-      for(let i=1;i<premiseCats.length;i++){
-        html += `<tr class="${obsIndex%2===0?'even-row':'odd-row'}"><td>${premiseCats[i]}</td><td>${categoryCounts[premiseCats[i]]}</td></tr>`;
-      }
-      html += `<tr style="background:#c8f7c5; color:#2c3e50; font-weight:bold;"><td>Total</td><td>${totalObs}</td></tr>`;
-    } else {
-      html += `<tr class="${obsIndex%2===0?'even-row':'odd-row'}"><td>${obs}</td><td>-</td><td>${transformedObservations[obs]}</td></tr>`;
-    }
-  });
-
-  html += `</table>
-  <h4 style="text-align:left; margin-top:30px;">Visual Distribution</h4>
-  <canvas id="defectsChart" width="500" height="500"></canvas>
-  <div id="actionTakenSection" style="margin-top:30px; text-align:left;"></div>`;
-
-  defectsBlock.innerHTML = html; 
-  container.appendChild(defectsBlock);
-
-  // Alternating row style
-  const style = document.createElement('style');
-  style.innerHTML = `.even-row { background-color: #ffffff; } .odd-row { background-color: #f9f9f9; }`;
-  document.head.appendChild(style);
-
-  // Pie chart rendering with extended legend labels
-const ctx = document.getElementById('defectsChart').getContext('2d');
-new Chart(ctx, { 
-  type: 'pie', 
-  data: { 
-    labels: obsKeys, 
-    datasets:[{
-      data: obsKeys.map(k => transformedObservations[k]),
-      backgroundColor: obsKeys.map(k => observationColors[k] || '#bdc3c7')
-    }]
-  },
-  options:{ 
-    plugins:{ 
-      legend:{
-        position:'right',
-        labels:{
-          boxWidth: 25,    // increase box width
-          padding: 10,     // increase padding
-          font: { size: 14, family: 'Arial' }, // font size and type
-          generateLabels: function(chart) {
-            const original = Chart.overrides.pie.plugins.legend.labels.generateLabels;
-            const labelsOriginal = original.call(this, chart);
-            labelsOriginal.forEach(label => {
-              // truncate or wrap if needed, here we keep full name
-              label.text = label.text; 
-            });
-            return labelsOriginal;
-          }
-        }
-      }
-    }
-  }
-});
-
-
-  // Action Taken section with bullets
-  const actionDiv = document.getElementById('actionTakenSection');
-  let actionHTML = `<h4>Action Taken</h4><ul>`;
-
-  obsKeys.forEach(obs=>{
-    if(observationActions[obs]){
-      actionHTML += `<li>${observationActions[obs]}</li>`;
-    }
-  });
-
-  // Include general TMDA adherence as last bullet
-  actionHTML += `<li>All inspected premises must strictly adhere to TMDA regulations.</li>`;
-  actionHTML += `</ul>`;
-  actionDiv.innerHTML = actionHTML;
-}
-
-
-// 3. Total Charges and Confiscated Products Values
-if (got + unreg + dldm > 0) {
-    const chargesBlock = document.createElement('div'); 
-    chargesBlock.className = 'report-block';
-
-    // Force page break before this section for print/PDF
-    chargesBlock.style.pageBreakBefore = 'always';
-    chargesBlock.style.marginTop = '50px';
-
-    // Build Charges HTML
-    let htmlCharges = `<h3 style="text-align:left; font-size:16px;">Total Charges and Confiscated Products Values</h3>`;
-
-    // Total Charges
-    const totalConfiscated = got + unreg + dldm;
-    htmlCharges += `<p style="text-align:left; font-size:14px;"><strong>Total Charges:</strong> Tsh ${totalConfiscated.toLocaleString()}/=</p>`;
-
-    // Table of confiscated products
-    htmlCharges += `<table style="width:100%; border-collapse:collapse; font-size:14px;">
-    <tr style="background:#f2f2f2;"><th style="border:1px solid #ccc; padding:5px;">Type</th><th style="border:1px solid #ccc; padding:5px;">Value (Tsh)</th></tr>`;
-
-    const confiscatedData = {
-      "Value of GOT Products Confiscated": got,
-      "Value of Unregistered Product Confiscated": unreg,
-      "Value of DLDM NOT ALLOWED MEDICINES Confiscated": dldm
-    };
-
-    for (let type in confiscatedData) {
-      htmlCharges += `<tr><td style="border:1px solid #ccc; padding:5px;">${type}</td><td style="border:1px solid #ccc; padding:5px;">${confiscatedData[type].toLocaleString()}</td></tr>`;
-    }
-
-    // Total row
-    htmlCharges += `<tr style="font-weight:bold; background:#f0f0f0;"><td style="border:1px solid #ccc; padding:5px;">Total Value of Confiscated Products</td><td style="border:1px solid #ccc; padding:5px;">${totalConfiscated.toLocaleString()}</td></tr>`;
-    htmlCharges += `</table>`;
-
-    // Add canvas for pie chart
-    htmlCharges += `<h4 style="text-align:left; margin-top:30px;">Visual Distribution of Confiscated Products</h4>
-    <canvas id="confiscatedChart" width="400" height="400"></canvas>`;
-
-    chargesBlock.innerHTML = htmlCharges;
-    container.appendChild(chargesBlock);
-
-    // Pie chart for confiscated products
-    const ctxConfiscated = document.getElementById('confiscatedChart').getContext('2d');
-    new Chart(ctxConfiscated, { 
-      type: 'pie', 
-      data: { 
-        labels: Object.keys(confiscatedData), 
-        datasets:[{
-          data: Object.values(confiscatedData),
-          backgroundColor: ["#1abc9c", "#e74c3c", "#16a085"]
-        }]
-      },
-      options:{ 
-        plugins:{ 
-          legend:{position:'right', labels:{boxWidth:20, padding:10}}
-        }
-      }
-    });
-} else {
-    // If no confiscated products
-    const chargesBlock = document.createElement('div'); 
-    chargesBlock.className = 'report-block';
-    chargesBlock.innerHTML = `<h3 style="text-align:left; font-size:16px;">Total Charges and Confiscated Products Values</h3>
-    <p style="text-align:left;">No charges or confiscated products recorded during this period.</p>`;
-    container.appendChild(chargesBlock);
-}
-
-
-  // 5. Recall Inspection
-const allRecalls = data.flatMap(d => d.recalls || []);
-if (allRecalls.length > 0) {
-  const recallBlock = document.createElement('div');
-  recallBlock.className = 'report-block';
-
-  const totalProducts = allRecalls.length;
-  const summaryText = totalProducts === 1 ?
-    `During this period, ONE product was recalled from the market.` :
-    `During this period, a total of ${totalProducts} products were recalled from the market.`;
-
-  let html = `<h3 style="text-align:left;">Recall Inspection</h3>
-  <p style="text-align:left;">${summaryText}</p>`;
-
-  allRecalls.forEach((rec, ri) => {
-    html += `<h4 style="margin-top:20px;">${ri + 1}. ${rec.brand} (${rec.generic})</h4>`;
-
-    // Product Description Table
-    html += `<table style="margin-bottom:15px;">
-      <tr>
-        <th>Brand Name</th>
-        <th>Generic Name</th>
-        <th>Batch Number</th>
-        <th>Manufacturer</th>
-        <th>UOM</th>
-        <th>Mfg.<br>Date</th>
-        <th>Exp.<br>Date</th>
-        <th>Reason</th>
-      </tr>
-      <tr>
-        <td>${rec.brand}</td>
-        <td>${rec.generic}</td>
-        <td>${rec.batch_number}</td>
-        <td>${rec.manufacturer}</td>
-        <td>${rec.uom}</td>
-        <td>${rec.mfg_date}</td>
-        <td>${rec.exp_date}</td>
-        <td>${rec.reason}</td>
-      </tr>
-    </table>`;
-
-    // Premise Category Table with Region/District grouping
-    html += `<table>
-      <tr>
-        <th>Region</th>
-        <th>District</th>
-        <th>Premise<br>Category</th>
-        <th>Premise<br>Inspected</th>
-        <th>Premise with<br>Recalled Product</th>
-        <th>Quantity</th>
-        <th>Value</th>
-      </tr>`;
-
-    // Group breakdown by region then district
-    const regionGroups = {};
-    rec.premise_breakdown.forEach(pb => {
-      if (!regionGroups[pb.region]) regionGroups[pb.region] = [];
-      regionGroups[pb.region].push(pb);
-    });
-
-    let subInspected = 0, subFound = 0, subQty = 0, subValue = 0;
-
-    Object.keys(regionGroups).forEach(region => {
-      const districts = regionGroups[region];
-      districts.forEach((pb, di) => {
-        subInspected += pb.inspected;
-        subFound += pb.found;
-        subQty += pb.quantity;
-        subValue += pb.value || 0;
-        html += `<tr>
-          ${di === 0 ? `<td rowspan="${districts.length}">${region}</td>` : ''}
-          <td>${pb.district}</td>
-          <td>${pb.premise}</td>
-          <td>${pb.inspected}</td>
-          <td>${pb.found}</td>
-          <td>${pb.quantity}</td>
-          <td>${pb.value || 0}</td>
-        </tr>`;
-      });
-    });
-
-    html += `<tr style="background:#c8f7c5; font-weight:bold;">
-      <td colspan="3">Subtotal</td>
-      <td>${subInspected}</td>
-      <td>${subFound}</td>
-      <td>${subQty}</td>
-      <td>${subValue}</td>
-    </tr></table>`;
-  });
-
-  recallBlock.innerHTML = html;
-  container.appendChild(recallBlock);
-
-} else {
-  const recallBlock = document.createElement('div');
-  recallBlock.className = 'report-block';
-  recallBlock.innerHTML = `<h3 style="text-align:left;">Recall Inspection</h3>
-    <p style="text-align:left;">No products were recalled during this period.</p>`;
-  container.appendChild(recallBlock);
-}
-
-
-  // 6. Two-Week Report
-  const twoWeekBlock=document.createElement('div'); 
-  twoWeekBlock.className='report-block';
-  let html=`<h3>Two Week Performance</h3><table><tr><th>Category</th><th>Inspected</th><th>Target</th><th>% Progress</th></tr>`;
-  for(let cat in targets){
-    const inspected=allPremises[cat]||0;
-    const progress=((inspected/targets[cat])*100).toFixed(1);
-    html+=`<tr><td>${cat}</td><td>${inspected}</td><td>${targets[cat]}</td><td>${progress}%</td></tr>`;
-  }
-  html+='</table>';
-  twoWeekBlock.innerHTML=html;
-  container.appendChild(twoWeekBlock);
-}
-</script>
+  </div>
+
+  <!-- How to Use -->
+  <div class="sub-section" style="margin-top:40px; font-weight:600; font-size:1.3rem; color:#333;">How to Use</div>
+  <div class="flow-grid">
+    <div class="flow-step">
+      <div class="flow-step-number">1</div>
+      <div><strong>Filter Premises</strong></div>
+      <div>Select Region → District → Category → Physical Location. Search by name. Toggle VR Type.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-number">2</div>
+      <div><strong>Add Premise</strong></div>
+      <div>Click Add Premise, fill details, save or cancel.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-number">3</div>
+      <div><strong>Edit / Delete</strong></div>
+      <div>Use the Actions column to modify or remove premises.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-number">4</div>
+      <div><strong>Add Observations</strong></div>
+      <div>Click Observation → select date & defects → enter values → save.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-number">5</div>
+      <div><strong>View Observations</strong></div>
+      <div>Click View Observations to see all historical inspection data.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-number">6</div>
+      <div><strong>Map</strong></div>
+      <div>Click Show Map or Map button in table to visualize location.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-number">7</div>
+      <div><strong>Export</strong></div>
+      <div>Download filtered premises list via Export to Excel.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-step-number">8</div>
+      <div><strong>Cart</strong></div>
+      <div>Selected premises appear in cart. Click to view summary popup.</div>
+    </div>
+  </div>
+
+  <!-- Existing 3-Image Gallery -->
+<div class="image-gallery">
+  <div class="image-left d-flex flex-column justify-content-between">
+    <!-- Descriptive Card -->
+    <div class="feature-card descriptive-card">
+      <div class="feature-title">Description</div>
+      <div>
+        Explain the three images: Map, Add Observation, and View Observations.
+      </div>
+    </div>
+    <!-- Left Image (Map) -->
+    <img src="{{ url_for('static', filename='images/notes/map.png') }}" alt="Map View">
+  </div>
+
+  <!-- Right Images -->
+  <div>
+    <img src="{{ url_for('static', filename='images/notes/addobservation.png') }}" alt="Add Observation">
+  </div>
+  <div>
+    <img src="{{ url_for('static', filename='images/notes/viewobservations.png') }}" alt="View Observations">
+  </div>
+</div>
+
+<!-- Wide Map2 Image with Description -->
+<div style="margin-top: 30px;">
+  <p style="font-weight:600; font-size:1rem; color:#333; margin-bottom:10px;">
+    The below sample map shows how a user can navigate toward a premise location; 
+    the red location icon indicates the premise location, and the blue dots show a direction from the user's position toward that premise.
+  </p>
+  <img src="{{ url_for('static', filename='images/notes/map2.png') }}" 
+       alt="Map 2 View" 
+       style="width:100%; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.15); border:1px solid #ddd;">
+</div>
+
+<!-- Observations & Calculations Explanation Card -->
+<div class="feature-card" style="margin-top:20px; max-height:600px; overflow-y:auto;">
+  <div class="feature-title" style="font-size:1.2rem; margin-bottom:10px;">How Observations and Calculations Work</div>
+  <div style="text-align:justify; font-size:0.95rem; line-height:1.5; color:#333;">
+
+    <p>When you record an observation for a premise, the system automatically calculates several metrics that help you understand the level of compliance and risk for that premise. Here’s how it works:</p>
+
+    <h6>1. Recording Observations</h6>
+    <ul>
+      <li>For each premise, you can add observations on a specific date.</li>
+      <li>Observations include checking for defects such as GOT Medicines, Unregistered Medicines, No Qualified Personnel, and other issues.</li>
+      <li>Some defects allow you to enter a monetary value in Tanzanian Shillings (Tsh) to quantify the severity.</li>
+      <li>If no issues are found, you can select “None”, and the system treats this observation as having no defects.</li>
+    </ul>
+
+    <h6>2. Intensity</h6>
+    <p>Each type of defect has a predefined intensity value that represents how serious the issue is. The total intensity for an observation is calculated as the sum of intensity values of all selected defects:</p>
+    <p><strong>Total Intensity = ∑(Intensity of each selected defect)</strong></p>
+    <p>Observations marked as “None” automatically have an intensity of 0.</p>
+
+    <h6>3. Policy Violation Index (PVI)</h6>
+    <p>The system calculates three PVI values for each observation:</p>
+    <ul>
+      <li><strong>Raw PVI:</strong> Each defect with a monetary value contributes based on its assigned weight:<br>
+          <strong>Raw PVI = ∑ (Weight of defect / 100 × Defect Value (Tsh))</strong></li>
+      <li><strong>Absolute PVI (%):</strong> The raw PVI is scaled against the maximum possible PVI for all weighted defects:<br>
+          <strong>Absolute PVI (%) = (Raw PVI / Maximum Policy Value) × 100</strong></li>
+      <li><strong>Relative PVI (%):</strong> Compares a premise’s total raw PVI to the maximum total raw PVI among premises in the same district (or all premises if no district is selected):<br>
+          <strong>Relative PVI (%) = (Premise Total Raw PVI / Maximum Raw PVI in Set) × 100</strong></li>
+    </ul>
+
+    <h6>4. Aggregating Observations</h6>
+    <p>Each premise can have multiple observations over time. The system calculates total and average values across all observations:</p>
+    <ul>
+      <li>Total Intensity = ∑Intensity of all observations</li>
+      <li>Average Intensity = Total Intensity / Number of Observations</li>
+      <li>Total Raw PVI = ∑Raw PVI of all observations</li>
+      <li>Average Raw PVI = Total Raw PVI / Number of Observations</li>
+      <li>Total Absolute PVI = ∑Absolute PVI of all observations</li>
+      <li>Average Absolute PVI = Total Absolute PVI / Number of Observations</li>
+    </ul>
+
+    <h6>5. Violation Rate (VR)</h6>
+    <p>The Violation Rate combines intensity and PVI to give a single compliance risk score:</p>
+    <ul>
+      <li>Absolute VR = (Average Intensity × Intensity Weight) + (Average Absolute PVI × PVI Weight)</li>
+      <li>Relative VR = (Average Intensity × Intensity Weight) + (Relative PVI × PVI Weight)</li>
+      <li>By default, the weights are 70% for intensity and 30% for PVI, but these can be configured in the system.</li>
+    </ul>
+
+    <h6>6. Intensity Cards</h6>
+    <p>Each premise has an Intensity Card, which provides a quick visual indicator of compliance level. The card color is based on the latest observations and average intensity:</p>
+    <ul>
+      <li>Green → low intensity, low risk</li>
+      <li>Blue → low to moderate intensity</li>
+      <li>Yellow → moderate intensity</li>
+      <li>Red → high intensity or critical defects present</li>
+    </ul>
+
+    <h6>7. Key Points</h6>
+    <ul>
+      <li>Intensity shows how severe the defects are.</li>
+      <li>PVI measures policy violation in absolute and relative terms.</li>
+      <li>Violation Rate (VR) gives a single score combining defect severity and policy violation.</li>
+      <li>Intensity Cards give a visual summary of compliance and risk.</li>
+      <li>All calculations update automatically when you add or edit observations, or when you filter premises by region, district, or category.</li>
+    </ul>
+
+  </div>
+</div>
+
+
+ 
+
+</div>
 </body>
 </html>
