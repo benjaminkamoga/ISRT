@@ -86,7 +86,7 @@ def index():
             users = User.query.all()
             data = [{"id": u.id, "name": u.name} for u in users]
         elif supabase:
-            response = supabase.table("users").select("*").execute()
+            response = supabase.table("user").select("*").execute()
             data = response.data
         else:
             data = {"error": "No database configured."}
