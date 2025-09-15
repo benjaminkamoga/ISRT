@@ -2400,10 +2400,7 @@ if not os.path.exists(QA_FILE):
     with open(QA_FILE, 'w') as f:
         json.dump(qa_data, f, indent=2)
 
-# Serve HTML page
-@app.route('/')
-def index():
-    return send_from_directory('.', 'index.html')
+
 
 # Get QA targets
 @app.route('/api/qa_targets', methods=['GET'])
