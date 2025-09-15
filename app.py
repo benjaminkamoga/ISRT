@@ -1,78 +1,39 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
+import os, json, uuid
 from datetime import datetime, date
 from collections import defaultdict
-import os, json
+from flask import current_app
+import sqlite3
+
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+from supabase import create_client, Client
 from flask_sqlalchemy import SQLAlchemy
+
 from models import db, User, PremiseCategory, Premise, InspectionSummary, Inspection, TimeBasedSummary
 from utils import update_time_based_summary
-import sqlite3
-import uuid
-from flask import current_app
-from werkzeug.security import generate_password_hash
-import psycopg2
-from flask import Flask, request, send_file, redirect, url_for, flash
 
-from dotenv import load_dotenv
-from flask import current_app, send_from_directory
+load_dotenv()  # optional for local testing
 
-
-# --------------------------
-# Load environment variables
-# --------------------------
-from dotenv import load_dotenv
-import os
-from flask import Flask, render_template, request, session, redirect, url_for, flash
-
-# Supabase imports
-from supabase import create_client, Client  # type: ignore
-
-# Load .env
-load_dotenv()
-
-# --------------------------
-# Supabase connection
-# --------------------------
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://rhmvmrqkkhnztiequjwf.supabase.co")
-SUPABASE_KEY = os.getenv(
-    "SUPABASE_KEY",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJobXZtcnFra2huenRpZXF1andmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2NTM2NjcsImV4cCI6MjA3MzIyOTY2N30.skBHZ0_82QuMipd1I0E2ih1PCpJNPpjgnx2mmTaDksU"
-)
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# --------------------------
-# Flask app setup
-# --------------------------
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "#@Potential7119#@")
 
-# --------------------------
-# SQLAlchemy setup (optional, only if you still use it)
-# --------------------------
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy(app)
-
-# Use Supabase as the actual database if needed, otherwise SQLAlchemy can be skipped
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres.rhmvmrqkkhnztiequjwf:%23%40Potential7119%23%40@aws-1-eu-west-2.pooler.supabase.com:6543/postgres"
-)
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+# Environment variables from Render
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = os.getenv("SECRET_KEY")
 
 # Initialize SQLAlchemy
 db.init_app(app)
 
-# Ensure tables exist (optional if using Supabase directly)
+# Supabase client
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Ensure tables exist
 with app.app_context():
     db.create_all()
-
-
-
-
 
 
 
