@@ -13,29 +13,87 @@ from flask_sqlalchemy import SQLAlchemy
 
 from models import db, User, PremiseCategory, Premise, InspectionSummary, Inspection, TimeBasedSummary
 from utils import update_time_based_summary
+import logging
 
+
+# --------------------------
+# Load .env for local development
+# --------------------------
 load_dotenv()  # optional for local testing
 
+# --------------------------
+# Initialize Flask
+# --------------------------
 app = Flask(__name__)
 
-# Environment variables from Render
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = os.getenv("SECRET_KEY")
+# --------------------------
+# Configure logging
+# --------------------------
+logging.basicConfig(level=logging.INFO)
 
-# Initialize SQLAlchemy
-db.init_app(app)
+# --------------------------
+# Flask session secret
+# --------------------------
+app.secret_key = os.getenv("SECRET_KEY", "dev_secret_key")
 
-# Supabase client
+# --------------------------
+# Database setup
+# --------------------------
+DATABASE_URL = os.getenv("DATABASE_URL")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Ensure tables exist
-with app.app_context():
-    db.create_all()
+db = SQLAlchemy()  # Initialize SQLAlchemy
+USE_LOCAL_DB = False
 
+# Try local SQLAlchemy first
+if DATABASE_URL:
+    try:
+        app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        db.init_app(app)
+        with app.app_context():
+            db.create_all()
+        logging.info("Connected to SQLAlchemy database successfully.")
+        USE_LOCAL_DB = True
+    except Exception as e:
+        logging.error("Failed to connect to SQLAlchemy database: %s", e, exc_info=True)
 
+# Setup Supabase client if local DB is not available
+supabase: Client = None
+if not USE_LOCAL_DB and SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        logging.info("Connected to Supabase successfully.")
+    except Exception as e:
+        logging.error("Failed to connect to Supabase: %s", e, exc_info=True)
+
+# --------------------------
+# SQLAlchemy Models
+# --------------------------
+if USE_LOCAL_DB:
+    class User(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.String(255), nullable=False)
+
+# --------------------------
+# Routes
+# --------------------------
+@app.route("/")
+def index():
+    try:
+        if USE_LOCAL_DB:
+            users = User.query.all()
+            data = [{"id": u.id, "name": u.name} for u in users]
+        elif supabase:
+            response = supabase.table("users").select("*").execute()
+            data = response.data
+        else:
+            data = {"error": "No database configured."}
+        return jsonify(data)
+    except Exception as e:
+        logging.error("Error fetching users: %s", e, exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 
 def update_inspections_json():
