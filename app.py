@@ -43,7 +43,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key')
 
-db = SQLAlchemy(app)
+
 
 
 # Initialize SQLAlchemy
