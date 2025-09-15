@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Time-Based Report</title>
+<title>Overall Reports</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
@@ -20,7 +20,7 @@ tr:nth-child(even) { background-color: #f9f9f9; }
 <body>
 <div class="container mt-3">
 
-  <h2>Overall Inspections Conducted in Southern Zone</h2>
+<h2>Overall Inspections Conducted in Southern Zone</h2>
 
 <!-- Filter Form -->
 <form id="filterForm" class="row g-3 mb-3">
@@ -45,590 +45,488 @@ tr:nth-child(even) { background-color: #f9f9f9; }
   <div class="col-md-3">
     <label for="district" class="form-label">District</label>
     <select id="district" class="form-select">
-  <option value="">All</option>
-  {% for dist in districts %}
-    <option value="{{ dist.name }}" data-region="{{ dist.region }}">
-      {{ dist.name }}
-    </option>
-  {% endfor %}
-</select>
-
+      <option value="">All</option>
+      {% for dist in districts %}
+        <option value="{{ dist.name }}" data-region="{{ dist.region }}">{{ dist.name }}</option>
+      {% endfor %}
+    </select>
   </div>
- <div class="col-md-3 align-self-end d-flex align-items-center gap-2">
-  <button type="button" id="resetFilter" class="btn btn-secondary">Reset</button>
-  <span id="resultCount" class="badge bg-primary" style="font-size:14px; display:none;">
-  Total Results: 0
-</span>
-
-</div>
-
+  <div class="col-md-3 align-self-end d-flex align-items-center gap-2">
+    <button type="button" id="resetFilter" class="btn btn-secondary">Reset</button>
+    <span id="resultCount" class="badge bg-primary" style="font-size:14px; display:none;">
+      Total Results: 0
+    </span>
+  </div>
 </form>
 
-
-
-
-
 {% if inspections %}
-    {% set defect_name_map = {
-        'gotMedicines': 'GOT Medicines',
-        'unregisteredMedicines': 'Unregistered Medicines',
-        'noQualifiedPersonnel': 'No Qualified Personnel',
-        'minimalRequirements': 'Premise Meets Minimal Requirements',
-        'unregisteredPremise': 'Unregistered Premises'
-    } %}
+{% set defect_name_map = {
+    'gotMedicines': 'GOT Medicines',
+    'unregisteredMedicines': 'Unregistered Medicines',
+    'noQualifiedPersonnel': 'No Qualified Personnel',
+    'minimalRequirements': 'Premise Meets Minimal Requirements',
+    'unregisteredPremise': 'Unregistered Premises'
+} %}
 
-    {# Aggregate inspections by overall_id #}
-    {% set aggregated = {} %}
-    {% for insp in inspections %}
-        {% set oid = insp.overall_id %}
-        {% if aggregated[oid] is not defined %}
-            {% set _ = aggregated.update({oid: {
-                'daily_ids': [insp.daily_id],
-                'summary': insp.summary,
-                'premises_data': insp.premises_data | default({}),
-                'defects_data': insp.defects_data | default({}),
-                'charges_data': insp.charges_data | default({'total':0,'got_value':0,'unregistered_value':0,'dldm_value':0,'no_permit_value':0}),
-                'recall_products': [insp.recall_product_data] if insp.recall_product_data is defined else [],
-                'dates': [insp.date]
-            }}) %}
-        {% else %}
-            {% set _ = aggregated[oid].daily_ids.append(insp.daily_id) %}
-            {% set _ = aggregated[oid].dates.append(insp.date) %}
-            {# Aggregate Premises #}
-            {% for k,v in (insp.premises_data or {}).items() %}
-                {% if aggregated[oid].premises_data[k] is defined %}
-                    {% set _ = aggregated[oid].premises_data.update({k: aggregated[oid].premises_data[k] + v}) %}
-                {% else %}
-                    {% set _ = aggregated[oid].premises_data.update({k: v}) %}
-                {% endif %}
-            {% endfor %}
-            {# Aggregate Defects #}
-            {% for k,v in (insp.defects_data or {}).items() %}
-                {% if aggregated[oid].defects_data[k] is defined %}
-                    {% for defect_key, defect_count in v.items() %}
-                        {% if aggregated[oid].defects_data[k][defect_key] is defined %}
-                            {% set _ = aggregated[oid].defects_data[k].update({defect_key: aggregated[oid].defects_data[k][defect_key] + defect_count}) %}
-                        {% else %}
-                            {% set _ = aggregated[oid].defects_data[k].update({defect_key: defect_count}) %}
-                        {% endif %}
-                    {% endfor %}
-                {% else %}
-                    {% set _ = aggregated[oid].defects_data.update({k:v}) %}
-                {% endif %}
-            {% endfor %}
-            {# Aggregate Charges #}
-            {% for k,v in (insp.charges_data or {}).items() %}
-                {% if aggregated[oid].charges_data[k] is defined %}
-                    {% set _ = aggregated[oid].charges_data.update({k: aggregated[oid].charges_data[k] + v}) %}
-                {% else %}
-                    {% set _ = aggregated[oid].charges_data.update({k: v}) %}
-                {% endif %}
-            {% endfor %}
-            {# Append Recall Products #}
-            {% if insp.recall_product_data is defined %}
-                {% set _ = aggregated[oid].recall_products.append(insp.recall_product_data) %}
-            {% endif %}
-        {% endif %}
+{% set aggregated = {} %}
+{% for insp in inspections %}
+  {% set oid = insp.overall_id %}
+  {% if aggregated[oid] is not defined %}
+    {% set _ = aggregated.update({oid: {
+      'daily_ids':[insp.daily_id],
+      'summary': insp.summary,
+      'premises_data': insp.premises_data | default({}),
+      'defects_data': insp.defects_data | default({}),
+      'charges_data': insp.charges_data | default({'total':0,'got_value':0,'unregistered_value':0,'dldm_value':0}),
+      'recall_products':[insp.recall_product_data] if insp.recall_product_data is defined else [],
+      'dates':[insp.date]
+    }}) %}
+  {% else %}
+    {% set _ = aggregated[oid].daily_ids.append(insp.daily_id) %}
+    {% set _ = aggregated[oid].dates.append(insp.date) %}
+    {% for k,v in (insp.premises_data or {}).items() %}
+      {% if aggregated[oid].premises_data[k] is defined %}
+        {% set _ = aggregated[oid].premises_data.update({k: aggregated[oid].premises_data[k]+v}) %}
+      {% else %}
+        {% set _ = aggregated[oid].premises_data.update({k:v}) %}
+      {% endif %}
     {% endfor %}
+    {% for k,v in (insp.defects_data or {}).items() %}
+      {% if aggregated[oid].defects_data[k] is defined %}
+        {% for defect_key, defect_count in v.items() %}
+          {% if aggregated[oid].defects_data[k][defect_key] is defined %}
+            {% set _ = aggregated[oid].defects_data[k].update({defect_key: aggregated[oid].defects_data[k][defect_key]+defect_count}) %}
+          {% else %}
+            {% set _ = aggregated[oid].defects_data[k].update({defect_key: defect_count}) %}
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        {% set _ = aggregated[oid].defects_data.update({k:v}) %}
+      {% endif %}
+    {% endfor %}
+    {% for k,v in (insp.charges_data or {}).items() %}
+      {% if aggregated[oid].charges_data[k] is defined %}
+        {% set _ = aggregated[oid].charges_data.update({k: aggregated[oid].charges_data[k]+v}) %}
+      {% else %}
+        {% set _ = aggregated[oid].charges_data.update({k:v}) %}
+      {% endif %}
+    {% endfor %}
+    {% if insp.recall_product_data is defined %}
+      {% set _ = aggregated[oid].recall_products.append(insp.recall_product_data) %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
 
 <table class="table table-bordered table-responsive">
 <thead>
 <tr>
-    <th>S/No</th>
-    <th>Inspection Name</th>
-    <th>Inspection Type</th>
-    <th>Region</th>
-    <th>District</th>
-    <th>View Summary</th>
-    <th>Official Report</th>
-    <th>Action</th> <!-- NEW -->
+<th>S/No</th>
+<th>Inspection Name</th>
+<th>Inspection Type</th>
+<th>Region</th>
+<th>District</th>
+<th>View Summary</th>
+<th>Official Report</th>
+<th>Action</th>
 </tr>
 </thead>
 <tbody>
 {% for oid, agg in aggregated.items() %}
 <tr>
-    <td>{{ loop.index }}</td>
-    <td>
-{% if agg.summary.inspection_type and agg.summary.district and agg.summary.region and agg.dates %}
-    {% set sorted_dates = agg.dates | sort %}
-    {{ agg.summary.inspection_type }} conducted in {{ agg.summary.district }} - {{ agg.summary.region }} on 
-    {{ sorted_dates[0].strftime('%Y-%m-%d') if sorted_dates[0] else 'NA' }}
-    {% if sorted_dates|length > 1 %}
-        to {{ sorted_dates[-1].strftime('%Y-%m-%d') if sorted_dates[-1] else 'NA' }}
-    {% endif %}
-{% else %}
-    NA
+<td>{{ loop.index }}</td>
+<td>
+{% set sorted_dates = agg.dates | sort %}
+{{ agg.summary.inspection_type }} conducted in {{ agg.summary.district }} - {{ agg.summary.region }}
+{% if sorted_dates|length>0 %}
+ on {{ sorted_dates[0]|string }}{% if sorted_dates|length>1 %} to {{ sorted_dates[-1]|string }}{% endif %}
 {% endif %}
 </td>
+<td>{{ agg.summary.inspection_type or 'NA' }}</td>
+<td>{{ agg.summary.region or 'NA' }}</td>
+<td>{{ agg.summary.district or 'NA' }}</td>
 
-    <td>{{ agg.summary.inspection_type or 'NA' }}</td>
-    <td>{{ agg.summary.region or 'NA' }}</td>
-    <td>{{ agg.summary.district or 'NA' }}</td>
+<!-- View Summary Modal -->
+<td>
+<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal{{ loop.index }}">View</button>
 
-    <!-- View Details Modal -->
-    <td>
-      <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal{{ loop.index }}">
-        View
-      </button>
-      
-
-  <div class="modal fade" id="modal{{ loop.index }}" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">
-    Summary of {{ agg.summary.inspection_type }} conducted in {{ agg.summary.district }} - {{ agg.summary.region }}
-    {% if agg.dates %}
-        {% set sorted_dates = agg.dates | sort %}
-        on {{ sorted_dates[0].strftime('%Y-%m-%d') if sorted_dates[0] else 'NA' }}
-        {% if sorted_dates|length > 1 %}
-            to {{ sorted_dates[-1].strftime('%Y-%m-%d') if sorted_dates[-1] else 'NA' }}
-        {% endif %}
-    {% endif %}
-</h5>
-
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-
-              <!-- Premises Data -->
-              {% if agg.premises_data %}
-<h6 class="bg-light p-2 rounded mt-3"><strong>Premises Inspected</strong></h6>
-
-{% set total_premises = agg.premises_data.values() | sum %}
-<p>During this inspection, a total of <strong>{{ total_premises }}</strong> premises were inspected as follows:</p>
-
-<table class="min-table">
-  <thead><tr><th>Premise Type</th><th>Count</th></tr></thead>
-  <tbody>
-    {% for k,v in agg.premises_data.items() %}
-        {% if v != 0 %}
-        <tr><td>{{ k }}</td><td>{{ v }}</td></tr>
-        {% endif %}
-    {% endfor %}
-  </tbody>
-</table>
+<div class="modal fade" id="modal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+<div class="modal-dialog modal-xl modal-dialog-scrollable">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">
+Summary of {{ agg.summary.inspection_type }} conducted in {{ agg.summary.district }} - {{ agg.summary.region }}
+{% if sorted_dates|length>0 %}
+ on {{ sorted_dates[0]|string }}{% if sorted_dates|length>1 %} to {{ sorted_dates[-1]|string }}{% endif %}
 {% endif %}
+</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
 
+<!-- Premises Data -->
+<!-- Premises Data -->
+{% if agg.premises_data %}
+  {% set premise_totals = {} %}
+  {% for ptype, count in agg.premises_data.items() %}
+    {% set cleaned = ptype.strip().lower() %}
+    {% if premise_totals[cleaned] is defined %}
+      {% set _ = premise_totals.update({cleaned: premise_totals[cleaned] + count}) %}
+    {% else %}
+      {% set _ = premise_totals.update({cleaned: count}) %}
+    {% endif %}
+  {% endfor %}
 
+  {% set total_premises = premise_totals.values() | sum %}
 
-             <!-- Observations Identified -->
-{% set defect_name_map = {
-    "gotMedicines": "Premises Found with GOT Medicines",
-    "GOT Medicines": "Premises Found with GOT Medicines",
+  <h6 class="bg-light p-2 rounded mt-3"><strong>Premises Inspected</strong></h6>
+  <p>
+    During this inspection, a total of <strong>{{ total_premises }}</strong> premises were inspected, with a breakdown as follows:
+  </p>
 
-    "unregisteredMedicines": "Premises Found with Unregistered Medicines",
-    "Unregistered Medicines": "Premises Found with Unregistered Medicines",
-
-    "noQualifiedPersonnel": "Premises With No Qualified Personnel",
-    "No Qualified Personnel": "Premises With No Qualified Personnel",
-
-    "minimalRequirements": "Premises Do Not Meet Minimal General Requirements",
-    "Premise Meets Minimal Requirements": "Premises Do Not Meet Minimal General Requirements",
-
-    "unregisteredPremise": "Unregistered Premises",
-    "Unregistered Premise": "Unregistered Premises",
-
-    "medicalPractices": "Medical Practices Violation Premises",
-    "Medical Practices": "Medical Practices Violation Premises",
-
-    "DLDM Not Allowed Medicines": "Premises with DLDM Not Allowed Medicines"
-} %}
-
-{% set all_observations = {} %}
-{% for premise_type, obs_data in agg.defects_data.items() %}
-    {% for obs_key, obs_count in obs_data.items() %}
-        {% if obs_count != 0 %}
-            {% if all_observations[obs_key] is not defined %}
-                {% set _ = all_observations.update({obs_key: {'total': obs_count, 'breakdown': {premise_type: obs_count}}}) %}
-            {% else %}
-                {% set existing = all_observations[obs_key] %}
-                {% set new_breakdown = existing.breakdown.copy() %}
-                {% if new_breakdown[premise_type] is defined %}
-                    {% set _ = new_breakdown.update({premise_type: new_breakdown[premise_type] + obs_count}) %}
-                {% else %}
-                    {% set _ = new_breakdown.update({premise_type: obs_count}) %}
-                {% endif %}
-                {% set _ = all_observations.update({obs_key: {'total': existing.total + obs_count, 'breakdown': new_breakdown}}) %}
-            {% endif %}
-        {% endif %}
-    {% endfor %}
-{% endfor %}
-
-{% if all_observations|length > 0 %}
-<h6 class="bg-light p-2 rounded mt-3"><strong>Observations Identified</strong></h6>
-<table class="min-table">
+  <table class="min-table">
     <thead>
-        <tr><th>Observation</th><th>Total Count</th><th>Breakdown by Premise</th></tr>
+      <tr><th>Premise Type</th><th>Count</th></tr>
     </thead>
     <tbody>
-        {% for obs_key, data in all_observations.items() %}
-        <tr>
-            <td>{{ defect_name_map.get(obs_key, obs_key) }}</td>
-            <td>{{ data.total }}</td>
-            <td>
-                {% for prem, count in data.breakdown.items() %}
-                    {{ prem }} {{ count }}{% if not loop.last %}, {% endif %}
-                {% endfor %}
-            </td>
-        </tr>
-        {% endfor %}
+    {% for k, v in premise_totals.items() if v > 0 %}
+      <tr><td>{{ k|title }}</td><td>{{ v }}</td></tr>
+    {% endfor %}
     </tbody>
-</table>
+  </table>
 {% endif %}
 
-<!-- Actions Taken as simple bullets -->
-{% set action_taken_map = {
-    "Premises Found with GOT Medicines": "The GOT Medicines / Medical Devices were confiscated. The owners were instructed to pay Disposal Fee + 2/3*Tsh 500,000/= as fine liable for selling GOT Products in private Facility. Likewise, they were given warning.",
-    "Premises Found with Unregistered Medicines": "The Unregistered Medicines / Medical Devices were confiscated. The owners were instructed to pay Disposal Fee + 2% FOB of total product value + 2/3*Tsh 500,000/= as fine liable for selling Unregistered Products in their facilities.",
-    "Premises With No Qualified Personnel": "For the premises with no Qualified personnel, the owners were instructed to hire qualified staff before proceeding to provide services.",
-    "Premises Do Not Meet Minimal General Requirements": "For Facilities which do not meet good GMP e.g. hygiene and premise air circulation, they were advised to upgrade to meet regulatory standards.",
-    "Unregistered Premises": "For Unregistered Premises, operations were halted until registration is completed.",
-    "Medical Practices Violation Premises": "For Premises found conducting Medical practices against the law, strict warning issued; follow-up required.",
-    "Premises with DLDM Not Allowed Medicines": "The DLDM NOT ALLOWED MEDICINES were confiscated and owners were instructed to pay Disposal fee i.e. 25% of total value of product confiscated. The owners were given the list of DLDM allowed medicines therefore to strictly rely on it."
+
+<!-- Observations -->
+{# Canonical mapping: all variants mapped to unified keys #}
+{% set canonical_key_map = {
+    'GOT Medicines': 'got_medicines',
+    'gotMedicines': 'got_medicines',
+    'Premises Found with GOT Medicines': 'got_medicines',
+
+    'Premise Meets Minimal Requirements': 'minimal_requirements',
+    'minimalRequirements': 'minimal_requirements',
+    'Premises Do Not Meet Minimal General Requirements(GSP)': 'minimal_requirements',
+
+    'Unregistered Premises': 'unregistered_premises',
+    'unregisteredPremise': 'unregistered_premises',
+
+    'Unregistered Medicines': 'unregistered_medicines',
+    'unregisteredMedicines': 'unregistered_medicines',
+    'Premises Found with Unregistered Medicine': 'unregistered_medicines',
+
+    'No Qualified Personnel': 'no_qualified_personnel',
+    'noQualifiedPersonnel': 'no_qualified_personnel',
+    'Premises With No Qualified Personnel': 'no_qualified_personnel',
+
+    'dldmNotAllowed': 'dldm_not_allowed',
+    'DLDM Not Allowed Medicines': 'dldm_not_allowed',
+    'Premise Found with DLDM NOT ALLOWED MEDICINES': 'dldm_not_allowed',
+
+    'medicalPractices': 'medical_practices',
+    'Medical Practices': 'medical_practices',
+    'Medical Practices Violation Premises': 'medical_practices'
 } %}
 
+{# Display labels for the canonical keys #}
+{% set label_map = {
+    'got_medicines': 'Premises Found with GOT Medicines',
+    'minimal_requirements': 'Premises Do Not Meet Minimal General Requirements(GSP)',
+    'unregistered_premises': 'Unregistered Premises',
+    'unregistered_medicines': 'Premises Found with Unregistered Medicine',
+    'no_qualified_personnel': 'Premises With No Qualified Personnel',
+    'dldm_not_allowed': 'Premise Found with DLDM NOT ALLOWED MEDICINES',
+    'medical_practices': 'Medical Practices Violation Premises'
+} %}
+
+{# Aggregate observations across all premises #}
+{% set all_observations = {} %}
+
+{% for ptype, defects in agg.defects_data.items() %}
+  {% for key, count in defects.items() %}
+    {% if count > 0 %}
+      {% set canonical_key = canonical_key_map.get(key, key) %}
+      {% set label = label_map.get(canonical_key, canonical_key) %}
+      {% if all_observations[canonical_key] is not defined %}
+        {% set _ = all_observations.update({
+          canonical_key: {
+            'label': label,
+            'total': count,
+            'breakdown': {ptype: count}
+          }
+        }) %}
+      {% else %}
+        {% set existing = all_observations[canonical_key] %}
+        {% set new_breakdown = existing.breakdown.copy() %}
+        {% set _ = new_breakdown.update({
+          ptype: new_breakdown.get(ptype, 0) + count
+        }) %}
+        {% set _ = all_observations.update({
+          canonical_key: {
+            'label': label,
+            'total': existing.total + count,
+            'breakdown': new_breakdown
+          }
+        }) %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+
+{# Output the Observations Table #}
+{% if all_observations|length > 0 %}
+  <h6 class="bg-light p-2 rounded mt-3"><strong>Observations Identified</strong></h6>
+  <p>The following observations were identified during inspection:</p>
+  <table class="min-table">
+    <thead>
+      <tr>
+        <th>Observation</th>
+        <th>Total</th>
+        <th>Breakdown by Premise</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for key, data in all_observations.items() %}
+        <tr>
+          <td>{{ data.label }}</td>
+          <td>{{ data.total }}</td>
+          <td>
+            {% for ptype, count in data.breakdown.items() %}
+              {{ ptype }} {{ count }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+
+
+<!-- Actions Taken -->
+<!-- Actions Taken -->
 <h6 class="bg-light p-2 rounded mt-3"><strong>Actions Taken</strong></h6>
 <ul>
-    {% for obs_key, data in all_observations.items() %}
-        <li>{{ action_taken_map.get(defect_name_map.get(obs_key, obs_key), 'NA') }}</li>
-    {% endfor %}
-    <li>Education was given to all staffs/owners of premise inspected to ensure that they strictly abide to the Laws, Rules and Regulation of Authority.</li>
+{% set action_map = {
+  'got_medicines': 'The GOT Medicines / Medical Devices were confiscated. The owners were instructed to pay Disposal Fee + 2/3*Tsh 500,000/= as fine liable for selling GOT Products in private Facility. Likewise, they were given warning.',
+  'unregistered_medicines': 'The Unregistered Medicines / Medical Devices were confiscated. The owners were instructed to pay Disposal Fee + 2% FOB of total product value + 2/3*Tsh 500,000/= as fine liable for selling Unregistered Products in their facilities.',
+  'no_qualified_personnel': 'For the premises with no Qualified personnel, the owners were instructed to hire qualified staff before proceeding to provide services.',
+  'minimal_requirements': 'For Facilities which do not meet good GMP e.g. hygiene and premise air circulation, they were advised to upgrade to meet regulatory standards.',
+  'unregistered_premises': 'For Unregistered Premises, operations were halted until registration is completed.',
+  'dldm_not_allowed': 'DLDM NOT ALLOWED MEDICINES were confiscated and ownwers were instructed to pay 25% of total product value for disposal.',
+  'medical_practices': 'For Premises found conducting Medical practices against the law, strict warning issued; follow-up required.'
+} %}
+
+{% set listed = [] %}
+{% for key in all_observations.keys() %}
+  {% if key in action_map and key not in listed %}
+    <li>{{ action_map[key] }}</li>
+    {% set _ = listed.append(key) %}
+  {% endif %}
+{% endfor %}
+<li>Education was given to all staffs/owners of premise inspected to ensure that they strictly abide to the Laws, Rules and Regulation of Authority.</li>
 </ul>
 
 
-              <!-- Recall Products -->
-{% set merged_products = {} %}
-{% for recall_set in agg.recall_products %}
-    {% if recall_set is defined %}
-        {% for category_name, cat_data in recall_set.items() %}
-            {% if cat_data.products_found is defined %}
-                {% for item in cat_data.products_found %}
-                    {% set product = (recall_set.recalled_products[item.product_index] if recall_set.recalled_products is defined and item.product_index < recall_set.recalled_products|length else item) %}
-                    {% set batch = (product.batches[item.batch_index] if product.batches is defined and item.batch_index < product.batches|length else {
-                        'batchNumber': item.get('batchNumber','N/A'),
-                        'manufactureDate': item.get('manufactureDate','N/A'),
-                        'expiryDate': item.get('expiryDate','N/A')
-                    }) %}
-                    {% set key = product.brandName ~ '|' ~ product.genericName ~ '|' ~ product.manufacturer ~ '|' ~ batch.batchNumber %}
-                    {% if merged_products[key] is not defined %}
-                        {% set _ = merged_products.update({key:{
-                            'brandName': product.brandName,
-                            'genericName': product.genericName,
-                            'manufacturer': product.manufacturer,
-                            'uom': product.uom,
-                            'batches':[batch],
-                            'premises': item.get('premises',0),
-                            'premises_breakdown': {category_name: item.get('premises',0)},
-                            'value': item.get('value',0),
-                            'quantity': item.get('quantity',0)
-                        }}) %}
-                    {% else %}
-                        {% set existing = merged_products[key] %}
-                        {% set new_breakdown = existing.premises_breakdown.copy() %}
-                        {% if new_breakdown[category_name] is defined %}
-                            {% set _ = new_breakdown.update({category_name: new_breakdown[category_name] + item.get('premises',0)}) %}
-                        {% else %}
-                            {% set _ = new_breakdown.update({category_name: item.get('premises',0)}) %}
-                        {% endif %}
-                        {% set _ = merged_products.update({key:{
-                            'brandName': existing.brandName,
-                            'genericName': existing.genericName,
-                            'manufacturer': existing.manufacturer,
-                            'uom': existing.uom,
-                            'batches': existing.batches,
-                            'premises': existing.premises + item.get('premises',0),
-                            'premises_breakdown': new_breakdown,
-                            'value': existing.value + item.get('value',0),
-                            'quantity': existing.quantity + item.get('quantity',0)
-                        }}) %}
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-        {% endfor %}
-    {% endif %}
-{% endfor %}
 
-{% if merged_products|length > 0 %}
-<h6 class="bg-light p-2 rounded mt-3"><strong>Recalled Products</strong></h6>
-<table class="min-table">
-  <thead>
-    <tr>
-      <th>SNO</th><th>Brand Name</th><th>Generic Name</th><th>Manufacturer</th>
-      <th>Batch</th><th>MFD</th><th>EXP</th><th>UOM</th>
-      <th>Premises with Recalled Product</th><th>Value (Tsh)</th><th>Quantity</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for key, product in merged_products.items() %}
-    <tr>
-      <td>{{ loop.index }}</td>
-      <td>{{ product.brandName }}</td>
-      <td>{{ product.genericName }}</td>
-      <td>{{ product.manufacturer }}</td>
-      <td>{% for b in product.batches %}{{ b.batchNumber }}<br>{% endfor %}</td>
-      <td>{% for b in product.batches %}{{ b.manufactureDate }}<br>{% endfor %}</td>
-      <td>{% for b in product.batches %}{{ b.expiryDate }}<br>{% endfor %}</td>
-      <td>{{ product.uom }}</td>
-      <td>{{ product.premises }} (
-          {% for cat, count in product.premises_breakdown.items() %}
-          {{ cat }} {{ count }}{% if not loop.last %}, {% endif %}
-          {% endfor %})
-      </td>
-      <td>{{ product.value }}</td>
-      <td>{{ product.quantity }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endif %}
+<!-- Recalled Products --> <h6 class="bg-light p-2 rounded mt-3"><strong>Recalled Products</strong></h6> {% set merged_products = {} %} {% for recall_set in agg.recall_products %} {% if recall_set is defined %} {% set all_products = recall_set.get('recalled_products', []) %} {% for facility_type, cat_data in recall_set.items() %} {% if facility_type != "recalled_products" and cat_data.products_found is defined %} {% for item in cat_data.products_found %} {# Check if item uses indexed format or embedded format #} {% if item.product_index is defined and item.batch_index is defined and all_products %} {% set product = all_products[item.product_index] %} {% set batch = product.batches[item.batch_index] %} {% else %} {% set product = item %} {% set batch = item.batches[0] %} {% endif %} {% set key = product.brandName ~ '|' ~ product.genericName ~ '|' ~ product.manufacturer ~ '|' ~ batch.batchNumber ~ '|' ~ product.reason %} {% if merged_products[key] is not defined %} {% set _ = merged_products.update({key: { 'brandName': product.brandName, 'genericName': product.genericName, 'manufacturer': product.manufacturer, 'batchNumber': batch.batchNumber, 'mfd': batch.manufactureDate, 'exp': batch.expiryDate, 'reason': product.reason, 'value': item.value, 'quantity': item.quantity, 'premises_total': item.premises, 'premises_breakdown': {facility_type: item.premises} }}) %} {% else %} {% set existing = merged_products[key] %} {% set updated_breakdown = existing.premises_breakdown.copy() %} {% set _ = updated_breakdown.update({ facility_type: updated_breakdown.get(facility_type, 0) + item.premises }) %} {% set _ = merged_products.update({key: { 'brandName': existing.brandName, 'genericName': existing.genericName, 'manufacturer': existing.manufacturer, 'batchNumber': existing.batchNumber, 'mfd': existing.mfd, 'exp': existing.exp, 'reason': existing.reason, 'value': existing.value + item.value, 'quantity': existing.quantity + item.quantity, 'premises_total': existing.premises_total + item.premises, 'premises_breakdown': updated_breakdown }}) %} {% endif %} {% endfor %} {% endif %} {% endfor %} {% endif %} {% endfor %} {% if merged_products|length > 0 %} <table class="min-table"> <thead> <tr> <th>S/No</th> <th>Brand</th> <th>Generic</th> <th>Manufacturer</th> <th>Batch</th> <th>MFD</th> <th>EXP</th> <th>Reason</th> <th>Premises</th> <th>Value (Tsh)</th> <th>Quantity</th> </tr> </thead> <tbody> {% for k, p in merged_products.items() %} <tr> <td>{{ loop.index }}</td> <td>{{ p.brandName }}</td> <td>{{ p.genericName }}</td> <td>{{ p.manufacturer }}</td> <td>{{ p.batchNumber }}</td> <td>{{ p.mfd }}</td> <td>{{ p.exp }}</td> <td>{{ p.reason }}</td> <td> {{ p.premises_total }} ( {% for ft, val in p.premises_breakdown.items() %} {{ ft }} {{ val }}{% if not loop.last %}, {% endif %} {% endfor %} ) </td> <td>{{ p.value }}</td> <td>{{ p.quantity }}</td> </tr> {% endfor %} </tbody> <tfoot> <tr> <th colspan="9" class="text-end">Total</th> <th>{{ merged_products.values() | map(attribute='value') | sum }}</th> <th>{{ merged_products.values() | map(attribute='quantity') | sum }}</th> </tr> </tfoot> </table> {% else %} <p>No recalled products.</p> {% endif %}
 
 
-              <!-- Charges -->
+
+<!-- Charges -->
 <h6 class="bg-light p-2 rounded mt-3"><strong>Charges & Confiscated Values</strong></h6>
 
-{% set total_charges = agg.charges_data.total | default(0) %}
 {% set got_value = agg.charges_data.got_value | default(0) %}
 {% set unregistered_value = agg.charges_data.unregistered_value | default(0) %}
 {% set dldm_value = agg.charges_data.dldm_value | default(0) %}
-{% set confiscated_total = got_value + unregistered_value + dldm_value %}
+{% set total_product_worth = got_value + unregistered_value + dldm_value %}
+{% set total_charges = agg.charges_data.total | default(0) %}
 
 <ul>
-  <li>During this inspection, a total charges of <strong>{{ total_charges }}</strong> Tsh was collected due to various offences committed.</li>
-  <li>Also, products worth <strong>{{ confiscated_total }}</strong> Tsh were confiscated, with the breakdown as follows:</li>
+  <li>
+    During this inspection, a total of <strong>{{ total_charges }} Tsh</strong> was collected due to various offences committed.
+  </li>
+  <li>
+    Also, products worth <strong>{{ total_product_worth }} Tsh</strong> were confiscated as the following table shows:
+  </li>
 </ul>
 
-{% set charge_name_map = {
-    'got_value': 'Value of GOT Products',
-    'unregistered_value': 'Value of Unregistered Products',
-    'dldm_value': 'Value of DLDM NOT ALLOWED MEDICINES'
-} %}
-
-{% if agg.charges_data %}
 <table class="min-table">
   <thead>
     <tr>
-      <th>Charge Type / Confiscation</th>
+      <th>Type</th>
       <th>Value (Tsh)</th>
     </tr>
   </thead>
   <tbody>
-    {% for k in ['got_value','unregistered_value','dldm_value'] %}
-      <tr>
-        <td>{{ charge_name_map[k] }}</td>
-        <td>{{ agg.charges_data[k] | default(0) }}</td>
-      </tr>
-    {% endfor %}
+    <tr>
+      <td>Value of GOT Products</td>
+      <td>{{ got_value }}</td>
+    </tr>
+    <tr>
+      <td>Value of Unregistered Products</td>
+      <td>{{ unregistered_value }}</td>
+    </tr>
+    <tr>
+      <td>Value of DLDM Not Allowed Medicines</td>
+      <td>{{ dldm_value }}</td>
+    </tr>
   </tbody>
 </table>
-{% else %}NA{% endif %}
 
 
-            </div>
-            <div class="modal-footer">
-  {% if not pdf_mode %}
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-    <button type="button" class="btn btn-danger btn-sm" onclick="exportModalToPDF('{{ loop.index }}')">
-      <i class="bi bi-file-earmark-pdf"></i> Export PDF
-    </button>
-  {% endif %}
 </div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+</div>
+</div>
+</div>
+</div>
+</td>
 
-          </div>
-        </div>
-      </div>
-    </td>
-
-    <!-- Official Report Column -->
-
-    <td>
-  <div id="uploadStatus{{ loop.index }}" style="display:flex; align-items:center; gap:5px;">
+<!-- Official Report Upload/Download Column -->
+<td>
+  <!-- Button Group for Download + Edit -->
+  <div id="uploadStatus{{ loop.index }}" class="btn-group" role="group">
     {% if agg.summary.official_report %}
-      <!-- File exists: Download + pen icon inline -->
-      <a href="{{ url_for('download_report', filename=agg.summary.official_report) }}" class="btn btn-success btn-sm" download>Download</a>
-      <button type="button" class="btn btn-outline-secondary btn-sm" title="Replace File" onclick="document.getElementById('fileInput{{ loop.index }}').click();">
+      <a href="{{ url_for('download_report', filename=agg.summary.official_report) }}"
+         class="btn btn-success btn-sm"
+         download>
+        Download
+      </a>
+      <button type="button"
+              class="btn btn-outline-secondary btn-sm"
+              onclick="document.getElementById('fileInput{{ loop.index }}').click();">
         <i class="bi bi-pencil"></i>
       </button>
     {% else %}
-      <!-- No file: Upload -->
-      <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileInput{{ loop.index }}').click();">Upload</button>
+      <button type="button"
+              class="btn btn-primary btn-sm"
+              onclick="document.getElementById('fileInput{{ loop.index }}').click();">
+        Upload
+      </button>
     {% endif %}
   </div>
 
-  <!-- Hidden file input -->
-  <form id="uploadForm{{ loop.index }}" enctype="multipart/form-data" style="display:inline-block;">
-    <input type="file" name="official_report" style="display:none;" id="fileInput{{ loop.index }}">
+  <!-- Hidden File Input Form -->
+  <form id="uploadForm{{ loop.index }}" enctype="multipart/form-data" style="display:none;">
+    <input type="file" name="official_report" id="fileInput{{ loop.index }}">
   </form>
 
+  <!-- Upload Script -->
   <script>
-  document.getElementById('fileInput{{ loop.index }}').addEventListener('change', function() {
-    let fileInput = this;
-    let formData = new FormData();
-    formData.append('official_report', fileInput.files[0], fileInput.files[0].name);
+    document.getElementById('fileInput{{ loop.index }}').addEventListener('change', function () {
+      const file = this.files[0];
+      if (!file) return;
 
-    fetch('{{ url_for("upload_report", report_id=agg.summary.id) }}', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        let statusDiv = document.getElementById('uploadStatus{{ loop.index }}');
-        statusDiv.innerHTML = `
-          <a href="${data.download_url}" class="btn btn-success btn-sm" download>Download</a>
-          <button type="button" class="btn btn-outline-secondary btn-sm" title="Replace File" onclick="document.getElementById('fileInput{{ loop.index }}').click();">
-            <i class="bi bi-pencil"></i>
-          </button>
-        `;
-      } else {
-        alert('Upload failed: ' + (data.error || 'Unknown error'));
+      // Optional: Check file size before upload (max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('File is too large. Max size is 5MB.');
+        return;
       }
-    })
-    .catch(err => alert('Upload error: ' + err));
-  });
+
+      const formData = new FormData();
+      formData.append('official_report', file, file.name);
+
+      fetch('{{ url_for("upload_report", report_id=agg.summary.id) }}', {
+        method: 'POST',
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('uploadStatus{{ loop.index }}').innerHTML = `
+              <div class="btn-group" role="group">
+                <a href="${data.download_url}" class="btn btn-success btn-sm" download>Download</a>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('fileInput{{ loop.index }}').click();">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </div>
+            `;
+          } else {
+            alert('Upload failed: ' + (data.error || 'Unknown error'));
+          }
+        })
+        .catch(err => {
+          alert('Upload error: ' + err);
+        });
+    });
   </script>
 </td>
 
-    <!-- Action Column: Trash Icon -->
-    <td>
-      <button type="button" class="btn btn-danger btn-sm trash-btn" 
-              data-summary-id="{{ agg.summary.id }}" data-row-index="{{ loop.index }}" 
-              title="Delete Inspection">
-        <i class="bi bi-trash"></i>
-      </button>
-    </td>
+
+<!-- Action Column -->
+<td>
+<button type="button" class="btn btn-danger btn-sm trash-btn" data-summary-id="{{ agg.summary.id }}" data-row-index="{{ loop.index }}">
+<i class="bi bi-trash"></i>
+</button>
+</td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
+
 {% else %}
 <p>No inspections recorded.</p>
 {% endif %}
-</div>
 
-<!-- JS -->
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-document.querySelectorAll('.trash-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    const summaryId = this.dataset.summaryId;
-    const rowIndex = this.dataset.rowIndex;
-
-    if (!confirm('Are you sure you want to delete this inspection and all its data?')) return;
-
-    fetch(`/delete_inspection/${summaryId}`, { method: 'DELETE' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          const row = document.querySelector('table tbody tr:nth-child(' + rowIndex + ')');
-          if (row) row.remove();
-          alert('Inspection deleted successfully.');
-        } else {
-          alert('Deletion failed: ' + (data.error || 'Unknown error'));
-        }
-      })
-      .catch(err => alert('Error deleting inspection: ' + err));
-  });
-});
-</script>
-
-<script>
+// Filter logic
 const inspectionTypeSelect = document.getElementById('inspectionType');
 const regionSelect = document.getElementById('region');
 const districtSelect = document.getElementById('district');
 const resultBadge = document.getElementById("resultCount");
 
-// Function to filter rows
-function filterTable() {
+function filterTable(){
   const inspType = inspectionTypeSelect.value.toLowerCase();
   const region = regionSelect.value.toLowerCase();
   const district = districtSelect.value.toLowerCase();
-
   const rows = document.querySelectorAll('table tbody tr');
-
-  rows.forEach(row => {
-    const rowType = row.cells[2]?.textContent.toLowerCase() || "";
-    const rowRegion = row.cells[3]?.textContent.toLowerCase() || "";
-    const rowDistrict = row.cells[4]?.textContent.toLowerCase() || "";
-
-    row.style.display = (
-      (inspType === "" || rowType === inspType) &&
-      (region === "" || rowRegion === region) &&
-      (district === "" || rowDistrict === district)
-    ) ? "" : "none";
+  rows.forEach(row=>{
+    const rowType = row.cells[2]?.textContent.toLowerCase()||"";
+    const rowRegion = row.cells[3]?.textContent.toLowerCase()||"";
+    const rowDistrict = row.cells[4]?.textContent.toLowerCase()||"";
+    row.style.display=( (inspType===""||rowType===inspType) && (region===""||rowRegion===region) && (district===""||rowDistrict===district) )?"":"none";
   });
-
-  // Count visible rows ONLY
-  const visibleCount = Array.from(rows).filter(r => r.style.display !== "none").length;
-
-  // Show badge only if a filter is applied
-  if (inspType || region || district) {
-    resultBadge.style.display = "inline-block"; // show
-    resultBadge.textContent = `Total Results: ${visibleCount}`;
-    resultBadge.classList.remove("bg-primary", "bg-success", "bg-danger");
-    resultBadge.classList.add(visibleCount === 0 ? "bg-danger" : "bg-success");
-  } else {
-    resultBadge.style.display = "none"; // hide
-  }
+  const visibleCount = Array.from(rows).filter(r=>r.style.display!=="none").length;
+  if(inspType||region||district){
+    resultBadge.style.display="inline-block";
+    resultBadge.textContent=`Total Results: ${visibleCount}`;
+    resultBadge.classList.remove("bg-primary","bg-success","bg-danger");
+    resultBadge.classList.add(visibleCount===0?"bg-danger":"bg-success");
+  }else{resultBadge.style.display="none";}
 }
 
-// Show/hide districts based on selected region
-regionSelect.addEventListener('change', function() {
-  const selectedRegion = this.value.toLowerCase();
-  districtSelect.querySelectorAll('option').forEach(opt => {
-    if (opt.value === "" || opt.dataset.region.toLowerCase() === selectedRegion) {
-      opt.style.display = "";
-    } else {
-      opt.style.display = "none";
-    }
+regionSelect.addEventListener('change',function(){
+  const sel=this.value.toLowerCase();
+  districtSelect.querySelectorAll('option').forEach(opt=>{
+    if(opt.value===""||opt.dataset.region.toLowerCase()===sel){opt.style.display="";}else{opt.style.display="none";}
   });
-  districtSelect.value = "";
+  districtSelect.value="";filterTable();
+});
+inspectionTypeSelect.addEventListener('change',filterTable);
+districtSelect.addEventListener('change',filterTable);
+document.getElementById('resetFilter').addEventListener('click',function(){
+  inspectionTypeSelect.value="";regionSelect.value="";districtSelect.value="";
+  districtSelect.querySelectorAll('option').forEach(opt=>opt.style.display="");
   filterTable();
 });
-
-// Filter on dropdown change
-inspectionTypeSelect.addEventListener('change', filterTable);
-districtSelect.addEventListener('change', filterTable);
-
-// Reset filters
-document.getElementById('resetFilter').addEventListener('click', function() {
-  inspectionTypeSelect.value = "";
-  regionSelect.value = "";
-  districtSelect.value = "";
-
-  // Make sure all district options are visible again
-  districtSelect.querySelectorAll('option').forEach(opt => opt.style.display = "");
-
-  filterTable();
-});
-
-// Initialize counter on page load
 filterTable();
 
-
+// Delete inspection
+document.querySelectorAll('.trash-btn').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    const summaryId=this.dataset.summaryId;
+    const rowIndex=this.dataset.rowIndex;
+    if(!confirm('Delete this inspection and all its data?')) return;
+    fetch(`/delete_inspection/${summaryId}`,{method:'DELETE'}).then(res=>res.json()).then(data=>{
+      if(data.success){const row=document.querySelector('table tbody tr:nth-child('+rowIndex+')');if(row) row.remove();alert('Inspection deleted.');}else{alert('Failed: '+(data.error||'Unknown'));}
+    }).catch(err=>alert('Error: '+err));
+  });
+});
 </script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script>
-function exportModalToPDF(index) {
-    const modalContent = document.querySelector('#modal' + index + ' .modal-content');
-    const footer = modalContent.querySelector('.modal-footer');
-    if (footer) footer.style.display = 'none';  // hide buttons
-
-    html2pdf().set({
-        margin: 0.2,
-        filename: 'inspection_summary.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    }).from(modalContent).save().finally(() => {
-        if (footer) footer.style.display = '';  // show again
-    });
-}
-
-</script>
-
-
 </body>
 </html>
