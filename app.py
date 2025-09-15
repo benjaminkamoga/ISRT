@@ -13,7 +13,7 @@ from flask import current_app
 from werkzeug.security import generate_password_hash
 import psycopg2
 from flask import Flask, request, send_file, redirect, url_for, flash
-import psycopg2
+
 from dotenv import load_dotenv
 from flask import current_app, send_from_directory
 
