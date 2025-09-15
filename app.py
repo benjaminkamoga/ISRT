@@ -1,30 +1,35 @@
-import os, json, uuid
+import os
+import json
+import uuid
 from datetime import datetime, date
 from collections import defaultdict
 from flask import current_app
 import sqlite3
-
+import logging  # <-- add this
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from flask_sqlalchemy import SQLAlchemy
-
 from models import db, User, PremiseCategory, Premise, InspectionSummary, Inspection, TimeBasedSummary
 from utils import update_time_based_summary
-import logging
 
 
 # --------------------------
-# Load .env for local development
+# Load environment variables
 # --------------------------
-load_dotenv()  # optional for local testing
+load_dotenv()  # load .env
+
+SECRET_KEY = os.getenv("SECRET_KEY", "dev_secret_key")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 # --------------------------
 # Initialize Flask
 # --------------------------
 app = Flask(__name__)
+app.secret_key = SECRET_KEY
 
 # --------------------------
 # Configure logging
@@ -32,68 +37,42 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # --------------------------
-# Flask session secret
+# Initialize Supabase
 # --------------------------
-app.secret_key = os.getenv("SECRET_KEY", "dev_secret_key")
-
-# --------------------------
-# Database setup
-# --------------------------
-DATABASE_URL = os.getenv("DATABASE_URL")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-db = SQLAlchemy()  # Initialize SQLAlchemy
-USE_LOCAL_DB = False
-
-# Try local SQLAlchemy first
-if DATABASE_URL:
-    try:
-        app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-        db.init_app(app)
-        with app.app_context():
-            db.create_all()
-        logging.info("Connected to SQLAlchemy database successfully.")
-        USE_LOCAL_DB = True
-    except Exception as e:
-        logging.error("Failed to connect to SQLAlchemy database: %s", e, exc_info=True)
-
-# Setup Supabase client if local DB is not available
-supabase: Client = None
-if not USE_LOCAL_DB and SUPABASE_URL and SUPABASE_KEY:
-    try:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        logging.info("Connected to Supabase successfully.")
-    except Exception as e:
-        logging.error("Failed to connect to Supabase: %s", e, exc_info=True)
-
-# --------------------------
-# SQLAlchemy Models
-# --------------------------
-if USE_LOCAL_DB:
-    class User(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        name = db.Column(db.String(255), nullable=False)
+try:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    logging.info("Connected to Supabase successfully.")
+except Exception as e:
+    logging.error(f"Failed to connect to Supabase: {e}", exc_info=True)
+    supabase = None
 
 # --------------------------
 # Routes
-# --------------------------
-@app.route("/")
-def index():
+
+ 
+
+# Example: add a new user
+@app.route('/add_user', methods=['POST'])
+def add_user():
+    if supabase is None:
+        return {"error": "Supabase client not initialized"}, 500
+
+    username = request.form.get("username")
+    role = request.form.get("role")
+
+    if not username or not role:
+        flash("Username and role are required", "error")
+        return redirect(url_for("index"))
+
     try:
-        if USE_LOCAL_DB:
-            users = User.query.all()
-            data = [{"id": u.id, "name": u.name} for u in users]
-        elif supabase:
-            response = supabase.table("user").select("*").execute()
-            data = response.data
-        else:
-            data = {"error": "No database configured."}
-        return jsonify(data)
+        supabase.table("users").insert({"username": username, "role": role}).execute()
+        flash("User added successfully!", "success")
     except Exception as e:
-        logging.error("Error fetching users: %s", e, exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"Error adding user: {e}")
+        flash("Failed to add user", "error")
+
+    return redirect(url_for("index"))
+
 
 
 def update_inspections_json():
@@ -428,6 +407,7 @@ def format_title_case(text):
 @app.route('/')
 def home():
     return redirect(url_for('login'))
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
