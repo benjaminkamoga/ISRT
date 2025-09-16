@@ -314,6 +314,27 @@ table thead th {
 }
 
 
+/* Fullscreen overlay (stays put) */
+#mapModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.5); /* semi-transparent */
+  z-index: 1000;
+}
+
+/* Draggable content */
+#mapModalContent {
+  position: absolute; /* lets it move around inside overlay */
+  top: 100px;
+  left: 100px;
+  width: 600px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+
 
 </style>
 
@@ -598,7 +619,16 @@ table thead th {
 </div>
 
 
-<!-- Map Modal --> <div id="mapModal"> <div> <span class="close-btn" onclick="closeMapModal()">&times;</span> <iframe id="mapFrame" width="100%" height="400" style="border:0;" allowfullscreen loading="lazy"></iframe> </div> </div>
+<!-- Map Modal -->
+<div id="mapModal">
+  <div id="mapModalContent">
+    <div id="mapModalHeader" style="cursor:move; background:#eee; padding:5px; border-radius:6px 6px 0 0;">
+      <span class="close-btn" onclick="closeMapModal()">&times;</span>
+      Map
+    </div>
+    <iframe id="mapFrame" width="100%" height="400" style="border:0;" allowfullscreen loading="lazy"></iframe>
+  </div>
+</div>
 
 
 
@@ -674,6 +704,7 @@ table thead th {
     </table>
   </div>
 </div>
+
 
 
 
@@ -1574,48 +1605,53 @@ async function viewObservations(id) {
     const container = document.getElementById('observationsList');
     container.innerHTML = ''; // clear previous
 
+    // Map observation text to defect_values keys
+    const obsKeyMap = {
+      "GOT Medicines": "got",
+      "Unregistered Medicines": "unreg",
+      "DLDM Not Allowed Medicines": "dldmNotAllowed"
+    };
+
     obsList.forEach(o => {
-  const card = document.createElement('div');
-  card.style.border = '1px solid #ccc';
-  card.style.borderRadius = '6px';
-  card.style.padding = '10px 15px';
-  card.style.background = '#fdfdfd';
-  card.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+      const card = document.createElement('div');
+      card.style.border = '1px solid #ccc';
+      card.style.borderRadius = '6px';
+      card.style.padding = '10px 15px';
+      card.style.background = '#fdfdfd';
+      card.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
 
-  const heading = document.createElement('p');
-  heading.style.fontWeight = 'bold';
-  heading.style.marginBottom = '6px';
-  heading.textContent = `On ${o.date}, the premise was found with the following observations:`;
-  card.appendChild(heading);
+      const heading = document.createElement('p');
+      heading.style.fontWeight = 'bold';
+      heading.style.marginBottom = '6px';
+      heading.textContent = `On ${o.date}, the premise was found with the following observations:`;
+      card.appendChild(heading);
 
-  const ul = document.createElement('ul');
-  ul.style.margin = '0';
-  ul.style.paddingLeft = '20px';
+      const ul = document.createElement('ul');
+      ul.style.margin = '0';
+      ul.style.paddingLeft = '20px';
 
-  if (o.observations && o.observations.length > 0) {
-    o.observations.forEach((obs, idx) => {
-      const li = document.createElement('li');
-      let valueText = '';
+      if (o.observations && o.observations.length > 0) {
+        o.observations.forEach(obs => {
+          const li = document.createElement('li');
+          let valueText = '';
 
-      // Attach Tsh value if present
-      if (o.defect_values) {
-        if (obs === "GOT Medicines" && o.defect_values.got) valueText = ` (Tsh ${o.defect_values.got})`;
-        if (obs === "Unregistered Medicines" && o.defect_values.unreg) valueText = ` (Tsh ${o.defect_values.unreg})`;
-        if (obs === "DLDM NOT ALLOWED Medicines" && o.defect_values.dldmNotAllowed) valueText = ` (Tsh ${o.defect_values.dldmNotAllowed})`;
+          // Attach Tsh value if present
+          if (o.defect_values && obsKeyMap[obs] && o.defect_values[obsKeyMap[obs]]) {
+            valueText = ` (Tsh ${o.defect_values[obsKeyMap[obs]]})`;
+          }
+
+          li.textContent = obs + valueText;
+          ul.appendChild(li);
+        });
+      } else {
+        const li = document.createElement('li');
+        li.textContent = 'No observations recorded';
+        ul.appendChild(li);
       }
 
-      li.textContent = obs + valueText;
-      ul.appendChild(li);
+      card.appendChild(ul);
+      container.appendChild(card);
     });
-  } else {
-    const li = document.createElement('li');
-    li.textContent = 'No observations recorded';
-    ul.appendChild(li);
-  }
-
-  card.appendChild(ul);
-  container.appendChild(card);
-});
 
     document.getElementById('viewObservationsModal').style.display = 'block';
   } catch (e) {
@@ -1623,6 +1659,10 @@ async function viewObservations(id) {
     console.error(e);
   }
 }
+
+
+
+
 
 function closeViewObservationsModal() {
   document.getElementById('viewObservationsModal').style.display = 'none';
@@ -2023,6 +2063,33 @@ function closeMultiMapModal() {
 
 // Attach click event to button
 document.getElementById("showMapBtn").addEventListener("click", showPhysicalLocationMap);
+
+
+const mapModal = document.getElementById("mapModal");
+const mapModalHeader = document.getElementById("mapModalHeader");
+
+let offsetX = 0, offsetY = 0, isDragging = false;
+
+mapModalHeader.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  offsetX = e.clientX - mapModal.offsetLeft;
+  offsetY = e.clientY - mapModal.offsetTop;
+  document.body.style.userSelect = 'none'; // prevent text selection while dragging
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (isDragging) {
+    mapModal.style.left = (e.clientX - offsetX) + "px";
+    mapModal.style.top = (e.clientY - offsetY) + "px";
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+  document.body.style.userSelect = 'auto';
+});
+
+
 </script>
 
 

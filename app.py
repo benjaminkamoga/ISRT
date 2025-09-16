@@ -51,27 +51,6 @@ except Exception as e:
 
  
 
-# Example: add a new user
-@app.route('/add_user', methods=['POST'])
-def add_user():
-    if supabase is None:
-        return {"error": "Supabase client not initialized"}, 500
-
-    username = request.form.get("username")
-    role = request.form.get("role")
-
-    if not username or not role:
-        flash("Username and role are required", "error")
-        return redirect(url_for("index"))
-
-    try:
-        supabase.table("users").insert({"username": username, "role": role}).execute()
-        flash("User added successfully!", "success")
-    except Exception as e:
-        app.logger.error(f"Error adding user: {e}")
-        flash("Failed to add user", "error")
-
-    return redirect(url_for("index"))
 
 
 
@@ -106,15 +85,20 @@ def update_inspections_json():
     json_path = os.path.join(data_dir, "inspections_from_db.json")
 
     # ------------------------------
-    # Process inspections
+    # Initialize trackers
     # ------------------------------
     daily_counters = {}
     processed_inspections = []
+    main_batches_map = {}  # key = Overall ID, value = list of main recall batches
 
+    # ------------------------------
+    # Recall products helper
+    # ------------------------------
     def get_recall_products(insp):
         recall_products = []
         recall_data_raw = insp.get("recall_product_data", {})
 
+        # Safely parse recall_data as dict
         if isinstance(recall_data_raw, str):
             try:
                 recall_data = json.loads(recall_data_raw or "{}")
@@ -126,43 +110,68 @@ def update_inspections_json():
             recall_data = {}
 
         products_list = recall_data.get("recalled_products", [])
-        categories = [k for k in recall_data if k != "recalled_products"]
 
-        for cat_name in categories:
-            cat = recall_data.get(cat_name, {})
-            for item in cat.get("products_found", []):
-                product_index = item.get("product_index")
-                batch_index = item.get("batch_index")
+        # Only include categories that are actually inspected
+        inspected_premises = []
+        if insp.get("premises_data"):
+            inspected_premises = [k for k, v in insp["premises_data"].items() if v > 0]
 
-                product = {}
-                batch = {}
+        for premise in inspected_premises:
+            cat = recall_data.get(premise, {})
+            products_found = cat.get("products_found", [])
 
-                if product_index is not None and product_index < len(products_list):
-                    product = products_list[product_index]
-                    if batch_index is not None and batch_index < len(product.get("batches", [])):
-                        batch = product["batches"][batch_index]
+            if not products_found:
+                # Placeholder for each recalled product
+                for product in products_list:
+                    batch = product.get("batches", [{}])[0] if product.get("batches") else {}
+                    recall_products.append({
+                        "brandName": product.get("brandName", "N/A"),
+                        "genericName": product.get("genericName", "N/A"),
+                        "manufacturer": product.get("manufacturer", "N/A"),
+                        "uom": product.get("uom", "N/A"),
+                        "batchNumber": batch.get("batchNumber", "N/A"),
+                        "manufactureDate": batch.get("manufactureDate", "N/A"),
+                        "expiryDate": batch.get("expiryDate", "N/A"),
+                        "premises": 0,
+                        "category": premise,
+                        "value": 0,
+                        "quantity": 0,
+                        "reason": product.get("reason", "N/A")
+                    })
+            else:
+                # Actual products
+                for item in products_found:
+                    product_index = item.get("product_index")
+                    batch_index = item.get("batch_index")
 
-                batch_number = item.get("batchNumber", batch.get("batchNumber", "N/A"))
-                manufacture_date = item.get("manufactureDate", batch.get("manufactureDate", "N/A"))
-                expiry_date = item.get("expiryDate", batch.get("expiryDate", "N/A"))
+                    product = {}
+                    batch = {}
 
-                recall_products.append({
-                    "brandName": product.get("brandName") or item.get("brandName", "N/A"),
-                    "genericName": product.get("genericName") or item.get("genericName", "N/A"),
-                    "manufacturer": product.get("manufacturer") or item.get("manufacturer", "N/A"),
-                    "uom": product.get("uom") or item.get("uom", "N/A"),
-                    "batchNumber": batch_number,
-                    "manufactureDate": manufacture_date,
-                    "expiryDate": expiry_date,
-                    "premises": item.get("premises", 0),
-                    "category": cat_name,
-                    "value": item.get("value", 0),
-                    "quantity": item.get("quantity", 0),
-                    "reason": product.get("reason", "N/A")
-                })
+                    if product_index is not None and product_index < len(products_list):
+                        product = products_list[product_index]
+                        if batch_index is not None and batch_index < len(product.get("batches", [])):
+                            batch = product["batches"][batch_index]
+
+                    recall_products.append({
+                        "brandName": product.get("brandName") or item.get("brandName", "N/A"),
+                        "genericName": product.get("genericName") or item.get("genericName", "N/A"),
+                        "manufacturer": product.get("manufacturer") or item.get("manufacturer", "N/A"),
+                        "uom": product.get("uom") or item.get("uom", "N/A"),
+                        "batchNumber": item.get("batchNumber", batch.get("batchNumber", "N/A")),
+                        "manufactureDate": item.get("manufactureDate", batch.get("manufactureDate", "N/A")),
+                        "expiryDate": item.get("expiryDate", batch.get("expiryDate", "N/A")),
+                        "premises": item.get("premises", 0),
+                        "category": premise,
+                        "value": item.get("value", 0),
+                        "quantity": item.get("quantity", 0),
+                        "reason": product.get("reason", "N/A")
+                    })
 
         return recall_products
 
+    # ------------------------------
+    # Loop through inspections
+    # ------------------------------
     for insp in inspections_data:
         summary = summary_map.get(insp.get("summary_id"))
         overall_id = insp.get("summary_id")
@@ -203,6 +212,35 @@ def update_inspections_json():
 
         # Recall products
         recall_products = get_recall_products(insp)
+
+        # ------------------------------
+        # Normalize recall batch info per Overall ID
+        # ------------------------------
+        if overall_id not in main_batches_map and recall_products:
+            # Store main batch info for the first inspection of this Overall ID
+            main_batches_map[overall_id] = []
+            for rp in recall_products:
+                main_batches_map[overall_id].append({
+                    "brandName": rp.get("brandName"),
+                    "genericName": rp.get("genericName"),
+                    "manufacturer": rp.get("manufacturer"),
+                    "uom": rp.get("uom"),
+                    "batchNumber": rp.get("batchNumber") or "N/A",
+                    "manufactureDate": rp.get("manufactureDate") or "N/A",
+                    "expiryDate": rp.get("expiryDate") or "N/A"
+                })
+        elif overall_id in main_batches_map:
+            # Update subsequent inspections to use main batch info
+            for i, rp in enumerate(recall_products):
+                if i < len(main_batches_map[overall_id]):
+                    main_batch = main_batches_map[overall_id][i]
+                    rp["batchNumber"] = main_batch.get("batchNumber", "N/A")
+                    rp["manufactureDate"] = main_batch.get("manufactureDate", "N/A")
+                    rp["expiryDate"] = main_batch.get("expiryDate", "N/A")
+                else:
+                    rp["batchNumber"] = "N/A"
+                    rp["manufactureDate"] = "N/A"
+                    rp["expiryDate"] = "N/A"
 
         # Charges
         charges = insp.get("charges_data") or {}
@@ -268,8 +306,6 @@ def update_inspections_json():
           f"{len(processed_inspections)} inspections, "
           f"{len(disposal_activities)} disposal activities, "
           f"and {len(qa_activities)} QA activities at {json_path}")
-
-
 
 
 
@@ -523,13 +559,17 @@ def create_user():
 @app.route('/manage_accounts')
 def manage_accounts():
     if 'username' not in session or session['role'] != 'admin':
-        flash('Access denied!', 'danger')
-        return redirect(url_for('dashboard'))
+        flash("Access denied!", "danger")
+        return redirect(url_for("dashboard"))
 
     resp = supabase.table("user").select("*").execute()
-    user = resp.data if resp.data else []
+    users = resp.data or []   # pull data from Supabase
 
-    return render_template('manage_accounts.html', user=user, current_user=session['username'])
+    return render_template(
+        "manage_accounts.html",
+        users=users, 
+        current_user=session['username']
+    )
 
 
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
@@ -1233,144 +1273,167 @@ def inspection_form():
 
   
 # ----------------- SAVE INSPECTION -----------------
+
+
+import threading
+from collections import defaultdict
+from datetime import datetime
+from flask import Flask, request, jsonify, session
+
+# In-memory dictionary to track user locks
+save_locks = {}
+
 @app.route('/api/inspection/save', methods=['POST'])
 def save_inspection():
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
+    username = session.get('username')
+    if not username:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
 
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
+    # Create lock for user if it doesn't exist
+    if username not in save_locks:
+        save_locks[username] = threading.Lock()
+    lock = save_locks[username]
 
-    # Required fields
-    required_fields = ['inspection_type', 'region', 'district', 'inspection_date', 'premises_inspected', 'defects']
-    for f in required_fields:
-        if f not in data or data[f] is None:
-            return jsonify({'error': f'Missing required field: {f}'}), 400
+    # Try to acquire lock without waiting
+    if not lock.acquire(blocking=False):
+        return jsonify({'success': False, 'error': 'Save in progress. Please wait...'}), 200
 
-    inspection_type = data['inspection_type']
-    region = data['region']
-    district = data['district']
-    date_str = data['inspection_date']
-    premises_data = data['premises_inspected']
-    defects_data = data['defects']
-    recall_data = data.get('recall_data', {})
-    inspection_name = data.get('inspection_name', None)
-    end_flag = data.get('end', False)
-
-    charges = data.get('charges', {})
-    got_value = charges.get('got_value', 0)
-    unregistered_value = charges.get('unregistered_value', 0)
-    dldm_value = charges.get('dldm_value', 0)
-    total_charges = charges.get('total_charges', 0)
-
-    # Parse date
     try:
-        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except ValueError:
-        return jsonify({'error': 'Invalid date format'}), 400
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
 
-    # --- Check if summary exists in Supabase ---
-    summary = None
-    if inspection_name:
+        # Required fields
+        required_fields = ['inspection_type', 'region', 'district', 'inspection_date', 'premises_inspected', 'defects']
+        for f in required_fields:
+            if f not in data or data[f] is None:
+                return jsonify({'success': False, 'error': f'Missing required field: {f}'}), 400
+
+        inspection_type = data['inspection_type']
+        region = data['region']
+        district = data['district']
+        date_str = data['inspection_date']
+        premises_data = data['premises_inspected']
+        defects_data = data['defects']
+        recall_data = data.get('recall_data', {})
+        inspection_name = data.get('inspection_name', None)
+        end_flag = data.get('end', False)
+
+        charges = data.get('charges', {})
+        got_value = charges.get('got_value', 0)
+        unregistered_value = charges.get('unregistered_value', 0)
+        dldm_value = charges.get('dldm_value', 0)
+        total_charges = charges.get('total_charges', 0)
+
+        # Parse date
+        try:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid date format'}), 400
+
+        # --- Ensure unique inspection name ---
+        if not inspection_name:
+            base_name = f"{inspection_type} - {region} - {district} - {date_obj.strftime('%Y%m%d')}"
+            inspection_name = base_name
+            count = 1
+            while True:
+                resp = supabase.table("inspection_summary").select("*").eq("inspection_name", inspection_name).execute()
+                if not resp.data:
+                    break
+                inspection_name = f"{base_name}_{count}"
+                count += 1
+
+        # --- Check if summary exists ---
         resp = supabase.table("inspection_summary").select("*").eq("inspection_name", inspection_name).execute()
         summary = resp.data[0] if resp.data else None
 
-    if not summary:
-        inspection_name = f"{inspection_type} - {region} - {district} - {date_obj.strftime('%Y%m%d')}"
-        # ensure unique
-        count = 1
-        while True:
-            resp = supabase.table("inspection_summary").select("*").eq("inspection_name", inspection_name).execute()
-            if not resp.data:
-                break
-            inspection_name = f"{inspection_type} - {region} - {district} - {date_obj.strftime('%Y%m%d')}_{count}"
-            count += 1
+        if not summary:
+            # Insert new summary
+            resp = supabase.table("inspection_summary").insert({
+                "inspection_name": inspection_name,
+                "inspection_type": inspection_type,
+                "region": region,
+                "district": district,
+                "finalized": False,
+                "inspection_date": date_obj.isoformat(),
+                "recall_product_data": recall_data
+            }).execute()
+            summary = resp.data[0]
+        else:
+            # Update recall products
+            existing_products = summary.get("recall_product_data", {}) or {}
+            merged = {**existing_products, **recall_data}
+            resp = supabase.table("inspection_summary").update({
+                "recall_product_data": merged
+            }).eq("id", summary["id"]).execute()
+            summary = resp.data[0]
 
-        resp = supabase.table("inspection_summary").insert({
-            "inspection_name": inspection_name,
-            "inspection_type": inspection_type,
-            "region": region,
-            "district": district,
-            "finalized": False,
-            "inspection_date": date_obj.isoformat(),
-            "recall_product_data": recall_data
+        # --- Insert daily inspection ---
+        resp = supabase.table("inspection").insert({
+            "summary_id": summary["id"],
+            "date": date_obj.isoformat(),
+            "premises_data": premises_data,
+            "defects_data": defects_data,
+            "recall_product_data": recall_data,
+            "charges_data": {
+                'total': total_charges,
+                'got_value': got_value,
+                'unregistered_value': unregistered_value,
+                'dldm_value': dldm_value
+            }
         }).execute()
-        summary = resp.data[0]
-    else:
-        # update recall products
-        existing_products = summary.get("recall_product_data", {}) or {}
-        merged = {**existing_products, **recall_data}
-        resp = supabase.table("inspection_summary").update({
-            "recall_product_data": merged
+        daily = resp.data[0]
+
+        # --- Aggregate totals ---
+        resp = supabase.table("inspection").select("*").eq("summary_id", summary["id"]).execute()
+        daily_all = resp.data
+
+        total_defects_agg = defaultdict(int)
+        total_premises = 0
+        val_got = val_unreg = val_dldm = val_total = 0
+
+        for d in daily_all:
+            defects = d.get("defects_data", {}) or {}
+            for k, v in defects.items():
+                if isinstance(v, int):
+                    total_defects_agg[k] += v
+                elif isinstance(v, dict):
+                    total_defects_agg[k] += sum(v.values())
+            if d.get("premises_data"):
+                total_premises += sum(d["premises_data"].values())
+            charges = d.get("charges_data", {}) or {}
+            val_got += charges.get("got_value", 0)
+            val_unreg += charges.get("unregistered_value", 0)
+            val_dldm += charges.get("dldm_value", 0)
+            val_total += charges.get("total", 0)
+
+        # Update summary
+        supabase.table("inspection_summary").update({
+            "total_premises": total_premises,
+            "total_defects": total_defects_agg,
+            "value_got_products": val_got,
+            "value_unregistered_products": val_unreg,
+            "value_dldm_not_allowed": val_dldm,
+            "total_charges": val_total,
+            "inspection_date": date_obj.isoformat(),
+            "finalized": end_flag
         }).eq("id", summary["id"]).execute()
-        summary = resp.data[0]
 
-    # --- Create daily inspection ---
-    resp = supabase.table("inspection").insert({
-        "summary_id": summary["id"],
-        "date": date_obj.isoformat(),
-        "premises_data": premises_data,
-        "defects_data": defects_data,
-        "recall_product_data": recall_data,
-        "charges_data": {
-            'total': total_charges,
-            'got_value': got_value,
-            'unregistered_value': unregistered_value,
-            'dldm_value': dldm_value
-        }
-    }).execute()
-    daily = resp.data[0]
+        # Update JSON
+        try:
+            update_inspections_json()
+        except Exception as e:
+            print("❌ Failed to update inspections JSON:", e)
 
-    # --- Aggregate totals ---
-    resp = supabase.table("inspection").select("*").eq("summary_id", summary["id"]).execute()
-    daily_all = resp.data
+        return jsonify({
+            'success': True,
+            'inspection_name': summary["inspection_name"],
+            'summary_id': summary["id"],
+            'daily_id': daily["id"]
+        })
 
-    total_defects_agg = defaultdict(int)
-    total_premises = 0
-    val_got = val_unreg = val_dldm = val_total = 0
-
-    for d in daily_all:
-        defects = d.get("defects_data", {}) or {}
-        for k, v in defects.items():
-            if isinstance(v, int):
-                total_defects_agg[k] += v
-            elif isinstance(v, dict):
-                total_defects_agg[k] += sum(v.values())
-        if d.get("premises_data"):
-            total_premises += sum(d["premises_data"].values())
-        charges = d.get("charges_data", {}) or {}
-        val_got += charges.get("got_value", 0)
-        val_unreg += charges.get("unregistered_value", 0)
-        val_dldm += charges.get("dldm_value", 0)
-        val_total += charges.get("total", 0)
-
-    # update summary
-    supabase.table("inspection_summary").update({
-        "total_premises": total_premises,
-        "total_defects": total_defects_agg,
-        "value_got_products": val_got,
-        "value_unregistered_products": val_unreg,
-        "value_dldm_not_allowed": val_dldm,
-        "total_charges": val_total,
-        "inspection_date": date_obj.isoformat(),
-        "finalized": end_flag
-    }).eq("id", summary["id"]).execute()
-
-    # ------------------------------
-    # Generate JSON after save
-    # ------------------------------
-    try:
-        update_inspections_json()
-    except Exception as e:
-        print("❌ Failed to update inspections JSON:", e)
-
-    return jsonify({
-        'success': True,
-        'inspection_name': summary["inspection_name"],
-        'summary_id': summary["id"],
-        'daily_id': daily["id"]
-    })
+    finally:
+        lock.release()  # release lock so user can save again
 
 
 # ----------------- END INSPECTION -----------------

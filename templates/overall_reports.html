@@ -328,10 +328,132 @@ Summary of {{ agg.summary.inspection_type }} conducted in {{ agg.summary.distric
 
 
 
-<!-- Recalled Products --> <h6 class="bg-light p-2 rounded mt-3"><strong>Recalled Products</strong></h6> {% set merged_products = {} %} {% for recall_set in agg.recall_products %} {% if recall_set is defined %} {% set all_products = recall_set.get('recalled_products', []) %} {% for facility_type, cat_data in recall_set.items() %} {% if facility_type != "recalled_products" and cat_data.products_found is defined %} {% for item in cat_data.products_found %} {# Check if item uses indexed format or embedded format #} {% if item.product_index is defined and item.batch_index is defined and all_products %} {% set product = all_products[item.product_index] %} {% set batch = product.batches[item.batch_index] %} {% else %} {% set product = item %} {% set batch = item.batches[0] %} {% endif %} {% set key = product.brandName ~ '|' ~ product.genericName ~ '|' ~ product.manufacturer ~ '|' ~ batch.batchNumber ~ '|' ~ product.reason %} {% if merged_products[key] is not defined %} {% set _ = merged_products.update({key: { 'brandName': product.brandName, 'genericName': product.genericName, 'manufacturer': product.manufacturer, 'batchNumber': batch.batchNumber, 'mfd': batch.manufactureDate, 'exp': batch.expiryDate, 'reason': product.reason, 'value': item.value, 'quantity': item.quantity, 'premises_total': item.premises, 'premises_breakdown': {facility_type: item.premises} }}) %} {% else %} {% set existing = merged_products[key] %} {% set updated_breakdown = existing.premises_breakdown.copy() %} {% set _ = updated_breakdown.update({ facility_type: updated_breakdown.get(facility_type, 0) + item.premises }) %} {% set _ = merged_products.update({key: { 'brandName': existing.brandName, 'genericName': existing.genericName, 'manufacturer': existing.manufacturer, 'batchNumber': existing.batchNumber, 'mfd': existing.mfd, 'exp': existing.exp, 'reason': existing.reason, 'value': existing.value + item.value, 'quantity': existing.quantity + item.quantity, 'premises_total': existing.premises_total + item.premises, 'premises_breakdown': updated_breakdown }}) %} {% endif %} {% endfor %} {% endif %} {% endfor %} {% endif %} {% endfor %} {% if merged_products|length > 0 %} <table class="min-table"> <thead> <tr> <th>S/No</th> <th>Brand</th> <th>Generic</th> <th>Manufacturer</th> <th>Batch</th> <th>MFD</th> <th>EXP</th> <th>Reason</th> <th>Premises</th> <th>Value (Tsh)</th> <th>Quantity</th> </tr> </thead> <tbody> {% for k, p in merged_products.items() %} <tr> <td>{{ loop.index }}</td> <td>{{ p.brandName }}</td> <td>{{ p.genericName }}</td> <td>{{ p.manufacturer }}</td> <td>{{ p.batchNumber }}</td> <td>{{ p.mfd }}</td> <td>{{ p.exp }}</td> <td>{{ p.reason }}</td> <td> {{ p.premises_total }} ( {% for ft, val in p.premises_breakdown.items() %} {{ ft }} {{ val }}{% if not loop.last %}, {% endif %} {% endfor %} ) </td> <td>{{ p.value }}</td> <td>{{ p.quantity }}</td> </tr> {% endfor %} </tbody> <tfoot> <tr> <th colspan="9" class="text-end">Total</th> <th>{{ merged_products.values() | map(attribute='value') | sum }}</th> <th>{{ merged_products.values() | map(attribute='quantity') | sum }}</th> </tr> </tfoot> </table> {% else %} <p>No recalled products.</p> {% endif %}
+{% if 'recall' in (agg.summary.inspection_type | lower) %}
+<!-- Recalled Products -->
+<h6 class="bg-light p-2 rounded mt-3"><strong>Recalled Products</strong></h6>
+
+{% set merged_products = {} %}
+
+{# Merge all recalled products #}
+{% for recall_set in agg.recall_products %}
+    {% if recall_set is defined %}
+        {% set all_products = recall_set.get('recalled_products', []) %}
+
+        {% for facility_type, cat_data in recall_set.items() %}
+            {% if facility_type != "recalled_products" %}
+                {% set items = [] %}
+
+                {# Use products_found if present, else fallback to recalled_products #}
+                {% if cat_data.products_found is defined and cat_data.products_found|length > 0 %}
+                    {% set items = cat_data.products_found %}
+                {% elif all_products|length > 0 %}
+                    {% set items = all_products %}
+                {% endif %}
+
+                {% for item in items %}
+                    {% if item.product_index is defined and item.batch_index is defined and all_products %}
+                        {% set product = all_products[item.product_index] %}
+                        {% set batch = product.batches[item.batch_index] %}
+                    {% else %}
+                        {% set product = item %}
+                        {% set batch = item.batches[0] if item.batches is defined and item.batches|length > 0 else {'batchNumber':'N/A','manufactureDate':'N/A','expiryDate':'N/A'} %}
+                    {% endif %}
+
+                    {% set key = product.brandName ~ '|' ~ product.genericName ~ '|' ~ product.manufacturer ~ '|' ~ batch.batchNumber ~ '|' ~ product.reason %}
+
+                    {% if merged_products[key] is not defined %}
+                        {% set _ = merged_products.update({key: {
+                            'brandName': product.brandName,
+                            'genericName': product.genericName,
+                            'manufacturer': product.manufacturer,
+                            'batchNumber': batch.batchNumber,
+                            'mfd': batch.manufactureDate,
+                            'exp': batch.expiryDate,
+                            'reason': product.reason,
+                            'value': item.value or 0,
+                            'quantity': item.quantity or 0,
+                            'premises_total': item.premises or 0,
+                            'premises_breakdown': {facility_type: item.premises or 0}
+                        }}) %}
+                    {% else %}
+                        {% set existing = merged_products[key] %}
+                        {% set updated_breakdown = existing.premises_breakdown.copy() %}
+                        {% set _ = updated_breakdown.update({facility_type: updated_breakdown.get(facility_type, 0) + (item.premises or 0)}) %}
+                        {% set _ = merged_products.update({key: {
+                            'brandName': existing.brandName,
+                            'genericName': existing.genericName,
+                            'manufacturer': existing.manufacturer,
+                            'batchNumber': existing.batchNumber,
+                            'mfd': existing.mfd,
+                            'exp': existing.exp,
+                            'reason': existing.reason,
+                            'value': existing.value + (item.value or 0),
+                            'quantity': existing.quantity + (item.quantity or 0),
+                            'premises_total': existing.premises_total + (item.premises or 0),
+                            'premises_breakdown': updated_breakdown
+                        }}) %}
+                    {% endif %}
+                {% endfor %}
+
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endfor %}
+
+{# Display Table #}
+<table class="min-table mt-2">
+    <thead>
+        <tr>
+            <th>S/No</th>
+            <th>Brand</th>
+            <th>Generic</th>
+            <th>Manufacturer</th>
+            <th>Batch</th>
+            <th>MFD</th>
+            <th>EXP</th>
+            <th>Reason</th>
+            <th>Premises</th>
+            <th>Value (Tsh)</th>
+            <th>Quantity</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for key, p in merged_products.items() %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ p.brandName }}</td>
+            <td>{{ p.genericName }}</td>
+            <td>{{ p.manufacturer }}</td>
+            <td>{{ p.batchNumber }}</td>
+            <td>{{ p.mfd }}</td>
+            <td>{{ p.exp }}</td>
+            <td>{{ p.reason }}</td>
+            <td>
+                {{ p.premises_total }} (
+                {% for ft, val in p.premises_breakdown.items() if val > 0 %}
+                    {{ ft }} {{ val }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+                )
+            </td>
+            <td>{{ p.value }}</td>
+            <td>{{ p.quantity }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <th colspan="9" class="text-end">Total</th>
+            <th>{{ merged_products.values() | map(attribute='value') | sum }}</th>
+            <th>{{ merged_products.values() | map(attribute='quantity') | sum }}</th>
+        </tr>
+    </tfoot>
+</table>
+{% endif %}
 
 
 
+
+{% if agg.summary.inspection_type != "Recall Inspection" %}
 <!-- Charges -->
 <h6 class="bg-light p-2 rounded mt-3"><strong>Charges & Confiscated Values</strong></h6>
 
@@ -372,6 +494,7 @@ Summary of {{ agg.summary.inspection_type }} conducted in {{ agg.summary.distric
     </tr>
   </tbody>
 </table>
+{% endif %}
 
 
 </div>

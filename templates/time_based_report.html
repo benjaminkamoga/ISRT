@@ -905,37 +905,28 @@ container.appendChild(recallBlock);
 
 
 
-
-
 // === Recall Inspections (aggregated, scrollable table with Reason column) ===
-
 recallBlock.className = 'report-block';
-
-
 
 if (recallInspections.length > 0) {
 
-    // Step 0: Compute narration totals
-let totalPremisesNarration = 0;
-let uniqueProductsSet = new Set();
+    // Step 0: Compute narration totals from Recall Products
+    let totalPremisesNarration = 0;
+    let uniqueProductsSet = new Set();
 
-recallInspections.forEach(insp => {
-    const overallId = insp["ID"] || insp["Inspection ID"] || 'unknown';
-    const products = Array.isArray(insp["Recall Products"]) ? insp["Recall Products"] : [];
-    const premisesData = Array.isArray(insp["Premises Data"]) ? insp["Premises Data"] : [];
+    recallInspections.forEach(insp => {
+        const overallId = insp["ID"] || insp["Inspection ID"] || 'unknown';
+        const products = Array.isArray(insp["Recall Products"]) ? insp["Recall Products"] : [];
 
-    // Count total premises from Premises Data array
-    const premisesCount = premisesData.reduce((sum, p) => sum + (p.Count || 0), 0);
-    totalPremisesNarration += premisesCount;
+        products.forEach(p => {
+            totalPremisesNarration += p.premises || 0;
 
-    products.forEach(p => {
-        const key = `${overallId}|${p.brandName}|${p.genericName}|${p.batchNumber}`;
-        uniqueProductsSet.add(key);
+            const key = `${overallId}|${p.brandName}|${p.genericName}|${p.batchNumber}`;
+            uniqueProductsSet.add(key);
+        });
     });
-});
 
-const totalProductsNarration = uniqueProductsSet.size;
-
+    const totalProductsNarration = uniqueProductsSet.size;
 
     // Step 1: Flatten all products from all recall inspections for table
     const allProducts = [];
@@ -951,16 +942,17 @@ const totalProductsNarration = uniqueProductsSet.size;
                 batchNumber: p.batchNumber || '-',
                 manufactureDate: p.manufactureDate || '-',
                 expiryDate: p.expiryDate || '-',
-                reason: p.reason || '-', // Reason column
+                reason: p.reason || '-', 
                 category: p.category ? [p.category] : [],
                 value: p.value || 0,
                 quantity: p.quantity || 0,
-                premises: p.premises || 0 // explicit premises for table aggregation
+                premises: p.premises || 0 
             });
         });
     });
 
     if (allProducts.length > 0) {
+
         // Step 2: Aggregate products by unique key for table
         const aggregated = {};
         allProducts.forEach(p => {
@@ -1005,11 +997,17 @@ The table below shows the detailed information:
 
         let serialNo = 1;
         aggregatedProducts.forEach(p => {
-            const categoryBreakdown = Object.entries(p.premisesByCategory)
-                .map(([cat, count]) => `${cat} ${count}`)
-                .join(', ');
+            let categoryBreakdown = "N/A";
+            let totalPremises = 0;
 
-            const totalPremises = Object.values(p.premisesByCategory).reduce((a, b) => a + b, 0);
+ if (totalPremisesNarration > 0) {
+    categoryBreakdown = Object.entries(p.premisesByCategory)
+        .filter(([cat, count]) => count > 0)   // <-- filter out zero counts
+        .map(([cat, count]) => `${cat} ${count}`)
+        .join(', ');
+
+    totalPremises = Object.values(p.premisesByCategory).reduce((a, b) => a + b, 0);
+}
 
             html += `<tr>
                 <td>${serialNo++}</td>
@@ -1028,8 +1026,12 @@ The table below shows the detailed information:
             </tr>`;
         });
 
-        html += `</table></div>
-<p style="margin-top:10px;"><strong>NOTE!</strong> The above recalled products were confiscated for the following regulatory procedures.</p>`;
+        html += `</table></div>`;
+
+        // Show NOTE only if totalPremisesNarration > 0
+        if (totalPremisesNarration > 0) {
+            html += `<p style="margin-top:10px;"><strong>NOTE!</strong> The above recalled products were confiscated for the following regulatory procedures.</p>`;
+        }
 
         recallBlock.innerHTML = html;
 
