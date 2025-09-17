@@ -2010,6 +2010,9 @@ def api_inspections():
     if 'username' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
 
+    # Regenerate the JSON from Supabase
+    update_inspections_json()  # no import needed since it's in app.py
+
     data_dir = os.path.join(current_app.root_path, "static", "data")
     json_path = os.path.join(data_dir, "inspections_from_db.json")
 
@@ -2020,8 +2023,6 @@ def api_inspections():
         data = json.load(f)
 
     inspections_list = data.get("Inspections", [])
-
-    # Return the JSON data instead of Supabase
     return jsonify(inspections_list)
 
 
