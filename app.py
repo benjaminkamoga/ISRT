@@ -2017,9 +2017,12 @@ def api_inspections():
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Return only the inspections list so the JS still works
     inspections_list = data.get("Inspections", [])
+
+    # Return the JSON data instead of Supabase
     return jsonify(inspections_list)
+
+
 
 @app.route('/api/disposal_activities')
 def api_disposal_activities():
