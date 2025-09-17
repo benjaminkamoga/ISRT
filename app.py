@@ -2003,6 +2003,8 @@ def time_based_report():
     )
 
 
+
+
 @app.route('/api/inspections')
 def api_inspections():
     if 'username' not in session:
@@ -2021,6 +2023,7 @@ def api_inspections():
 
     # Return the JSON data instead of Supabase
     return jsonify(inspections_list)
+
 
 
 
