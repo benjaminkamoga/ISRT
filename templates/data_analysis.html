@@ -2774,7 +2774,7 @@ const totalPremisesInspectedForOverallID = groupInspections.reduce((sum, insp) =
 
                         const premisesDisplay = `${Object.values(item.premisesWithRecalled).reduce((a,b)=>a+b,0)}${premisesBreakdown ? ` (${premisesBreakdown})` : ''}`;
 
-                        if (Object.values(item.premisesWithRecalled).reduce((a,b)=>a+b,0) === 0) return;
+                       
 
                         html += `
                             <tr>
