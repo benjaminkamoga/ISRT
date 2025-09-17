@@ -419,7 +419,7 @@ regions = {
 categories = [
     "Dispensary", "Health Centre", "Polyclinic", "Hospital",
     "Medical Lab (Private)", "Medical Lab (GOT)", "Pharmacy (Human)", "Pharmacy (Vet)",
-    "DLDM (Human)", "DLDM (Vet)","Non Medical shops", "Ware House","Medical Devices Shops","Arbitary Sellers"
+    "DLDM (Human)", "DLDM (Vet)","Non Medical shops", "Ware House","Medical Devices Shops","Arbitary Sellers","Gas Plant"
 ]
 
 RECALL_CATEGORIES = [cat for cat in categories if cat != "Arbitary Sellers"]

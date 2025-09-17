@@ -2165,17 +2165,13 @@ buildQATable();
 
 // === Progressive Report Section ===
 async function buildProgressiveReport() {
-    // Fetch targets from API
+    // Fetch targets from local JSON file inside static/data/
     const targets = await (async () => {
         try {
-            const response = await fetch('/api/targets');
-            if (!response.ok) throw new Error('Failed to fetch targets');
-            const data = await response.json();
-            const obj = {};
-            data.forEach(item => {
-                obj[item.category] = item.annual_target; // Use annual_target
-            });
-            return obj;
+            const response = await fetch('/static/data/targets.json');
+            if (!response.ok) throw new Error('Failed to fetch targets.json');
+            const data = await response.json();  // already in { "Dispensary": 40, ... } format
+            return data;
         } catch (err) {
             console.error(err);
             return {}; // fallback empty targets
@@ -2190,36 +2186,36 @@ async function buildProgressiveReport() {
     const reportType = reportTypeFilter.value;
     const currentYear = new Date().getFullYear();
 
-    if(data.length === 0){
+    if (inspectionData.length === 0) {
         filteredEndDate = new Date();
     } else {
-        switch(reportType){
+        switch (reportType) {
             case 'biweekly':
                 const selectedMonth = parseInt(monthFilter.value);
-                if(biweeklyFilter.value === '1-15'){
+                if (biweeklyFilter.value === '1-15') {
                     filteredEndDate = new Date(currentYear, selectedMonth, 15);
                 } else {
-                    const lastDay = new Date(currentYear, selectedMonth+1, 0).getDate();
+                    const lastDay = new Date(currentYear, selectedMonth + 1, 0).getDate();
                     filteredEndDate = new Date(currentYear, selectedMonth, lastDay);
                 }
                 break;
             case 'monthly':
                 const month = parseInt(monthFilter.value);
-                const lastDayOfMonth = new Date(currentYear, month+1, 0).getDate();
+                const lastDayOfMonth = new Date(currentYear, month + 1, 0).getDate();
                 filteredEndDate = new Date(currentYear, month, lastDayOfMonth);
                 break;
             case 'quarterly':
                 const quarterMonths = {
-                    1: [6,7,8],
-                    2: [9,10,11],
-                    3: [0,1,2],
-                    4: [3,4,5]
+                    1: [6, 7, 8],
+                    2: [9, 10, 11],
+                    3: [0, 1, 2],
+                    4: [3, 4, 5]
                 };
                 const qMonths = quarterMonths[parseInt(quarterFilter.value)];
-                filteredEndDate = new Date(currentYear, Math.max(...qMonths)+1, 0);
+                filteredEndDate = new Date(currentYear, Math.max(...qMonths) + 1, 0);
                 break;
             case 'semiannual':
-                if(parseInt(semiFilter.value) === 1){
+                if (parseInt(semiFilter.value) === 1) {
                     filteredEndDate = new Date(currentYear, 5, 30);
                 } else {
                     filteredEndDate = new Date(currentYear, 11, 31);
@@ -2247,11 +2243,12 @@ async function buildProgressiveReport() {
             <th>Achievement</th>
         </tr>`;
 
-    const categoryMap = {
-        "Dispensary": "Dispensaries",
-        "Hospital": "Hospitals",
-        "Medical Lab (GOT)": "Laboratory (GOT)",
-        "Medical Lab (Private)": "Laboratory (Private)"
+    // Reverse mapping: inspection categories → JSON keys
+    const reverseCategoryMap = {
+        "Hospitals": "Hospital",
+        "Dispensaries": "Dispensary",
+        "Laboratory (GOT)": "Medical Lab (GOT)",
+        "Laboratory (Private)": "Medical Lab (Private)"
     };
 
     // Totals
@@ -2277,8 +2274,8 @@ async function buildProgressiveReport() {
             }
         });
 
-        const mappedCat = categoryMap[cat] || cat;
-        const targetValue = targets[mappedCat] || 0;
+        const jsonKey = reverseCategoryMap[cat] || cat;
+        const targetValue = targets[jsonKey] || 0;
 
         let achievementText = '—';
         let achievementColor = '#888'; // grey for no target
@@ -2291,9 +2288,7 @@ async function buildProgressiveReport() {
             else achievementColor = '#dc3545'; // red
         }
 
-        // Alternate row colors
         const rowColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
-
         progressiveHTML += `<tr style="background-color:${rowColor};">
             <td style="font-weight:bold;">${cat}</td>
             <td>${targetValue}</td>
@@ -2302,7 +2297,6 @@ async function buildProgressiveReport() {
             <td style="color:${achievementColor}; font-weight:bold;">${achievementText}</td>
         </tr>`;
 
-        // Add to totals
         totalTarget += targetValue;
         totalInspectedInPeriod += inspectedInPeriod;
         totalCumulative += cumulative;
@@ -2329,15 +2323,11 @@ async function buildProgressiveReport() {
     progressiveHTML += `</table>`;
     progressiveBlock.innerHTML = progressiveHTML;
     container.appendChild(progressiveBlock);
-
-
-
-    
 }
 
 // Build report on page load
 buildProgressiveReport();
-  
+
 
 }
 
