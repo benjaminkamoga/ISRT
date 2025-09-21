@@ -2176,16 +2176,27 @@ def help():
     """
 
 
+from functools import wraps
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("user_id"):  # or whatever key you use when logging in
+            return redirect(url_for("login"))  # redirect to your login page
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @app.route('/help/about', endpoint='help_about')
+@login_required
 def help_about():
     return render_template('about_app.html')
 
 
-
 @app.route('/help/howto', endpoint='help_howto')
+@login_required
 def help_howto():
     return render_template('how_to_use_tool.html')
-
 
 
 
